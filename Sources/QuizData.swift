@@ -1,40 +1,39 @@
 import Foundation
 
-/// v1 quiz 題庫（working draft — 題目設計仍需 research，見 PRD §9）。
-/// 每個維度 1 題，共 3 題，剛好對應 prototype 的核心互動。
+/// v1 quiz copy. One question per dimension keeps the prototype concise.
 enum QuizData {
     static let questions: [QuizQuestion] = [
         QuizQuestion(
             id: "q_emotional",
             dimension: .emotional,
-            prompt: "When you feel off-balance, what do you need most?",
+            prompt: "When your balance slips, what do you reach for first?",
             options: [
-                QuizOption(id: "e_quiet",   label: "Quiet time alone",  tag: "quiet"),
-                QuizOption(id: "e_talk",    label: "Talk to someone",   tag: "connection"),
-                QuizOption(id: "e_move",    label: "Move my body",      tag: "movement"),
-                QuizOption(id: "e_create",  label: "Make something",    tag: "creativity")
+                QuizOption(id: "e_quiet",   label: "Quiet space",       tag: "quiet"),
+                QuizOption(id: "e_talk",    label: "Someone nearby",    tag: "connection"),
+                QuizOption(id: "e_move",    label: "A physical reset",  tag: "movement"),
+                QuizOption(id: "e_create",  label: "A creative outlet", tag: "creativity")
             ]
         ),
         QuizQuestion(
             id: "q_cultural",
             dimension: .cultural,
-            prompt: "Where do you feel most like yourself?",
+            prompt: "Where does your attention settle most naturally?",
             options: [
-                QuizOption(id: "c_nature",  label: "In nature",         tag: "nature"),
-                QuizOption(id: "c_people",  label: "Around people",     tag: "communal"),
-                QuizOption(id: "c_home",    label: "At home",           tag: "home"),
-                QuizOption(id: "c_new",     label: "Somewhere new",     tag: "explore")
+                QuizOption(id: "c_nature",  label: "Under open sky",    tag: "nature"),
+                QuizOption(id: "c_people",  label: "With familiar people", tag: "communal"),
+                QuizOption(id: "c_home",    label: "Inside a warm room", tag: "home"),
+                QuizOption(id: "c_new",     label: "Somewhere undiscovered", tag: "explore")
             ]
         ),
         QuizQuestion(
             id: "q_physical",
             dimension: .physical,
-            prompt: "How does your body recharge?",
+            prompt: "What pace helps your body come back online?",
             options: [
                 QuizOption(id: "p_still",   label: "Stillness",         tag: "still"),
-                QuizOption(id: "p_active",  label: "Movement",          tag: "active"),
-                QuizOption(id: "p_sensory", label: "Sensory calm",      tag: "sensory"),
-                QuizOption(id: "p_rest",    label: "Rest",              tag: "rest")
+                QuizOption(id: "p_active",  label: "Walking it out",    tag: "active"),
+                QuizOption(id: "p_sensory", label: "Soft sensory calm", tag: "sensory"),
+                QuizOption(id: "p_rest",    label: "Deep rest",         tag: "rest")
             ]
         )
     ]

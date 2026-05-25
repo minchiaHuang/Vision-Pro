@@ -3,23 +3,22 @@ import SwiftUI
 import RealityKit
 import UIKit
 
-/// iOS/iPadOS：把 360° equirectangular 圖貼在大球體內壁，相機放球心，
-/// 用拖曳手勢轉動視角 → 模擬「站在世界裡環視」。
-/// （沒有 Vision Pro 也能驗證整套體驗。）
+/// iOS/iPadOS 360-degree view using an inward-facing equirectangular sphere.
 struct Immersive360View: View {
     let world: World
 
-    @State private var committed = SIMD2<Float>(0, 0)   // 已固定的 yaw/pitch
-    @State private var live = SIMD2<Float>(0, 0)        // 當前拖曳中的增量
+    @State private var committed = SIMD2<Float>(0, 0)
+    @State private var live = SIMD2<Float>(0, 0)
+
+    private let dragSensitivity: Float = 0.004
+    private let maxPitch: Float = .pi * 0.42
 
     var body: some View {
         RealityView { content in
-            // 球心相機
             let camera = PerspectiveCamera()
             camera.position = .zero
             content.add(camera)
 
-            // 內壁貼圖的球體
             let sphere = await makeSkySphere(imageName: world.imageName)
             sphere.name = "sky"
             content.add(sphere)
@@ -33,18 +32,20 @@ struct Immersive360View: View {
         .gesture(
             DragGesture()
                 .onChanged { value in
-                    live = SIMD2(Float(value.translation.width) * 0.004,
-                                 Float(value.translation.height) * 0.004)
+                    let yawDelta = Float(value.translation.width) * dragSensitivity
+                    let pitchDelta = Float(value.translation.height) * dragSensitivity
+                    let nextPitch = clampedPitch(committed.y + pitchDelta)
+                    live = SIMD2(yawDelta, nextPitch - committed.y)
                 }
                 .onEnded { _ in
-                    committed += live
+                    committed = SIMD2(committed.x + live.x, clampedPitch(committed.y + live.y))
                     live = .zero
                 }
         )
         .background(Color.black)
     }
 
-    /// 建一個法線朝內、貼上 360° 圖的球體。
+    /// Builds the inward-facing sphere used as the panorama surface.
     private func makeSkySphere(imageName: String) async -> Entity {
         let mesh = MeshResource.generateSphere(radius: 1000)
         var material = UnlitMaterial()
@@ -57,14 +58,16 @@ struct Immersive360View: View {
            ) {
             material.color = .init(tint: .white, texture: .init(texture))
         } else {
-            // 找不到圖的後備：純色，flow 一樣跑得起來
             material.color = .init(tint: .init(white: 0.25, alpha: 1))
         }
 
         let entity = ModelEntity(mesh: mesh, materials: [material])
-        // 翻面，讓貼圖顯示在球體內側
         entity.scale = SIMD3(-1, 1, 1)
         return entity
+    }
+
+    private func clampedPitch(_ pitch: Float) -> Float {
+        min(max(pitch, -maxPitch), maxPitch)
     }
 }
 #endif
