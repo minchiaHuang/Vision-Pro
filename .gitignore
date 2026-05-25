@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# CocoaPods / Carthage (若之後用到)
+Pods/
+Carthage/Build/
+
+# Secrets — API keys 絕對不能進 repo（v2 Skybox API key）
+Secrets.swift
+*.env
+.env
+APIKeys.plist
