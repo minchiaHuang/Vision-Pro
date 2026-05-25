@@ -1,41 +1,41 @@
 import Foundation
 
-/// v1：預先準備好的世界 + 查表解析。
-/// 之後 v2 會用 SkyboxService 即時生成取代 resolve()。
+/// v1 world presets and lookup-based resolution.
+/// v2 can replace resolve() with live Skybox generation.
 enum WorldCatalog {
 
-    /// 打包進 Assets 的世界（imageName 要和 Assets.xcassets 裡的圖名一致）。
+    /// Bundled worlds. imageName must match the asset catalog names.
     static let all: [World] = [
         World(
             id: "calm_communal",
-            title: "This is what balance feels like for you",
+            title: "A Room That Lets You Exhale",
             imageName: "world_calm_communal",
-            blurb: "A warm, communal space — calm but not empty."
+            blurb: "Warm light, familiar textures, and enough company to feel held."
         ),
         World(
             id: "open_nature",
-            title: "This is what balance feels like for you",
+            title: "A Horizon With Room to Move",
             imageName: "world_open_nature",
-            blurb: "Open nature — room to breathe and move."
+            blurb: "Open air, soft distance, and a path that gives your body space."
         ),
         World(
             id: "quiet_solitary",
-            title: "This is what balance feels like for you",
+            title: "A Night Made for Quiet",
             imageName: "world_quiet_solitary",
-            blurb: "A quiet, solitary place — nothing to prove."
+            blurb: "Low city light, deep stillness, and space to return to yourself."
         )
     ]
 
-    /// 找不到對應圖時的後備（讓 flow 一定跑得起來）。
+    /// Fallback world, so the flow still completes if resolution misses.
     static let fallback = World(
         id: "fallback",
-        title: "This is what balance feels like for you",
+        title: "A Place to Begin Again",
         imageName: "world_calm_communal",
         blurb: "Your space."
     )
 
-    /// 根據 quiz 結果查表決定世界。
-    /// v1 邏輯刻意簡單：用 emotional + cultural + physical 的傾向決定大方向。
+    /// Resolve a world from quiz tags.
+    /// v1 stays simple: emotional, cultural, and physical tags choose a preset.
     static func resolve(from result: QuizResult) -> World {
         let emotional = result.tag(for: .emotional) ?? ""
         let cultural = result.tag(for: .cultural) ?? ""
