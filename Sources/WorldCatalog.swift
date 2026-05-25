@@ -35,18 +35,21 @@ enum WorldCatalog {
     )
 
     /// 根據 quiz 結果查表決定世界。
-    /// v1 邏輯刻意簡單：用 cultural + physical 的傾向決定大方向。
+    /// v1 邏輯刻意簡單：用 emotional + cultural + physical 的傾向決定大方向。
     static func resolve(from result: QuizResult) -> World {
+        let emotional = result.tag(for: .emotional) ?? ""
         let cultural = result.tag(for: .cultural) ?? ""
         let physical = result.tag(for: .physical) ?? ""
 
-        switch (cultural, physical) {
-        case ("communal", _), ("home", _):
-            return byId("calm_communal")
-        case (_, "active"), ("explore", _), ("nature", _):
-            return byId("open_nature")
-        case (_, "still"), (_, "rest"):
+        switch (emotional, cultural, physical) {
+        case ("quiet", _, _):
             return byId("quiet_solitary")
+        case (_, "communal", _), (_, "home", _):
+            return byId("calm_communal")
+        case (_, _, "still"), (_, _, "rest"):
+            return byId("quiet_solitary")
+        case (_, _, "active"), (_, "explore", _), (_, "nature", _):
+            return byId("open_nature")
         default:
             return fallback
         }

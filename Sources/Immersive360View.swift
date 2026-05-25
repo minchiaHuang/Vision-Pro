@@ -1,6 +1,7 @@
 #if !os(visionOS)
 import SwiftUI
 import RealityKit
+import UIKit
 
 /// iOS/iPadOS：把 360° equirectangular 圖貼在大球體內壁，相機放球心，
 /// 用拖曳手勢轉動視角 → 模擬「站在世界裡環視」。
@@ -48,7 +49,12 @@ struct Immersive360View: View {
         let mesh = MeshResource.generateSphere(radius: 1000)
         var material = UnlitMaterial()
 
-        if let texture = try? await TextureResource(named: imageName) {
+        if let cgImage = UIImage(named: imageName)?.cgImage,
+           let texture = try? await TextureResource(
+            image: cgImage,
+            withName: imageName,
+            options: .init(semantic: .color)
+           ) {
             material.color = .init(tint: .white, texture: .init(texture))
         } else {
             // 找不到圖的後備：純色，flow 一樣跑得起來
