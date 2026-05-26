@@ -42,10 +42,12 @@ final class MotionManager {
     private var referenceAttitude: CMAttitude?
 
     // Mirror compensation for the inward-facing sphere (entity.scale.x = -1).
-    // Start identity; flip an axis on device if pitch/yaw/roll feels inverted.
-    private let signX: Float = 1     // pitch (vertical)
-    private let signY: Float = 1     // yaw   (horizontal)
-    private let signZ: Float = 1     // roll
+    // After the device→view change-of-basis, inv.imag.x drives the view's pitch
+    // (vertical) and inv.imag.y drives the yaw (horizontal). Tuned on device:
+    // both pitch and yaw needed flipping for the mirrored sphere; roll stays.
+    private let signX: Float = -1    // pitch (vertical)   — flipped
+    private let signY: Float = -1    // yaw   (horizontal) — flipped
+    private let signZ: Float =  1    // roll
 
     /// Quaternion that maps the device-portrait frame to the view-landscape frame.
     /// Recomputed whenever the interface orientation changes.
