@@ -24,6 +24,7 @@ struct RootView: View {
 /// Opening screen.
 struct SplashView: View {
     @Environment(AppState.self) private var appState
+    @State private var showWorldLabs = false
 
     var body: some View {
         VStack(spacing: 28) {
@@ -48,9 +49,19 @@ struct SplashView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+
+            Button("Experimental: World Labs") {
+                showWorldLabs = true
+            }
+            .buttonStyle(.borderless)
+            .font(.footnote)
+            .foregroundStyle(.secondary)
         }
         .frame(maxWidth: 520)
         .padding(32)
+        .sheet(isPresented: $showWorldLabs) {
+            WorldLabsTestView()
+        }
     }
 }
 

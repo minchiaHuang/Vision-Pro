@@ -6,6 +6,7 @@ import UIKit
 /// iOS/iPadOS 360-degree view using an inward-facing equirectangular sphere.
 struct Immersive360View: View {
     let world: World
+    var overrideImage: UIImage? = nil
 
     @State private var committed = SIMD2<Float>(0, 0)
     @State private var live = SIMD2<Float>(0, 0)
@@ -19,7 +20,7 @@ struct Immersive360View: View {
             camera.position = .zero
             content.add(camera)
 
-            let sphere = await makeSkySphere(imageName: world.imageName)
+            let sphere = await makeSkySphere()
             sphere.name = "sky"
             content.add(sphere)
         } update: { content in
@@ -46,14 +47,16 @@ struct Immersive360View: View {
     }
 
     /// Builds the inward-facing sphere used as the panorama surface.
-    private func makeSkySphere(imageName: String) async -> Entity {
+    /// Uses `overrideImage` (e.g. a downloaded panorama) when present, else the bundled asset.
+    private func makeSkySphere() async -> Entity {
         let mesh = MeshResource.generateSphere(radius: 1000)
         var material = UnlitMaterial()
 
-        if let cgImage = UIImage(named: imageName)?.cgImage,
+        let cgImage = (overrideImage ?? UIImage(named: world.imageName))?.cgImage
+        if let cgImage,
            let texture = try? await TextureResource(
             image: cgImage,
-            withName: imageName,
+            withName: nil,
             options: .init(semantic: .color)
            ) {
             material.color = .init(tint: .white, texture: .init(texture))
