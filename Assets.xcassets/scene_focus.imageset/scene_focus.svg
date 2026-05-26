@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sfoBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0e1218"/>
+      <stop offset="100%" stop-color="#191512"/>
+    </linearGradient>
+    <radialGradient id="sfoGlow" cx="0.6" cy="0.3" r="0.4">
+      <stop offset="0%" stop-color="#e8a76c" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#e8a76c" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sfoBg)"/>
+  <rect width="400" height="300" fill="url(#sfoGlow)"/>
+  <rect x="80" y="60" width="240" height="140" rx="6" fill="#0a0c10"/>
+  <rect x="86" y="66" width="228" height="128" rx="3" fill="#1a2230"/>
+  <rect x="100" y="80" width="200" height="2" fill="#7fa8d0" opacity="0.6"/>
+  <rect x="100" y="92" width="140" height="2" fill="#7fa8d0" opacity="0.5"/>
+  <rect x="100" y="104" width="180" height="2" fill="#7fa8d0" opacity="0.5"/>
+  <rect x="100" y="118" width="100" height="2" fill="#7fa8d0" opacity="0.4"/>
+  <rect x="100" y="130" width="160" height="2" fill="#7fa8d0" opacity="0.4"/>
+  <rect x="100" y="148" width="120" height="2" fill="#7fa8d0" opacity="0.3"/>
+  <rect x="190" y="200" width="20" height="20" fill="#0a0c10"/>
+  <ellipse cx="200" cy="225" rx="50" ry="6" fill="#0a0c10"/>
+  <rect x="120" y="235" width="160" height="28" rx="4" fill="#1a1612"/>
+  <rect x="130" y="240" width="9" height="6" rx="1" fill="#2a2620"/>
+  <rect x="142" y="240" width="9" height="6" rx="1" fill="#2a2620"/>
+  <rect x="154" y="240" width="9" height="6" rx="1" fill="#2a2620"/>
+  <rect x="166" y="240" width="9" height="6" rx="1" fill="#2a2620"/>
+  <rect x="178" y="240" width="9" height="6" rx="1" fill="#2a2620"/>
+  <rect x="190" y="240" width="9" height="6" rx="1" fill="#2a2620"/>
+  <rect x="202" y="240" width="9" height="6" rx="1" fill="#2a2620"/>
+  <rect x="214" y="240" width="9" height="6" rx="1" fill="#2a2620"/>
+  <rect x="226" y="240" width="9" height="6" rx="1" fill="#2a2620"/>
+  <rect x="238" y="240" width="9" height="6" rx="1" fill="#2a2620"/>
+  <rect x="250" y="240" width="9" height="6" rx="1" fill="#2a2620"/>
+  <rect x="262" y="240" width="9" height="6" rx="1" fill="#2a2620"/>
+</svg>

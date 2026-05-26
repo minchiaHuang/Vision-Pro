@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="semSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#cfb88a"/>
+      <stop offset="60%" stop-color="#9c8266"/>
+      <stop offset="100%" stop-color="#5e4838"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#semSky)"/>
+  <path d="M0,180 L80,150 L160,170 L240,140 L320,165 L400,150 L400,200 L0,200 Z" fill="#6a5a4e" opacity="0.85"/>
+  <rect y="200" width="400" height="60" fill="#54483e" opacity="0.7"/>
+  <rect y="200" width="400" height="3" fill="#fff" opacity="0.18"/>
+  <rect y="250" width="400" height="50" fill="#3a2a1e"/>
+  <g>
+    <rect x="170" y="225" width="60" height="6" fill="#1a1410"/>
+    <rect x="170" y="235" width="60" height="3" fill="#1a1410"/>
+    <rect x="178" y="225" width="4" height="22" fill="#1a1410"/>
+    <rect x="218" y="225" width="4" height="22" fill="#1a1410"/>
+  </g>
+  <path d="M30,290 Q35,275 40,290" stroke="#3a2a1a" stroke-width="2" fill="none"/>
+  <path d="M340,290 Q350,275 360,290" stroke="#3a2a1a" stroke-width="2" fill="none"/>
+</svg>

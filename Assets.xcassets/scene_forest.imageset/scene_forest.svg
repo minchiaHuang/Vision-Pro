@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sfSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d6c389"/>
+      <stop offset="55%" stop-color="#6f6634"/>
+      <stop offset="100%" stop-color="#231e10"/>
+    </linearGradient>
+    <radialGradient id="sfBeam" cx="0.6" cy="0.3" r="0.4">
+      <stop offset="0%" stop-color="#fff0c0" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#fff0c0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sfSky)"/>
+  <rect width="400" height="300" fill="url(#sfBeam)"/>
+  <rect x="20" y="0" width="10" height="300" fill="#15140a"/>
+  <rect x="70" y="0" width="16" height="300" fill="#1f1a0c"/>
+  <rect x="120" y="0" width="22" height="300" fill="#2a200f"/>
+  <rect x="170" y="0" width="10" height="300" fill="#15140a"/>
+  <rect x="220" y="0" width="16" height="300" fill="#1f1a0c"/>
+  <rect x="270" y="0" width="22" height="300" fill="#2a200f"/>
+  <rect x="320" y="0" width="10" height="300" fill="#15140a"/>
+  <rect x="370" y="0" width="16" height="300" fill="#1f1a0c"/>
+  <path d="M0,260 Q100,240 200,260 Q300,280 400,250 L400,300 L0,300 Z" fill="#0a0d05"/>
+  <path d="M0,280 Q100,275 200,280 Q300,290 400,275 L400,300 L0,300 Z" fill="#050702"/>
+  <path d="M170,300 Q200,200 200,130" stroke="#c2b079" stroke-width="20" fill="none" opacity="0.32" stroke-linecap="round"/>
+</svg>
