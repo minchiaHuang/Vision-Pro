@@ -39,12 +39,12 @@ struct WorldLabsTestView: View {
 
             HStack(spacing: 14) {
                 Button("Back") { dismiss() }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(SecondaryPillButtonStyle())
 
                 Button(isBusy ? "Generating…" : "Generate world") {
                     Task { await service.run(prompt: prompt) }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(PrimaryPillButtonStyle())
                 .disabled(isBusy || prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
@@ -107,7 +107,7 @@ struct WorldLabsTestView: View {
             #endif
 
             Button("Back") { dismiss() }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(PrimaryPillButtonStyle())
                 .padding(.bottom, 32)
         }
     }

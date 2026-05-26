@@ -34,25 +34,34 @@ enum WorldCatalog {
         blurb: "Your space."
     )
 
-    /// Resolve a world from quiz tags.
-    /// v1 stays simple: emotional, cultural, and physical tags choose a preset.
-    static func resolve(from result: QuizResult) -> World {
-        let emotional = result.tag(for: .emotional) ?? ""
-        let cultural = result.tag(for: .cultural) ?? ""
-        let physical = result.tag(for: .physical) ?? ""
-
-        switch (emotional, cultural, physical) {
-        case ("quiet", _, _):
-            return byId("quiet_solitary")
-        case (_, "communal", _), (_, "home", _):
-            return byId("calm_communal")
-        case (_, _, "still"), (_, _, "rest"):
-            return byId("quiet_solitary")
-        case (_, _, "active"), (_, "explore", _), (_, "nature", _):
-            return byId("open_nature")
-        default:
-            return fallback
+    /// Resolve one of the three preset worlds from the five answers.
+    /// Priority: week (context) → need/help → energy. Mapping is tunable;
+    /// it is a product decision (see PRD §9) and starts from this baseline.
+    static func resolve(from answers: QuizAnswers) -> World {
+        // 1) Weekly context wins.
+        switch answers.week {
+        case "sleep":        return byId("quiet_solitary")
+        case "home":         return byId("open_nature")
+        case "exam", "focus": return byId("calm_communal")
+        default: break
         }
+
+        // 2) What they need / what helps.
+        if answers.need == "quiet" || answers.help == "alone" {
+            return byId("quiet_solitary")
+        }
+        if answers.need == "connection" || answers.help == "talk" {
+            return byId("calm_communal")
+        }
+        if answers.need == "movement" || answers.help == "move"
+            || answers.need == "creativity" || answers.help == "make" {
+            return byId("open_nature")
+        }
+
+        // 3) Fall back to body energy.
+        if answers.energy < 0.35 { return byId("quiet_solitary") }
+        if answers.energy > 0.65 { return byId("open_nature") }
+        return fallback
     }
 
     private static func byId(_ id: String) -> World {

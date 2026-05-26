@@ -6,6 +6,9 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
+            if appState.phase != .world {
+                WarmBackground()
+            }
             switch appState.phase {
             case .splash:
                 SplashView()
@@ -27,18 +30,16 @@ struct SplashView: View {
     @State private var showWorldLabs = false
 
     var body: some View {
-        VStack(spacing: 28) {
-            VStack(spacing: 12) {
-                Text("Visiting Artisan")
-                    .font(.system(size: 44, weight: .semibold, design: .serif))
-                    .multilineTextAlignment(.center)
+        VStack(spacing: 30) {
+            OrbView(size: 120)
 
-                Text("A short ritual for finding your balance world.")
-                    .font(.title3.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+            VStack(spacing: 16) {
+                Eyebrow("Visiting Artisan")
 
-                Text("Answer from instinct. Step into what steadies you.")
+                Text("A world, woven for who\nyou are right now.")
+                    .vaLargeThinTitle(size: 38)
+
+                Text("Five soft questions. Then an immersive place, arranged from your own shape.")
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -47,8 +48,7 @@ struct SplashView: View {
             Button("Begin") {
                 appState.phase = .quiz
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(PrimaryPillButtonStyle())
 
             Button("Experimental: World Labs") {
                 showWorldLabs = true
@@ -67,19 +67,32 @@ struct SplashView: View {
 
 /// Short transition while the preset world is resolved.
 struct LoadingView: View {
+    @Environment(AppState.self) private var appState
+
+    private var weavingCopy: String {
+        let a = appState.answers
+        let energyWord = a.energy < 0.35 ? "stillness"
+            : (a.energy > 0.65 ? "bright energy" : "warm focus")
+        let place: String
+        switch a.week {
+        case "sleep": place = "first light over the mountains"
+        case "home":  place = "an open coastal horizon"
+        case "exam", "focus": place = "a lamp-lit reading terrace"
+        default: place = "a quiet forest stream"
+        }
+        return "Threading \(energyWord)\nthrough \(place)."
+    }
+
     var body: some View {
-        VStack(spacing: 18) {
-            ProgressView()
-                .controlSize(.large)
+        VStack(spacing: 28) {
+            OrbView(size: 180)
 
-            VStack(spacing: 8) {
-                Text("Shaping your world...")
-                    .font(.title3.weight(.semibold))
+            VStack(spacing: 10) {
+                Eyebrow("Weaving")
 
-                Text("Finding the place your answers point toward.")
-                    .font(.body)
+                Text(weavingCopy)
+                    .vaLargeThinTitle(size: 26)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
             }
         }
         .padding(32)

@@ -1,47 +1,23 @@
 import Foundation
 
-/// Quiz 的三個維度。
-enum Dimension: String, CaseIterable, Identifiable {
-    case emotional
-    case cultural
-    case physical
-    var id: String { rawValue }
+/// 五題混合題型的作答結果。
+/// energy/minutes 有預設值；need/help/week 需使用者選擇。
+struct QuizAnswers {
+    var energy: Double = 0.45      // Q1 slider: 0 = stillness, 1 = energy
+    var need: String? = nil        // Q2 image grid: quiet/connection/movement/creativity
+    var help: String? = nil        // Q3 icon grid: alone/talk/move/make
+    var week: String? = nil        // Q4 image grid: exam/sleep/home/focus
+    var minutes: Int = 10          // Q5 time row
 
-    var title: String {
-        switch self {
-        case .emotional: return "Emotional"
-        case .cultural:  return "Cultural"
-        case .physical:  return "Physical"
-        }
-    }
+    var isComplete: Bool { need != nil && help != nil && week != nil }
 }
 
-/// 一個 quiz 選項。`tag` 是用來組 prompt / 查表的關鍵字。
-struct QuizOption: Identifiable, Hashable {
+/// 單選題的一個選項。`image` 為對應的世界 asset 名（圖卡用），`symbol` 為 SF Symbol（icon 卡用）。
+struct ChoiceOption: Identifiable, Hashable {
     let id: String
     let label: String
-    let tag: String
-}
-
-/// 一道 quiz 題目。
-struct QuizQuestion: Identifiable {
-    let id: String
-    let dimension: Dimension
-    let prompt: String
-    let options: [QuizOption]
-}
-
-/// 使用者答完後的結果：每個維度對應一個選到的 tag。
-struct QuizResult {
-    var answers: [Dimension: String] = [:]
-
-    var isComplete: Bool {
-        Dimension.allCases.allSatisfy { answers[$0] != nil }
-    }
-
-    func tag(for dimension: Dimension) -> String? {
-        answers[dimension]
-    }
+    var image: String? = nil
+    var symbol: String? = nil
 }
 
 /// 一個生成（v1 為預先準備）的沉浸式世界。

@@ -54,11 +54,10 @@ struct VisionWorldPanel: View {
                     }
                 }
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            .buttonStyle(PrimaryPillButtonStyle())
 
             Button("Start over") { appState.restart() }
-                .buttonStyle(.bordered)
+                .buttonStyle(SecondaryPillButtonStyle())
         }
         .frame(maxWidth: 520)
         .padding(44)
@@ -110,7 +109,7 @@ struct iOSWorldView: View {
                     .frame(maxWidth: isLandscape ? 680 : 560)
 
                     Button("Start over") { appState.restart() }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(PrimaryPillButtonStyle())
                 }
                 .padding(.horizontal, isLandscape ? 32 : 24)
                 .padding(.bottom, isLandscape ? 28 : 44)
