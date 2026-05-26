@@ -1,33 +1,30 @@
 import Foundation
 
-/// 把 quiz 答案組成一段 text prompt。
-/// v1：用來顯示「你的世界是根據這些生成的」+ 之後接 API（v2）直接餵給 Skybox AI。
+/// Builds a text prompt from the quiz answers.
+/// Not wired into the UI yet; kept for a future World Labs / Skybox hookup.
 enum PromptBuilder {
 
-    /// 每個 tag 對應的視覺描述片段。
-    private static let fragments: [String: String] = [
-        // emotional
+    private static let needFragment: [String: String] = [
         "quiet":      "calm and serene",
         "connection": "warm and inviting",
         "movement":   "energetic and open",
-        "creativity": "soft, imaginative light",
-        // cultural
-        "nature":     "natural landscape",
-        "communal":   "warm communal space with a sense of gathering",
-        "home":       "cozy familiar interior",
-        "explore":    "expansive unfamiliar vista",
-        // physical
-        "still":      "still water, minimal motion",
-        "active":     "dynamic terrain, sense of movement",
-        "sensory":    "rich textures and gentle ambient detail",
-        "rest":       "soft, restful atmosphere"
+        "creativity": "soft, imaginative light"
     ]
 
-    static func prompt(from result: QuizResult) -> String {
-        let parts = Dimension.allCases.compactMap { dim -> String? in
-            guard let tag = result.tag(for: dim) else { return nil }
-            return fragments[tag] ?? tag
-        }
+    private static let weekFragment: [String: String] = [
+        "exam":  "a focused, lamp-lit interior",
+        "sleep": "a quiet space for winding down",
+        "home":  "an open, familiar landscape",
+        "focus": "a still, distraction-free place"
+    ]
+
+    static func prompt(from answers: QuizAnswers) -> String {
+        var parts: [String] = []
+        let energyWord = answers.energy < 0.35 ? "stillness"
+            : (answers.energy > 0.65 ? "bright energy" : "warm focus")
+        parts.append(energyWord)
+        if let need = answers.need, let f = needFragment[need] { parts.append(f) }
+        if let week = answers.week, let f = weekFragment[week] { parts.append(f) }
         let body = parts.joined(separator: ", ")
         return "An immersive 360 environment that feels \(body)."
     }

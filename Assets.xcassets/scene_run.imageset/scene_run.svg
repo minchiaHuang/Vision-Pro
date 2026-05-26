@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="srSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d6b48a"/>
+      <stop offset="60%" stop-color="#9c7a5e"/>
+      <stop offset="100%" stop-color="#3a2f28"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#srSky)"/>
+  <rect y="120" width="400" height="60" fill="#6a7a86" opacity="0.6"/>
+  <rect y="125" width="400" height="2" fill="#ffdab8" opacity="0.6"/>
+  <path d="M0,180 L120,140 L240,170 L400,150 L400,200 L0,200 Z" fill="#4e413a" opacity="0.85"/>
+  <path d="M0,210 Q150,170 280,200 Q360,220 400,205 L400,300 L0,300 Z" fill="#54483a"/>
+  <path d="M0,240 Q150,210 280,235 Q360,250 400,240 L400,300 L0,300 Z" fill="#382e26"/>
+  <path d="M120,300 Q160,260 200,240 Q240,220 280,210" stroke="#beae8a" stroke-width="14" fill="none" opacity="0.55" stroke-linecap="round"/>
+  <g transform="translate(195,205)">
+    <circle cx="0" cy="-22" r="8" fill="#2a2018"/>
+    <path d="M-10,-15 Q-10,0 0,4 Q10,2 10,-15 Z" fill="#557082"/>
+    <path d="M-10,-12 L-20,-6" stroke="#557082" stroke-width="5" stroke-linecap="round"/>
+    <path d="M10,-10 L18,-2" stroke="#557082" stroke-width="5" stroke-linecap="round"/>
+    <path d="M-3,4 L-8,22" stroke="#2a2018" stroke-width="5" stroke-linecap="round"/>
+    <path d="M3,4 L8,22" stroke="#2a2018" stroke-width="5" stroke-linecap="round"/>
+    <path d="M-6,-28 Q-12,-22 -10,-14" stroke="#2a1a10" stroke-width="3" fill="none"/>
+  </g>
+</svg>

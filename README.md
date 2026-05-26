@@ -32,17 +32,19 @@ Splash  →  "Who are you?" Quiz  →  Building your world…  →  Your immersi
 ```
 Vision-Pro/
 ├── README.md          ← you are here
+├── VisitingArtisan.xcodeproj
+├── Assets.xcassets    ← app assets, including sample v1 world images
 ├── PRD.md             ← product spec + technical architecture
 ├── ARCHITECTURE.md    ← system architecture (deep dive)
-├── SETUP.md           ← how to create the Xcode project & run
+├── SETUP.md           ← how to build & run
 ├── WORLDS.md          ← how to generate the 360° world images
-└── Sources/           ← Swift source (add to the Xcode project)
+└── Sources/           ← Swift source used by the Xcode target
 ```
 
 ## Getting started
 
-See [SETUP.md](SETUP.md) — create the multiplatform Xcode project, add `Sources/`, and run.
-No external API needed for v1: it runs end-to-end with bundled images (or a grey fallback).
+See [SETUP.md](SETUP.md) — open `VisitingArtisan.xcodeproj` and run.
+No external API needed for v1: it runs end-to-end with bundled sample images.
 
 ## Tech stack
 

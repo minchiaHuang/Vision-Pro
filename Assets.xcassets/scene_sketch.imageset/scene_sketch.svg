@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sskBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c8a982"/>
+      <stop offset="100%" stop-color="#5a4530"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sskBg)"/>
+  <rect y="180" width="400" height="120" fill="#3a2a1a"/>
+  <rect x="220" y="120" width="60" height="50" fill="#8a6a4a" rx="6"/>
+  <path d="M250,40 Q230,80 240,120 Q260,90 270,40 Q270,30 260,30 Z" fill="#7a8a4a"/>
+  <path d="M260,55 Q280,75 290,110 Q300,70 280,40 Z" fill="#88a05e"/>
+  <rect x="60" y="195" width="180" height="100" fill="#f0e6d0" rx="3"/>
+  <rect x="58" y="195" width="6" height="100" fill="#d0c6b0"/>
+  <g stroke="#3a2a1a" stroke-width="1" fill="none" opacity="0.85">
+    <path d="M140,275 L140,225"/>
+    <path d="M140,225 Q130,210 125,200"/>
+    <path d="M140,225 Q150,210 160,205"/>
+    <path d="M140,245 Q128,235 120,232"/>
+    <path d="M140,255 Q152,242 165,238"/>
+  </g>
+  <path d="M280,300 Q300,250 320,235 L360,210 L400,210 L400,300 Z" fill="#c89c6a"/>
+  <ellipse cx="190" cy="240" rx="22" ry="14" fill="#e3c19e" transform="rotate(-30,190,240)"/>
+  <path d="M186,250 L165,225" stroke="#3a2a1a" stroke-width="3" stroke-linecap="round"/>
+  <rect x="305" y="200" width="28" height="40" fill="#a07a52" rx="2"/>
+  <rect x="310" y="180" width="2" height="22" fill="#3a2a1a"/>
+  <rect x="315" y="175" width="2" height="27" fill="#5a4030"/>
+  <rect x="320" y="178" width="2" height="24" fill="#3a2a1a"/>
+  <rect x="325" y="183" width="2" height="20" fill="#7a5a3a"/>
+</svg>

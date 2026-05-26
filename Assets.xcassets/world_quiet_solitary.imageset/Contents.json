@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "world_quiet_solitary.jpg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

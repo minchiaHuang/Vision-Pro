@@ -1,6 +1,7 @@
 #if os(visionOS)
 import SwiftUI
 import RealityKit
+import UIKit
 
 /// visionOS：真沉浸。把 360° 圖貼在大球體內壁，使用者的頭就是相機（頭部追蹤）。
 struct ImmersiveWorldView: View {
@@ -17,7 +18,12 @@ struct ImmersiveWorldView: View {
         let mesh = MeshResource.generateSphere(radius: 1000)
         var material = UnlitMaterial()
 
-        if let texture = try? await TextureResource(named: imageName) {
+        if let cgImage = UIImage(named: imageName)?.cgImage,
+           let texture = try? await TextureResource(
+            image: cgImage,
+            withName: imageName,
+            options: .init(semantic: .color)
+           ) {
             material.color = .init(tint: .white, texture: .init(texture))
         } else {
             material.color = .init(tint: .init(white: 0.25, alpha: 1))

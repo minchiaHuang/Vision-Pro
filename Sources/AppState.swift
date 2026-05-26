@@ -13,13 +13,8 @@ enum AppPhase {
 @Observable
 final class AppState {
     var phase: AppPhase = .splash
-    var result = QuizResult()
+    var answers = QuizAnswers()
     var world: World?
-
-    /// 記錄一題的答案。
-    func answer(_ dimension: Dimension, tag: String) {
-        result.answers[dimension] = tag
-    }
 
     /// quiz 答完 → 進 loading → 解析世界 → 進 world。
     func finishQuiz() {
@@ -28,7 +23,7 @@ final class AppState {
             // 模擬「生成世界」的過場（v2 這裡會是真的 API 呼叫）
             try? await Task.sleep(for: .seconds(2))
             await MainActor.run {
-                self.world = WorldCatalog.resolve(from: self.result)
+                self.world = WorldCatalog.resolve(from: self.answers)
                 self.phase = .world
             }
         }
@@ -36,7 +31,7 @@ final class AppState {
 
     /// 重新開始。
     func restart() {
-        result = QuizResult()
+        answers = QuizAnswers()
         world = nil
         phase = .splash
     }
