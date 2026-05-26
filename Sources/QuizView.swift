@@ -138,14 +138,25 @@ private struct ImageCardGrid: View {
                         } else {
                             Color.secondary.opacity(0.2)
                         }
-                        LinearGradient(colors: [.clear, .black.opacity(0.55)],
-                                       startPoint: .center, endPoint: .bottom)
+                        // Stronger gradient so label stays legible on light SVGs
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: 0.35),
+                                .init(color: .black.opacity(0.45), location: 0.7),
+                                .init(color: .black.opacity(0.72), location: 1.0)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
                         Text(option.label)
-                            .font(.title3.weight(.medium))
+                            .font(.callout.weight(.semibold))
                             .foregroundStyle(.white)
-                            .padding(14)
+                            .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 1)
+                            .padding(.horizontal, 14)
+                            .padding(.bottom, 14)
                     }
-                    .frame(height: 132)
+                    // Aspect ratio scales with column width — no more fixed squished height
+                    .aspectRatio(16/9, contentMode: .fit)
                     .frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                     .overlay(selectionRing(selected: selection == option.id))
