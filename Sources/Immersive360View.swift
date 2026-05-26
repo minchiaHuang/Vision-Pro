@@ -10,9 +10,13 @@ struct Immersive360View: View {
 
     @State private var committed = SIMD2<Float>(0, 0)
     @State private var live = SIMD2<Float>(0, 0)
+    @State private var useGyro = false
+    @State private var motion = MotionManager()
 
     private let dragSensitivity: Float = 0.004
     private let maxPitch: Float = .pi * 0.42
+
+    private var gyroActive: Bool { useGyro && motion.isAvailable }
 
     var body: some View {
         RealityView { content in
@@ -25,25 +29,71 @@ struct Immersive360View: View {
             content.add(sphere)
         } update: { content in
             guard let sky = content.entities.first(where: { $0.name == "sky" }) else { return }
-            let yaw = committed.x + live.x
-            let pitch = committed.y + live.y
-            sky.orientation = simd_quatf(angle: yaw, axis: [0, 1, 0])
-                * simd_quatf(angle: pitch, axis: [1, 0, 0])
+            if gyroActive {
+                sky.orientation = motion.orientation
+            } else {
+                let yaw = committed.x + live.x
+                let pitch = committed.y + live.y
+                sky.orientation = simd_quatf(angle: yaw, axis: [0, 1, 0])
+                    * simd_quatf(angle: pitch, axis: [1, 0, 0])
+            }
         }
-        .gesture(
-            DragGesture()
-                .onChanged { value in
-                    let yawDelta = Float(value.translation.width) * dragSensitivity
-                    let pitchDelta = Float(value.translation.height) * dragSensitivity
-                    let nextPitch = clampedPitch(committed.y + pitchDelta)
-                    live = SIMD2(yawDelta, nextPitch - committed.y)
-                }
-                .onEnded { _ in
-                    committed = SIMD2(committed.x + live.x, clampedPitch(committed.y + live.y))
-                    live = .zero
-                }
-        )
+        .gesture(dragGesture)
+        .overlay(alignment: .topTrailing) { controls }
         .background(Color.black)
+        .onChange(of: useGyro) { _, isOn in
+            if isOn {
+                motion.start()
+                motion.recenter()
+            } else {
+                motion.stop()
+            }
+        }
+        .onDisappear { motion.stop() }
+    }
+
+    private var dragGesture: some Gesture {
+        DragGesture()
+            .onChanged { value in
+                guard !gyroActive else { return }
+                let yawDelta = Float(value.translation.width) * dragSensitivity
+                let pitchDelta = Float(value.translation.height) * dragSensitivity
+                let nextPitch = clampedPitch(committed.y + pitchDelta)
+                live = SIMD2(yawDelta, nextPitch - committed.y)
+            }
+            .onEnded { _ in
+                guard !gyroActive else { return }
+                committed = SIMD2(committed.x + live.x, clampedPitch(committed.y + live.y))
+                live = .zero
+            }
+    }
+
+    @ViewBuilder
+    private var controls: some View {
+        VStack(alignment: .trailing, spacing: 10) {
+            Button {
+                useGyro.toggle()
+            } label: {
+                Label(useGyro ? "Gyro" : "Drag",
+                      systemImage: useGyro ? "gyroscope" : "hand.draw")
+                    .font(.footnote.weight(.semibold))
+                    .labelStyle(.titleAndIcon)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!motion.isAvailable)
+
+            if gyroActive {
+                Button {
+                    motion.recenter()
+                } label: {
+                    Label("Recenter", systemImage: "scope")
+                        .font(.footnote.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .padding(.top, 16)
+        .padding(.trailing, 16)
     }
 
     /// Builds the inward-facing sphere used as the panorama surface.

@@ -22,6 +22,8 @@
 		AA000001000000000000000D /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000010F /* Secrets.swift */; };
 		AA000001000000000000000E /* WorldLabsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000110 /* WorldLabsService.swift */; };
 		AA000001000000000000000F /* WorldLabsTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000111 /* WorldLabsTestView.swift */; };
+		AA0000010000000000000010 /* MotionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000112 /* MotionManager.swift */; };
+		AA0000010000000000000011 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000113 /* DesignSystem.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +44,8 @@
 		AA000001000000000000010F /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		AA0000010000000000000110 /* WorldLabsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldLabsService.swift; sourceTree = "<group>"; };
 		AA0000010000000000000111 /* WorldLabsTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldLabsTestView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000112 /* MotionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionManager.swift; sourceTree = "<group>"; };
+		AA0000010000000000000113 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +86,8 @@
 				AA000001000000000000010F /* Secrets.swift */,
 				AA0000010000000000000110 /* WorldLabsService.swift */,
 				AA0000010000000000000111 /* WorldLabsTestView.swift */,
+				AA0000010000000000000112 /* MotionManager.swift */,
+				AA0000010000000000000113 /* DesignSystem.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -185,6 +191,8 @@
 				AA000001000000000000000D /* Secrets.swift in Sources */,
 				AA000001000000000000000E /* WorldLabsService.swift in Sources */,
 				AA000001000000000000000F /* WorldLabsTestView.swift in Sources */,
+				AA0000010000000000000010 /* MotionManager.swift in Sources */,
+				AA0000010000000000000011 /* DesignSystem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -310,7 +318,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = MCD2V89BPF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				"GENERATE_INFOPLIST_FILE[sdk=xros*]" = NO;
@@ -327,8 +335,6 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -352,7 +358,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = MCD2V89BPF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				"GENERATE_INFOPLIST_FILE[sdk=xros*]" = NO;
@@ -369,8 +375,6 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
