@@ -68,6 +68,8 @@ struct VisionWorldPanel: View {
 /// iOS/iPadOS full-screen 360-degree view with a readable result overlay.
 struct iOSWorldView: View {
     @Environment(AppState.self) private var appState
+    @State private var showOverlay = false
+    @State private var showHint = true
 
     var body: some View {
         GeometryReader { proxy in
@@ -79,40 +81,66 @@ struct iOSWorldView: View {
                         .ignoresSafeArea()
                 }
 
-                LinearGradient(
-                    colors: [.clear, .black.opacity(isLandscape ? 0.74 : 0.68)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
+                // Gradient + text overlay — hidden until tapped
+                Group {
+                    LinearGradient(
+                        colors: [.clear, .black.opacity(isLandscape ? 0.74 : 0.68)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
 
-                VStack(spacing: isLandscape ? 10 : 14) {
-                    Spacer(minLength: 0)
+                    VStack(spacing: isLandscape ? 10 : 14) {
+                        Spacer(minLength: 0)
 
-                    VStack(spacing: 8) {
-                        Text(appState.world?.title ?? "")
-                            .font((isLandscape ? Font.title3 : Font.title2).weight(.semibold))
-                            .foregroundStyle(.white)
-                            .shadow(radius: 8)
-                            .multilineTextAlignment(.center)
-
-                        if let blurb = appState.world?.blurb, !blurb.isEmpty {
-                            Text(blurb)
-                                .font(.subheadline)
-                                .foregroundStyle(.white.opacity(0.88))
+                        VStack(spacing: 8) {
+                            Text(appState.world?.title ?? "")
+                                .font((isLandscape ? Font.title3 : Font.title2).weight(.semibold))
+                                .foregroundStyle(.white)
                                 .shadow(radius: 8)
                                 .multilineTextAlignment(.center)
-                                .lineLimit(isLandscape ? 2 : 3)
-                        }
-                    }
-                    .frame(maxWidth: isLandscape ? 680 : 560)
 
-                    Button("Start over") { appState.restart() }
-                        .buttonStyle(PrimaryPillButtonStyle())
+                            if let blurb = appState.world?.blurb, !blurb.isEmpty {
+                                Text(blurb)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.white.opacity(0.88))
+                                    .shadow(radius: 8)
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(isLandscape ? 2 : 3)
+                            }
+                        }
+                        .frame(maxWidth: isLandscape ? 680 : 560)
+
+                        Button("Start over") { appState.restart() }
+                            .buttonStyle(PrimaryPillButtonStyle())
+                    }
+                    .padding(.horizontal, isLandscape ? 32 : 24)
+                    .padding(.bottom, isLandscape ? 28 : 44)
                 }
-                .padding(.horizontal, isLandscape ? 32 : 24)
-                .padding(.bottom, isLandscape ? 28 : 44)
+                .opacity(showOverlay ? 1 : 0)
+                .animation(.easeInOut(duration: 0.35), value: showOverlay)
+
+                // Entry hint — fades out after 2 s or on first tap
+                VStack {
+                    Spacer()
+                    Text("Tap to reveal")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.55))
+                        .padding(.bottom, isLandscape ? 20 : 32)
+                }
+                .opacity(showHint && !showOverlay ? 1 : 0)
+                .animation(.easeOut(duration: 0.5), value: showHint)
+                .animation(.easeOut(duration: 0.25), value: showOverlay)
+                .allowsHitTesting(false)
+            }
+            .onTapGesture {
+                showHint = false
+                showOverlay.toggle()
+            }
+            .task {
+                try? await Task.sleep(for: .seconds(2))
+                showHint = false
             }
         }
     }
