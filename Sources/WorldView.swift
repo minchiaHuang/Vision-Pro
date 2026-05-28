@@ -23,7 +23,17 @@ struct VisionWorldPanel: View {
     @Environment(AppState.self) private var appState
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
-    @State private var isOpen = false
+
+    /// Which ImmersiveSpace is currently open (if any).
+    /// "world" = 3DoF skybox, "world_3d" = 6DoF USDZ spike.
+    @State private var openSpaceID: String? = nil
+
+    private var skyboxLabel: String {
+        openSpaceID == "world" ? "Leave the world" : "Step into your world"
+    }
+    private var spikeLabel: String {
+        openSpaceID == "world_3d" ? "Leave 6DoF" : "View in 6DoF (spike)"
+    }
 
     var body: some View {
         VStack(spacing: 22) {
@@ -42,25 +52,49 @@ struct VisionWorldPanel: View {
                     .multilineTextAlignment(.center)
             }
 
-            Button(isOpen ? "Leave the world" : "Step into your world") {
-                Task {
-                    if isOpen {
-                        await dismissImmersiveSpace()
-                        isOpen = false
-                    } else {
-                        if case .opened = await openImmersiveSpace(id: "world") {
-                            isOpen = true
-                        }
-                    }
-                }
+            Button(skyboxLabel) {
+                Task { await toggle(spaceID: "world") }
             }
             .buttonStyle(PrimaryPillButtonStyle())
 
-            Button("Start over") { appState.restart() }
-                .buttonStyle(SecondaryPillButtonStyle())
+            Button(spikeLabel) {
+                Task { await toggle(spaceID: "world_3d") }
+            }
+            .buttonStyle(SecondaryPillButtonStyle())
+
+            Button("Start over") {
+                Task {
+                    if openSpaceID != nil {
+                        await dismissImmersiveSpace()
+                        openSpaceID = nil
+                    }
+                    appState.restart()
+                }
+            }
+            .buttonStyle(SecondaryPillButtonStyle())
         }
         .frame(maxWidth: 520)
         .padding(44)
+    }
+
+    /// Toggles between the named ImmersiveSpace and the windowed panel.
+    /// If a different ImmersiveSpace is already open, dismiss it first —
+    /// only one ImmersiveSpace can be presented at a time on visionOS.
+    private func toggle(spaceID: String) async {
+        if openSpaceID == spaceID {
+            await dismissImmersiveSpace()
+            openSpaceID = nil
+            return
+        }
+
+        if openSpaceID != nil {
+            await dismissImmersiveSpace()
+            openSpaceID = nil
+        }
+
+        if case .opened = await openImmersiveSpace(id: spaceID) {
+            openSpaceID = spaceID
+        }
     }
 }
 #else

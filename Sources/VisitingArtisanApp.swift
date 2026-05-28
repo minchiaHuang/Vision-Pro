@@ -28,9 +28,15 @@ struct VisitingArtisanApp: App {
         }
 
         #if os(visionOS)
-        // visionOS 專用：真沉浸的 ImmersiveSpace
+        // visionOS：3DoF 360° skybox（主線）
         ImmersiveSpace(id: "world") {
             ImmersiveWorldView()
+                .environment(appState)
+        }
+
+        // visionOS：6DoF USDZ walkable spike — sibling space, see ROADMAP.md
+        ImmersiveSpace(id: "world_3d") {
+            ImmersiveScene3DView()
                 .environment(appState)
         }
         #endif

@@ -28,6 +28,8 @@
 		AA0000010000000000000013 /* SceneLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000115 /* SceneLoader.swift */; };
 		AA0000010000000000000014 /* world_warm_communal.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000116 /* world_warm_communal.usdz */; };
 		AA0000010000000000000015 /* world_open_nature.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000117 /* world_open_nature.usdz */; };
+		AA0000010000000000000016 /* VirtualJoystick.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000118 /* VirtualJoystick.swift */; };
+		AA0000010000000000000017 /* ImmersiveScene3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000119 /* ImmersiveScene3DView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,6 +56,8 @@
 		AA0000010000000000000115 /* SceneLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneLoader.swift; sourceTree = "<group>"; };
 		AA0000010000000000000116 /* world_warm_communal.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = "Resources/Scenes/world_warm_communal.usdz"; sourceTree = "<group>"; };
 		AA0000010000000000000117 /* world_open_nature.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = "Resources/Scenes/world_open_nature.usdz"; sourceTree = "<group>"; };
+		AA0000010000000000000118 /* VirtualJoystick.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VirtualJoystick.swift; sourceTree = "<group>"; };
+		AA0000010000000000000119 /* ImmersiveScene3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveScene3DView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -100,6 +104,8 @@
 				AA0000010000000000000115 /* SceneLoader.swift */,
 				AA0000010000000000000116 /* world_warm_communal.usdz */,
 				AA0000010000000000000117 /* world_open_nature.usdz */,
+				AA0000010000000000000118 /* VirtualJoystick.swift */,
+				AA0000010000000000000119 /* ImmersiveScene3DView.swift */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -209,6 +215,8 @@
 				AA0000010000000000000011 /* DesignSystem.swift in Sources */,
 				AA0000010000000000000012 /* Scene3DView.swift in Sources */,
 				AA0000010000000000000013 /* SceneLoader.swift in Sources */,
+				AA0000010000000000000016 /* VirtualJoystick.swift in Sources */,
+				AA0000010000000000000017 /* ImmersiveScene3DView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
