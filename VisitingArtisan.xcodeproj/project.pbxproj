@@ -24,6 +24,11 @@
 		AA000001000000000000000F /* WorldLabsTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000111 /* WorldLabsTestView.swift */; };
 		AA0000010000000000000010 /* MotionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000112 /* MotionManager.swift */; };
 		AA0000010000000000000011 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000113 /* DesignSystem.swift */; };
+		AA0000010000000000000012 /* USDZTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000114 /* USDZTestView.swift */; };
+		AA0000010000000000000013 /* GamepadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000115 /* GamepadManager.swift */; };
+		AA0000010000000000000020 /* Cozy_living_room_baked.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000120 /* Cozy_living_room_baked.usdz */; };
+		AA0000010000000000000021 /* Free_Low_Poly_Forest.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000121 /* Free_Low_Poly_Forest.usdz */; };
+		AA0000010000000000000022 /* FREE_Dirt_Road_Through_Forest.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000122 /* FREE_Dirt_Road_Through_Forest.usdz */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +51,11 @@
 		AA0000010000000000000111 /* WorldLabsTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldLabsTestView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000112 /* MotionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionManager.swift; sourceTree = "<group>"; };
 		AA0000010000000000000113 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		AA0000010000000000000114 /* USDZTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USDZTestView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000115 /* GamepadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamepadManager.swift; sourceTree = "<group>"; };
+		AA0000010000000000000120 /* Cozy_living_room_baked.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Cozy_living_room_baked.usdz; sourceTree = "<group>"; };
+		AA0000010000000000000121 /* Free_Low_Poly_Forest.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Free_Low_Poly_Forest.usdz; sourceTree = "<group>"; };
+		AA0000010000000000000122 /* FREE_Dirt_Road_Through_Forest.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = FREE_Dirt_Road_Through_Forest.usdz; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +74,7 @@
 			children = (
 				AA0000010000000000000302 /* Sources */,
 				AA0000010000000000000304 /* Config */,
+				AA0000010000000000000305 /* USDZ */,
 				AA000001000000000000010C /* Assets.xcassets */,
 				AA0000010000000000000303 /* Products */,
 			);
@@ -88,8 +99,20 @@
 				AA0000010000000000000111 /* WorldLabsTestView.swift */,
 				AA0000010000000000000112 /* MotionManager.swift */,
 				AA0000010000000000000113 /* DesignSystem.swift */,
+				AA0000010000000000000114 /* USDZTestView.swift */,
+				AA0000010000000000000115 /* GamepadManager.swift */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		AA0000010000000000000305 /* USDZ */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000010000000000000120 /* Cozy_living_room_baked.usdz */,
+				AA0000010000000000000121 /* Free_Low_Poly_Forest.usdz */,
+				AA0000010000000000000122 /* FREE_Dirt_Road_Through_Forest.usdz */,
+			);
+			path = USDZ;
 			sourceTree = "<group>";
 		};
 		AA0000010000000000000303 /* Products */ = {
@@ -167,6 +190,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA000001000000000000000C /* Assets.xcassets in Resources */,
+				AA0000010000000000000020 /* Cozy_living_room_baked.usdz in Resources */,
+				AA0000010000000000000021 /* Free_Low_Poly_Forest.usdz in Resources */,
+				AA0000010000000000000022 /* FREE_Dirt_Road_Through_Forest.usdz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -193,6 +219,8 @@
 				AA000001000000000000000F /* WorldLabsTestView.swift in Sources */,
 				AA0000010000000000000010 /* MotionManager.swift in Sources */,
 				AA0000010000000000000011 /* DesignSystem.swift in Sources */,
+				AA0000010000000000000012 /* USDZTestView.swift in Sources */,
+				AA0000010000000000000013 /* GamepadManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -315,7 +343,8 @@
 		AA0000010000000000000803 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+					ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = MCD2V89BPF;
@@ -355,7 +384,8 @@
 		AA0000010000000000000804 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+					ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = MCD2V89BPF;

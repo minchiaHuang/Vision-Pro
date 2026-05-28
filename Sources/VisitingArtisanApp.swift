@@ -23,8 +23,14 @@ struct VisitingArtisanApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(appState)
+            Group {
+                if USDZDebug.launchIntoTest {
+                    USDZTestView()
+                } else {
+                    RootView()
+                }
+            }
+            .environment(appState)
         }
 
         #if os(visionOS)
