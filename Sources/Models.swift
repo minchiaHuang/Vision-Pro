@@ -23,16 +23,28 @@ struct ChoiceOption: Identifiable, Hashable {
 /// 一個生成（v1 為預先準備）的沉浸式世界。
 struct World: Identifiable {
     let id: String
-    let title: String       // 顯示在世界裡的一句話
-    let imageName: String   // v1：打包進 Assets 的 360° 圖名稱
-    let imageURL: URL?      // v2：API 回傳的遠端圖
-    let blurb: String       // 補充說明
+    let title: String          // 顯示在世界裡的一句話
+    let imageName: String      // v1：打包進 Assets 的 360° 圖名稱（3DoF skybox）
+    let imageURL: URL?         // v2：API 回傳的遠端圖
+    let blurb: String          // 補充說明
+    let narrationText: String  // Phase 1 旁白文字（30–50 字英文，現在式、感官語言）
+    let sceneName: String?     // 6DoF spike：bundle 內的 USDZ 檔名（不含副檔名），nil 走 fallback
 
-    init(id: String, title: String, imageName: String, imageURL: URL? = nil, blurb: String = "") {
+    init(
+        id: String,
+        title: String,
+        imageName: String,
+        imageURL: URL? = nil,
+        blurb: String = "",
+        narrationText: String = "",
+        sceneName: String? = nil
+    ) {
         self.id = id
         self.title = title
         self.imageName = imageName
         self.imageURL = imageURL
         self.blurb = blurb
+        self.narrationText = narrationText
+        self.sceneName = sceneName
     }
 }

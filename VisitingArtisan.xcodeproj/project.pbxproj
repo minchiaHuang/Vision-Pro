@@ -24,6 +24,10 @@
 		AA000001000000000000000F /* WorldLabsTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000111 /* WorldLabsTestView.swift */; };
 		AA0000010000000000000010 /* MotionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000112 /* MotionManager.swift */; };
 		AA0000010000000000000011 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000113 /* DesignSystem.swift */; };
+		AA0000010000000000000012 /* Scene3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000114 /* Scene3DView.swift */; };
+		AA0000010000000000000013 /* SceneLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000115 /* SceneLoader.swift */; };
+		AA0000010000000000000014 /* world_warm_communal.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000116 /* world_warm_communal.usdz */; };
+		AA0000010000000000000015 /* world_open_nature.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000117 /* world_open_nature.usdz */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +50,10 @@
 		AA0000010000000000000111 /* WorldLabsTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldLabsTestView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000112 /* MotionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionManager.swift; sourceTree = "<group>"; };
 		AA0000010000000000000113 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		AA0000010000000000000114 /* Scene3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scene3DView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000115 /* SceneLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneLoader.swift; sourceTree = "<group>"; };
+		AA0000010000000000000116 /* world_warm_communal.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = "Resources/Scenes/world_warm_communal.usdz"; sourceTree = "<group>"; };
+		AA0000010000000000000117 /* world_open_nature.usdz */ = {isa = PBXFileReference; lastKnownFileType = file.usdz; path = "Resources/Scenes/world_open_nature.usdz"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +96,10 @@
 				AA0000010000000000000111 /* WorldLabsTestView.swift */,
 				AA0000010000000000000112 /* MotionManager.swift */,
 				AA0000010000000000000113 /* DesignSystem.swift */,
+				AA0000010000000000000114 /* Scene3DView.swift */,
+				AA0000010000000000000115 /* SceneLoader.swift */,
+				AA0000010000000000000116 /* world_warm_communal.usdz */,
+				AA0000010000000000000117 /* world_open_nature.usdz */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -167,6 +179,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA000001000000000000000C /* Assets.xcassets in Resources */,
+				AA0000010000000000000014 /* world_warm_communal.usdz in Resources */,
+				AA0000010000000000000015 /* world_open_nature.usdz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -193,6 +207,8 @@
 				AA000001000000000000000F /* WorldLabsTestView.swift in Sources */,
 				AA0000010000000000000010 /* MotionManager.swift in Sources */,
 				AA0000010000000000000011 /* DesignSystem.swift in Sources */,
+				AA0000010000000000000012 /* Scene3DView.swift in Sources */,
+				AA0000010000000000000013 /* SceneLoader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

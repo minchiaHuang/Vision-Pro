@@ -68,6 +68,7 @@ struct VisionWorldPanel: View {
 /// iOS/iPadOS full-screen 360-degree view with a readable result overlay.
 struct iOSWorldView: View {
     @Environment(AppState.self) private var appState
+    @State private var show6DoFSpike = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -108,11 +109,20 @@ struct iOSWorldView: View {
                     }
                     .frame(maxWidth: isLandscape ? 680 : 560)
 
+                    Button("View in 6DoF (spike)") { show6DoFSpike = true }
+                        .buttonStyle(SecondaryPillButtonStyle())
+                        .disabled(appState.world == nil)
+
                     Button("Start over") { appState.restart() }
                         .buttonStyle(PrimaryPillButtonStyle())
                 }
                 .padding(.horizontal, isLandscape ? 32 : 24)
                 .padding(.bottom, isLandscape ? 28 : 44)
+            }
+        }
+        .fullScreenCover(isPresented: $show6DoFSpike) {
+            if let world = appState.world {
+                Scene3DView(world: world)
             }
         }
     }
