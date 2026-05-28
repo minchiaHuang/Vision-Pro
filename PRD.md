@@ -132,7 +132,7 @@ World(image)
 
 > **顯示層 note：** v1/v2 的 `SkyboxService` 對應 **Skybox AI API**（360° equirectangular → 球體貼圖），
 > 現有 `Immersive360View` / `ImmersiveWorldView` 直接吃這種圖。
-> v4 改用 Marble 時，顯示層要從「球體貼圖」換成「splat / mesh 場景」——是**另一條顯示管線**（見 §6.5 決策）。
+> v5 改用 Marble 時，顯示層要從「球體貼圖」換成「splat / mesh 場景」——是**另一條顯示管線**（見 §6.5 決策）。
 
 ---
 
@@ -248,8 +248,8 @@ struct World: Identifiable {
 | iPad 環視 | `RealityView` + CoreMotion / 手勢 |
 | 網路（v2） | URLSession → Skybox AI REST API |
 | 生圖（v2） | Skybox AI（Blockade Labs），text → 8K 360° equirectangular |
-| 生世界（v4 stretch） | World Labs Marble（World API）→ Gaussian splat / mesh |
-| splat 渲染（v4） | MetalSplatter（開源）或 mesh(GLB) 匯入 RealityKit；或 PLY→USDZ via Omniverse NuRec |
+| 生世界（v5） | World Labs Marble（World API）→ Gaussian splat / mesh |
+| splat 渲染（v5） | MetalSplatter（開源）或 mesh(GLB) 匯入 RealityKit；或 PLY→USDZ via Omniverse NuRec |
 | 輕量中間方案 | visionOS 26 內建 Spatial Scene（單圖 → 體積場景） |
 | 語音輸入 STT（v4） | Speech framework / iOS 26 SpeechAnalyzer |
 | 語音輸出 TTS（v4） | AVSpeechSynthesizer（或更自然的第三方／雲端 TTS） |
