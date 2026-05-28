@@ -75,6 +75,14 @@ struct VisionWorldPanel: View {
         }
         .frame(maxWidth: 520)
         .padding(44)
+        .task {
+            // Dev shortcut: auto-open the 6DoF ImmersiveSpace once when the
+            // panel first appears. Small delay lets the SwiftUI scene env
+            // wire `openImmersiveSpace` before we call it.
+            guard DebugConfig.autoOpenSpike, openSpaceID == nil else { return }
+            try? await Task.sleep(for: .milliseconds(100))
+            await toggle(spaceID: "world_3d")
+        }
     }
 
     /// Toggles between the named ImmersiveSpace and the windowed panel.
@@ -157,6 +165,13 @@ struct iOSWorldView: View {
         .fullScreenCover(isPresented: $show6DoFSpike) {
             if let world = appState.world {
                 Scene3DView(world: world)
+            }
+        }
+        .onAppear {
+            // Dev shortcut: auto-jump into the 6DoF spike on first appearance.
+            // No-op once the user has already toggled the spike for this run.
+            if DebugConfig.autoOpenSpike && !show6DoFSpike {
+                show6DoFSpike = true
             }
         }
     }

@@ -16,6 +16,18 @@ final class AppState {
     var answers = QuizAnswers()
     var world: World?
 
+    /// Reads `DebugConfig.skipQuizTo` once at construction. If the value is
+    /// a valid World id, jump straight to `.world` so we can iterate on the
+    /// 6DoF spike without sitting through the quiz each run. Restart still
+    /// returns to `.splash` regardless.
+    init() {
+        if let id = DebugConfig.skipQuizTo,
+           let preset = WorldCatalog.all.first(where: { $0.id == id }) {
+            self.world = preset
+            self.phase = .world
+        }
+    }
+
     /// quiz 答完 → 進 loading → 解析世界 → 進 world。
     func finishQuiz() {
         phase = .loading
