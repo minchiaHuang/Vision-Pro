@@ -41,9 +41,11 @@ Splash（App 名稱）
     ↓
 "Building your world…"（過場 / loading）
     ↓
-你的沉浸式世界（360° 環境）
+你的沉浸式世界（可走動 3D）
     ↓
-（v3+）daily 入口：回到你的空間
+與 AI 語音陪伴對話（v4：先 speech-to-chat，後續深化為「引導反思」的導師）
+    ↓
+（後續）daily 入口：回到你的空間
 ```
 
 對應 user stories：
@@ -173,14 +175,18 @@ World(image)
 
 ## 7. 分階段（Phasing）
 
-| 階段 | 目標 | 顯示 | 世界來源 | 外部申請 |
-|---|---|---|---|---|
-| **v1** | 整套 flow 跑得通 | iPad + visionOS 模擬器 | 3–4 張預生 360° 圖，查表對應 | ❌ 無 |
-| **v2** | 接真 AI 即時生成（360°） | 同上 | Skybox AI API（prompt → 360°） | ✅ Skybox API（Business $112/mo） |
-| **v3** | 真沉浸部署（仍 360°） | Vision Pro 實機 | 同 v2 | Apple Developer（免費 tier 跑自己裝置） |
-| **v4（stretch / 野心）** | 可走動 3D 世界 | Vision Pro，6DOF 探索 | World Labs Marble（World API → splat / mesh） | Marble API + splat 渲染整合 |
+> **方向調整：** v1（整套 flow 跑得通，預生 360° 查表）已完成；原本 v2 的「Skybox AI 即時生成 360°」
+> **跳過不做**——直接跳到「可走動的世界」這條路。以下從目前所在的 **v3** 起算。
 
-> v4 是「能走進去探索」的升級路線；顯示層要換管線（球體貼圖 → splat/mesh）。先把 v1–v3 跑穩再說。
+| 階段 | 目標 | 顯示 | 世界來源 | 外部申請 | 狀態 |
+|---|---|---|---|---|---|
+| **v3** | 可走動的 3D 世界 | Vision Pro / iPad，6DOF 走動探索 | 預先做好的 USDZ mesh 場景 | ❌ 無（本地 USDZ） | 🔵 進行中（USDZ mesh + PS5 手把 spike） |
+| **v4** | **AI 語音對話**（世界裡的陪伴／導師） | 世界內語音互動 | — | 對話 LLM（on-device 或 API） | ⬜ spike（先 speech-to-chat 基礎版；「AI 導師引導反思」的人設／提問設計留到 §9 research 後深化） |
+| **v5** | 可走動 **+ AI 即時生成**的世界 | 同上 | World Labs Marble（World API → splat / mesh） | Marble API + splat/mesh 渲染整合 | ⬜ 未開始（原 v4） |
+| **v6** | Vision Pro 實機部署 | Vision Pro 實機 | 同 v5 | Apple Developer（免費 tier 跑自己裝置） | ⬜ 最後（原 v5） |
+
+> **v4 先做「能對話」的 speech-to-chat（麥克風→STT→LLM→TTS），維持 spike 性質**；上真機感受延遲後再決定是否正式投入，不在頭顯驗證前承諾做完整。
+> v5 把「預先做好的可走動場景」升級成「AI 即時生成的可走動世界」（顯示層維持 splat/mesh 管線）。v6 把成品部署上 Vision Pro 實機。
 
 ---
 
@@ -226,7 +232,8 @@ struct World: Identifiable {
 2. **答案 → 世界的 mapping** — 什麼樣的視覺真的讓人感覺「對齊自己」？需要使用者測試。
 3. **Aisha 進入後的 gap surfacing** — 她進來後，app 怎麼被動讓她看見「你以為的自己 vs 生成的世界」之間的落差？
 4. **「achieve」的延伸** — daily 入口、rebalance 機制（v3+ 範疇）。
-5. **v4 Marble 可行性** — quiz → Marble prompt 的個人化成本/延遲、Gaussian splat 在 Vision Pro 的渲染效能，都需要實測才能確認 v4 值不值得做。
+5. **v5 Marble 可行性** — quiz → Marble prompt 的個人化成本/延遲、Gaussian splat 在 Vision Pro 的渲染效能，都需要實測才能確認 v5 值不值得做。
+6. **AI 語音陪伴/導師（v4）** — 它該問什麼才真的扣到 self-alignment（而非閒聊）？人設與語氣？多輪對話怎麼收尾？語音延遲與自然度在頭顯裡感受如何（只能上真機判斷）？語音資料隱私、on-device vs 雲端取捨。
 
 ---
 
@@ -244,6 +251,10 @@ struct World: Identifiable {
 | 生世界（v4 stretch） | World Labs Marble（World API）→ Gaussian splat / mesh |
 | splat 渲染（v4） | MetalSplatter（開源）或 mesh(GLB) 匯入 RealityKit；或 PLY→USDZ via Omniverse NuRec |
 | 輕量中間方案 | visionOS 26 內建 Spatial Scene（單圖 → 體積場景） |
+| 語音輸入 STT（v4） | Speech framework / iOS 26 SpeechAnalyzer |
+| 語音輸出 TTS（v4） | AVSpeechSynthesizer（或更自然的第三方／雲端 TTS） |
+| 對話 AI（v4） | LLM——on-device Foundation Models 或雲端 API |
+| 空間音訊（v4，visionOS） | RealityKit spatial audio，讓陪伴的聲音定位在世界裡 |
 | IDE | Xcode 26.5 |
 
 ---
