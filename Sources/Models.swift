@@ -1,15 +1,26 @@
 import Foundation
 
-/// 五題混合題型的作答結果。
-/// energy/minutes 有預設值；need/help/week 需使用者選擇。
-struct QuizAnswers {
-    var energy: Double = 0.45      // Q1 slider: 0 = stillness, 1 = energy
-    var need: String? = nil        // Q2 image grid: quiet/connection/movement/creativity
-    var help: String? = nil        // Q3 icon grid: alone/talk/move/make
-    var week: String? = nil        // Q4 image grid: exam/sleep/home/focus
-    var minutes: Int = 10          // Q5 time row
+/// One this-or-that slider question (both poles are positive — no bad answer).
+/// Left pole = score 0, right pole = score 1.
+struct ThisOrThat: Identifiable {
+    let id: String
+    let question: String
+    let leftLabel: String
+    let rightLabel: String
+}
 
-    var isComplete: Bool { need != nil && help != nil && week != nil }
+/// Answers from the 4+1 axis quiz (research 方向 3).
+struct QuizAnswers {
+    /// 12 this-or-that slider values, 0...1 (0 = left pole, 1 = right pole).
+    /// Index groups: [0-2] = axis1 自主↔歸屬, [3-5] = axis2 探索↔穩定,
+    ///               [6-8] = axis3 表達↔連結, [9-11] = axis4 平靜↔生機.
+    var sliders: [Double] = Array(repeating: 0.5, count: 12)
+    /// Q14 hope direction — option id string ("ownPath" / "people" / "explore" / "stable").
+    var hope: String? = nil
+    /// Q15 free text — optional; used for world naming / atmosphere micro-tuning.
+    var hopeFreeText: String = ""
+
+    var isComplete: Bool { hope != nil }
 }
 
 /// 單選題的一個選項。`image` 為對應的世界 asset 名（圖卡用），`symbol` 為 SF Symbol（icon 卡用）。

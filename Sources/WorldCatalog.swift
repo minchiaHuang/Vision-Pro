@@ -34,36 +34,6 @@ enum WorldCatalog {
         blurb: "Your space."
     )
 
-    /// Resolve one of the three preset worlds from the five answers.
-    /// Priority: week (context) → need/help → energy. Mapping is tunable;
-    /// it is a product decision (see PRD §9) and starts from this baseline.
-    static func resolve(from answers: QuizAnswers) -> World {
-        // 1) Weekly context wins.
-        switch answers.week {
-        case "sleep":        return byId("quiet_solitary")
-        case "home":         return byId("open_nature")
-        case "exam", "focus": return byId("calm_communal")
-        default: break
-        }
-
-        // 2) What they need / what helps.
-        if answers.need == "quiet" || answers.help == "alone" {
-            return byId("quiet_solitary")
-        }
-        if answers.need == "connection" || answers.help == "talk" {
-            return byId("calm_communal")
-        }
-        if answers.need == "movement" || answers.help == "move"
-            || answers.need == "creativity" || answers.help == "make" {
-            return byId("open_nature")
-        }
-
-        // 3) Fall back to body energy.
-        if answers.energy < 0.35 { return byId("quiet_solitary") }
-        if answers.energy > 0.65 { return byId("open_nature") }
-        return fallback
-    }
-
     /// Returns the `World` whose title/blurb matches the given archetype,
     /// aligning overlay copy with the USDZ scene the user actually sees.
     static func world(for archetype: WorldArchetype) -> World {
@@ -81,46 +51,24 @@ enum WorldCatalog {
 
 // MARK: - Continuous scoring + mapping (research 方向 6 → 方向 7)
 
-/// Turns the quiz answers into the hidden continuous `AxisScores`.
-/// NOTE: this is an INTERIM read of the v1 five-question quiz so the whole
-/// pipeline runs end-to-end now. Phase 5 replaces it with the research 4+1
-/// question bank (`doc/self_alignment_3d_world_quiz_questions.md`).
+/// Turns the research 4+1 axis quiz answers into the hidden continuous `AxisScores`.
+/// Each axis is the mean of its 3 this-or-that sliders (each already 0...1).
 enum Scorer {
     static func score(_ a: QuizAnswers) -> AxisScores {
-        // 軸4 平靜↔生機: the energy slider already runs 0 (stillness) … 1 (energy).
-        let calmVivid = clamp01(a.energy)
-
-        // 軸1 自主↔歸屬: alone/quiet lean autonomy; talk/connection lean belonging.
-        var autonomyBelonging = 0.5
-        if a.help == "alone" || a.need == "quiet" { autonomyBelonging = 0.15 }
-        if a.help == "talk" || a.need == "connection" { autonomyBelonging = 0.85 }
-
-        // 軸3 自我表達↔集體連結: make/creativity lean expression; talk/connection lean connection.
-        var expressionConnection = 0.5
-        if a.help == "make" || a.need == "creativity" { expressionConnection = 0.2 }
-        if a.help == "talk" || a.need == "connection" { expressionConnection = 0.8 }
-
-        // 軸2 探索↔穩定: movement/creativity lean explore; exam/focus/sleep lean stable.
-        var exploreStable = 0.5
-        if a.need == "movement" || a.help == "move" || a.need == "creativity" { exploreStable = 0.25 }
-        if a.week == "exam" || a.week == "focus" || a.week == "sleep" { exploreStable = 0.75 }
-
-        // 軸5 希望方向: a light read of what they reached for (never a deficit).
+        guard a.sliders.count == 12 else { return .neutral }
+        let axis1 = (a.sliders[0] + a.sliders[1] + a.sliders[2]) / 3
+        let axis2 = (a.sliders[3] + a.sliders[4] + a.sliders[5]) / 3
+        let axis3 = (a.sliders[6] + a.sliders[7] + a.sliders[8]) / 3
+        let axis4 = (a.sliders[9] + a.sliders[10] + a.sliders[11]) / 3
         let hope: HopeDirection
-        switch a.need {
-        case "connection": hope = .people
-        case "movement":   hope = .explore
-        case "quiet":      hope = .stable
-        default:           hope = .ownPath   // creativity / unset
+        switch a.hope {
+        case "people":  hope = .people
+        case "explore": hope = .explore
+        case "stable":  hope = .stable
+        default:        hope = .ownPath
         }
-
-        return AxisScores(
-            autonomyBelonging: autonomyBelonging,
-            exploreStable: exploreStable,
-            expressionConnection: expressionConnection,
-            calmVivid: calmVivid,
-            hope: hope
-        )
+        return AxisScores(autonomyBelonging: axis1, exploreStable: axis2,
+                          expressionConnection: axis3, calmVivid: axis4, hope: hope)
     }
 }
 

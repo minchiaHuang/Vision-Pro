@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// Five soft questions, one surface per step:
-/// slider · image grid · icon grid · image grid · time row.
+/// 4+1 axis quiz: 4 axis screens (3 sliders each) + hope direction + free text.
 struct QuizView: View {
     @Environment(AppState.self) private var appState
     @State private var step = 0
@@ -9,22 +8,13 @@ struct QuizView: View {
     private var isLast: Bool { step == QuizData.stepCount - 1 }
 
     private var canContinue: Bool {
-        switch step {
-        case 1: return appState.answers.need != nil
-        case 2: return appState.answers.help != nil
-        case 3: return appState.answers.week != nil
-        default: return true   // slider & time always have a value
-        }
+        step == 4 ? appState.answers.hope != nil : true
     }
 
     private var title: String {
-        switch step {
-        case 0: return "How is your body right now?"
-        case 1: return "When you feel off-balance,\nwhat do you need?"
-        case 2: return "What would help most right now?"
-        case 3: return "Where in your week are you?"
-        default: return "How much time do you have?"
-        }
+        if step < 4 { return QuizData.axisTitles[step] }
+        if step == 4 { return "A year from now, you'd want to be\na little closer to—" }
+        return "If one word or image came to mind,\nwhat would it be?"
     }
 
     var body: some View {
@@ -34,22 +24,25 @@ struct QuizView: View {
             ProgressPips(step: step, total: QuizData.stepCount)
 
             Text(title)
-                .vaLargeThinTitle(size: 28)
-                .lineLimit(2)
+                .vaLargeThinTitle(size: 24)
+                .lineLimit(3)
                 .padding(.horizontal)
 
             Group {
                 switch step {
-                case 0:
-                    SliderSurface(value: $appState.answers.energy)
-                case 1:
-                    ImageCardGrid(options: QuizData.need, selection: $appState.answers.need)
-                case 2:
-                    IconCardGrid(options: QuizData.help, selection: $appState.answers.help)
-                case 3:
-                    ImageCardGrid(options: QuizData.week, selection: $appState.answers.week)
+                case 0, 1, 2, 3:
+                    AxisSlidersScreen(
+                        questions: QuizData.axisGroups[step],
+                        sliderBase: step * 3,
+                        answers: $appState.answers
+                    )
+                case 4:
+                    IconCardGrid(
+                        options: QuizData.hopeOptions,
+                        selection: $appState.answers.hope
+                    )
                 default:
-                    TimeRow(options: QuizData.minutes, selection: $appState.answers.minutes)
+                    FreeTextScreen(text: $appState.answers.hopeFreeText)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -92,83 +85,79 @@ private struct ProgressPips: View {
     }
 }
 
-// MARK: - Q1 slider
+// MARK: - Axis sliders screen (3 this-or-that rows per axis)
 
-private struct SliderSurface: View {
-    @Binding var value: Double
-    var body: some View {
-        VStack(spacing: 20) {
-            HStack(spacing: 16) {
-                Text("I need\nstillness")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
-                Slider(value: $value, in: 0...1)
-                    .tint(.accentColor)
-                Text("I need\nenergy")
-                    .font(.subheadline).foregroundStyle(.secondary)
-                    .multilineTextAlignment(.trailing)
-            }
-            Text("Drag to where you are right now")
-                .font(.footnote).foregroundStyle(.tertiary)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 24)
-    }
-}
-
-// MARK: - Q2 / Q4 image grid
-
-private struct ImageCardGrid: View {
-    let options: [ChoiceOption]
-    @Binding var selection: String?
-
-    private let columns = [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+private struct AxisSlidersScreen: View {
+    let questions: [ThisOrThat]
+    let sliderBase: Int
+    @Binding var answers: QuizAnswers
 
     var body: some View {
-        LazyVGrid(columns: columns, spacing: 16) {
-            ForEach(options) { option in
-                Button {
-                    selection = option.id
-                } label: {
-                    ZStack(alignment: .bottomLeading) {
-                        if let name = option.image {
-                            Image(name)
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            Color.secondary.opacity(0.2)
-                        }
-                        // Stronger gradient so label stays legible on light SVGs
-                        LinearGradient(
-                            stops: [
-                                .init(color: .clear, location: 0.35),
-                                .init(color: .black.opacity(0.45), location: 0.7),
-                                .init(color: .black.opacity(0.72), location: 1.0)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                        Text(option.label)
-                            .font(.callout.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .shadow(color: .black.opacity(0.5), radius: 4, x: 0, y: 1)
-                            .padding(.horizontal, 14)
-                            .padding(.bottom, 14)
-                    }
-                    // Aspect ratio scales with column width — no more fixed squished height
-                    .aspectRatio(16/9, contentMode: .fit)
-                    .frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    .overlay(selectionRing(selected: selection == option.id))
-                }
-                .buttonStyle(.plain)
+        VStack(spacing: 28) {
+            ForEach(Array(questions.enumerated()), id: \.offset) { i, q in
+                ThisOrThatRow(
+                    question: q,
+                    value: $answers.sliders[sliderBase + i]
+                )
             }
         }
         .padding(.horizontal)
     }
 }
 
-// MARK: - Q3 icon grid
+private struct ThisOrThatRow: View {
+    let question: ThisOrThat
+    @Binding var value: Double
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(question.question)
+                .font(.callout.weight(.medium))
+                .multilineTextAlignment(.center)
+            HStack(spacing: 10) {
+                Text(question.leftLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .frame(width: 88, alignment: .leading)
+                Slider(value: $value, in: 0...1)
+                    .tint(.accentColor)
+                Text(question.rightLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 88, alignment: .trailing)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+// MARK: - Q14 hope direction (reuses IconCardGrid below)
+
+// MARK: - Q15 free text (optional)
+
+private struct FreeTextScreen: View {
+    @Binding var text: String
+
+    var body: some View {
+        VStack(spacing: 12) {
+            TextField("optional — skip anytime", text: $text, axis: .vertical)
+                .font(.body)
+                .padding(16)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .lineLimit(3...5)
+
+            Text("No answer needed — whatever comes to mind, or nothing at all.")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal)
+    }
+}
+
+// MARK: - Q14 icon grid (also used by Q14 hope direction)
 
 private struct IconCardGrid: View {
     let options: [ChoiceOption]
@@ -199,44 +188,6 @@ private struct IconCardGrid: View {
             }
         }
         .padding(.horizontal)
-    }
-}
-
-// MARK: - Q5 time row
-
-private struct TimeRow: View {
-    let options: [Int]
-    @Binding var selection: Int
-
-    var body: some View {
-        HStack(spacing: 14) {
-            ForEach(options, id: \.self) { m in
-                let isSelected = m == selection
-                Button {
-                    selection = m
-                } label: {
-                    VStack(spacing: 2) {
-                        Text("\(m)").font(.title2.weight(.medium))
-                        Text("min").font(.caption2)
-                    }
-                    .foregroundStyle(isSelected ? VATheme.onAmber : .primary)
-                    .frame(width: 76, height: 76)
-                    .background {
-                        if isSelected {
-                            Circle().fill(
-                                LinearGradient(colors: [VATheme.amber, VATheme.amberDeep],
-                                               startPoint: .top, endPoint: .bottom))
-                        } else {
-                            Circle().fill(.ultraThinMaterial)
-                        }
-                    }
-                    .overlay(Circle().stroke(.white.opacity(0.2), lineWidth: 0.5))
-                    .shadow(color: isSelected ? VATheme.amber.opacity(0.5) : .clear, radius: 16)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.vertical, 24)
     }
 }
 
