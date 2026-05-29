@@ -76,6 +76,21 @@ struct iOSWorldView: View {
     @State private var showOverlay = false
     @State private var showHint = true
     @State private var walkable = false
+    @State private var narrator = NarrationService()
+
+    /// Composes and speaks the guide's entry narration from the user's scores.
+    private func speakEntryNarration() {
+        guard let world = appState.world,
+              let scores = appState.axisScores,
+              let params = appState.worldParams else { return }
+        let text = NarrationComposer.entryNarration(world: world, scores: scores, params: params)
+        narrator.speak(text)
+    }
+
+    /// Tapping the mascot replays the welcome — or stops it if already speaking.
+    private func toggleNarration() {
+        if narrator.isSpeaking { narrator.stop() } else { speakEntryNarration() }
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -152,6 +167,20 @@ struct iOSWorldView: View {
                 .animation(.easeOut(duration: 0.5), value: showHint)
                 .animation(.easeOut(duration: 0.25), value: showOverlay)
                 .allowsHitTesting(false)
+
+                // Voice-companion mascot — speaks the welcome on entry; tap to replay.
+                VStack {
+                    HStack {
+                        Spacer()
+                        OrbView(size: 76, isSpeaking: narrator.isSpeaking)
+                            .contentShape(Circle())
+                            .onTapGesture { toggleNarration() }
+                            .accessibilityLabel("Replay your world's welcome")
+                            .padding(.trailing, isLandscape ? 28 : 20)
+                            .padding(.top, isLandscape ? 16 : 24)
+                    }
+                    Spacer()
+                }
             }
             .onTapGesture {
                 showHint = false
@@ -161,6 +190,12 @@ struct iOSWorldView: View {
                 try? await Task.sleep(for: .seconds(2))
                 showHint = false
             }
+            .task {
+                // A short beat so the world has rendered before the guide speaks.
+                try? await Task.sleep(for: .milliseconds(900))
+                speakEntryNarration()
+            }
+            .onDisappear { narrator.stop() }
         }
     }
 }

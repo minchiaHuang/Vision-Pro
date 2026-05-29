@@ -34,7 +34,8 @@ platform-specific. So the entire flow can be validated on iPad before any Vision
 | **Entry/Nav** | `VisitingArtisanApp.swift`, `RootView.swift` | App entry, phase-based view switching |
 | **Views** | `QuizView.swift`, `WorldView.swift`, `RootView.swift` | Splash, quiz, loading, world |
 | **Display** | `Immersive360View.swift` (iOS), `ImmersiveWorldView.swift` (visionOS) | 360° sphere rendering |
-| **Voice (v4)** | `ConversationService.swift` (planned) | Mic → STT → LLM → TTS conversation loop; runs during `.world` phase |
+| **Voice (v4 · 6a)** | `NarrationService.swift`, `NarrationComposer.swift` | On-device TTS entry narration: composes a welcome from `AxisScores` and speaks it via `AVSpeechSynthesizer` when `.world` appears. No mic, no network, no permissions |
+| **Voice (v4 · 6b)** | `ConversationService.swift` (planned) | Mic → STT → cloud LLM → TTS conversation loop; runs during `.world` phase. Reuses `NarrationService` as its TTS stage |
 
 ---
 
@@ -102,7 +103,8 @@ If the image asset is missing, both fall back to a grey sphere — so the flow a
 | Future | Where it plugs in | Note |
 |---|---|---|
 | **v2 live generation** | new `SkyboxService`, replaces `WorldCatalog.resolve` in `AppState.finishQuiz()` | `World.imageURL` already exists for remote images |
-| **v4 AI voice companion** | new `ConversationService`, activated in `.world` phase | spike first (speech-to-chat); deepen into a reflection mentor later |
+| **v4 · 6a entry narration** | `NarrationService` (TTS) + `NarrationComposer` (text), triggered in `iOSWorldView.task` | done — on-device `AVSpeechSynthesizer`, no deps/keys/permissions; mascot = reused `OrbView` |
+| **v4 · 6b AI voice companion** | new `ConversationService`, activated in `.world` phase; reuses `NarrationService` as its TTS stage | spike first (speech-to-chat, cloud LLM — needs key/package approval); deepen into a reflection mentor later |
 | **v5 AI-generated walkable worlds** | new display pipeline (splat/mesh) replacing the sphere | World Labs Marble; significant display-layer change |
 | **More quiz questions** | append to `QuizData.questions` | UI auto-adapts (progress dots, one-per-screen) |
 | **New worlds** | add to `WorldCatalog.all` + Assets | update `resolve()` mapping |

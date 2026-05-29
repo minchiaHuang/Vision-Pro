@@ -102,9 +102,12 @@ struct WarmBackground: View {
 
 // MARK: - Orb
 
-/// Glowing amber orb used on splash and loading ("Weaving") screens.
+/// Glowing amber orb used on splash and loading ("Weaving") screens, and as the
+/// world's voice-companion mascot. When `isSpeaking` is true it breathes more
+/// strongly and glows brighter, giving a visual cue that the guide is talking.
 struct OrbView: View {
     var size: CGFloat = 180
+    var isSpeaking: Bool = false
     @State private var pulse = false
     @State private var spin = false
 
@@ -124,8 +127,10 @@ struct OrbView: View {
                     )
                 )
                 .frame(width: size, height: size)
-                .shadow(color: VATheme.amber.opacity(0.45), radius: 40)
-                .scaleEffect(pulse ? 1.04 : 1.0)
+                .shadow(color: VATheme.amber.opacity(isSpeaking ? 0.7 : 0.45),
+                        radius: isSpeaking ? 56 : 40)
+                .scaleEffect(pulse ? (isSpeaking ? 1.12 : 1.04) : 1.0)
+                .animation(.easeInOut(duration: 0.4), value: isSpeaking)
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) {
