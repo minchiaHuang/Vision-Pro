@@ -17,6 +17,12 @@ final class NarrationService: NSObject, AVSpeechSynthesizerDelegate {
     /// animation. Mutated on the main queue so SwiftUI observation stays happy.
     private(set) var isSpeaking = false
 
+    /// When true (default), `speak()` configures a `.playback` audio session each
+    /// time. Phase 6b's `ConversationService` sets this false and owns a shared
+    /// `.playAndRecord` session, so TTS playback and mic capture don't clobber
+    /// each other.
+    var managesAudioSession = true
+
     override init() {
         super.init()
         synth.delegate = self
@@ -48,6 +54,7 @@ final class NarrationService: NSObject, AVSpeechSynthesizerDelegate {
     // MARK: - Audio session
 
     private func configureSession() {
+        guard managesAudioSession else { return }
         #if !os(macOS)
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])

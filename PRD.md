@@ -181,7 +181,7 @@ World(image)
 | 階段 | 目標 | 顯示 | 世界來源 | 外部申請 | 狀態 |
 |---|---|---|---|---|---|
 | **v3** | 可走動的 3D 世界 | Vision Pro / iPad，6DOF 走動探索 | 預先做好的 USDZ mesh 場景 | ❌ 無（本地 USDZ） | 🔵 進行中（USDZ mesh + PS5 手把 spike） |
-| **v4** | **AI 語音對話**（世界裡的陪伴／導師） | 世界內語音互動 | — | 對話 LLM（on-device 或 API） | 🔵 6a 進場敘事 ✅（內建 `AVSpeechSynthesizer` TTS，零權限；`NarrationService` + `NarrationComposer`）；6b 雙向 speech-to-chat（mic→STT→雲端 LLM→TTS）⬜ 待核准套件/金鑰；「AI 導師引導反思」人設／提問設計留到 §9 research 後深化 |
+| **v4** | **AI 語音對話**（世界裡的陪伴／導師） | 世界內語音互動 | — | 對話 LLM（on-device 或 API） | 🔵 6a 進場敘事 ✅（內建 `AVSpeechSynthesizer` TTS，零權限；`NarrationService` + `NarrationComposer`）；6b 雙向 speech-to-chat ✅ spike（`SFSpeechRecognizer` STT → Claude Messages API via URLSession，Haiku 4.5 → TTS；`ConversationService` + `SpeechRecognizer`，需麥克風/語音權限＋本機 `anthropicAPIKey`）；「AI 導師引導反思」人設／提問設計留到 §9 research 後深化 |
 | **v5** | 可走動 **+ AI 即時生成**的世界 | 同上 | World Labs Marble（World API → splat / mesh） | Marble API + splat/mesh 渲染整合 | ⬜ 未開始（原 v4） |
 | **v6** | Vision Pro 實機部署 | Vision Pro 實機 | 同 v5 | Apple Developer（免費 tier 跑自己裝置） | ⬜ 最後（原 v5） |
 

@@ -76,20 +76,48 @@ struct iOSWorldView: View {
     @State private var showOverlay = false
     @State private var showHint = true
     @State private var walkable = false
-    @State private var narrator = NarrationService()
+    @State private var convo = ConversationService()
 
-    /// Composes and speaks the guide's entry narration from the user's scores.
-    private func speakEntryNarration() {
+    /// The guide's entry-narration text, composed from the user's scores.
+    private func entryNarrationText() -> String? {
+        guard let world = appState.world,
+              let scores = appState.axisScores,
+              let params = appState.worldParams else { return nil }
+        return NarrationComposer.entryNarration(world: world, scores: scores, params: params)
+    }
+
+    /// Grounds the guide in this world and speaks the welcome once on entry.
+    private func startGuide() {
         guard let world = appState.world,
               let scores = appState.axisScores,
               let params = appState.worldParams else { return }
-        let text = NarrationComposer.entryNarration(world: world, scores: scores, params: params)
-        narrator.speak(text)
+        convo.configure(world: world, scores: scores, params: params,
+                        hopeFreeText: appState.answers.hopeFreeText)
+        if let text = entryNarrationText() { convo.speakEntry(text) }
     }
 
-    /// Tapping the mascot replays the welcome — or stops it if already speaking.
-    private func toggleNarration() {
-        if narrator.isSpeaking { narrator.stop() } else { speakEntryNarration() }
+    /// Short tap on the mascot = push-to-talk (start listening / send turn).
+    private func tapMascot() {
+        if convo.isListening {
+            convo.finishListeningAndReply()
+        } else if convo.turn == .idle {
+            Task { await convo.beginListening() }
+        }
+    }
+
+    /// Long-press the mascot to replay the welcome narration.
+    private func replayWelcome() {
+        if let text = entryNarrationText() { convo.speakEntry(text) }
+    }
+
+    /// One-line status shown under the mascot.
+    private var mascotCaption: String {
+        switch convo.turn {
+        case .listening: return "Listening… tap to send"
+        case .thinking:  return "Thinking…"
+        case .speaking:  return "Speaking…"
+        case .idle:      return convo.isSpeaking ? "Speaking…" : "Tap to talk"
+        }
     }
 
     var body: some View {
@@ -168,16 +196,36 @@ struct iOSWorldView: View {
                 .animation(.easeOut(duration: 0.25), value: showOverlay)
                 .allowsHitTesting(false)
 
-                // Voice-companion mascot — speaks the welcome on entry; tap to replay.
+                // Voice-companion mascot — entry narration (6a) + push-to-talk
+                // conversation (6b). Tap to talk, long-press to replay the welcome.
                 VStack {
                     HStack {
                         Spacer()
-                        OrbView(size: 76, isSpeaking: narrator.isSpeaking)
-                            .contentShape(Circle())
-                            .onTapGesture { toggleNarration() }
-                            .accessibilityLabel("Replay your world's welcome")
-                            .padding(.trailing, isLandscape ? 28 : 20)
-                            .padding(.top, isLandscape ? 16 : 24)
+                        VStack(spacing: 6) {
+                            OrbView(size: 76,
+                                    isSpeaking: convo.isSpeaking,
+                                    isListening: convo.isListening)
+                                .contentShape(Circle())
+                                .onTapGesture { tapMascot() }
+                                .onLongPressGesture { replayWelcome() }
+                                .accessibilityLabel("Talk with your world's guide")
+
+                            Text(mascotCaption)
+                                .font(.caption2)
+                                .foregroundStyle(.white.opacity(0.7))
+                                .shadow(radius: 4)
+
+                            if let err = convo.lastError {
+                                Text(err)
+                                    .font(.caption2)
+                                    .foregroundStyle(.yellow.opacity(0.9))
+                                    .multilineTextAlignment(.center)
+                                    .frame(maxWidth: 220)
+                                    .shadow(radius: 4)
+                            }
+                        }
+                        .padding(.trailing, isLandscape ? 28 : 20)
+                        .padding(.top, isLandscape ? 16 : 24)
                     }
                     Spacer()
                 }
@@ -193,9 +241,9 @@ struct iOSWorldView: View {
             .task {
                 // A short beat so the world has rendered before the guide speaks.
                 try? await Task.sleep(for: .milliseconds(900))
-                speakEntryNarration()
+                startGuide()
             }
-            .onDisappear { narrator.stop() }
+            .onDisappear { convo.stop() }
         }
     }
 }

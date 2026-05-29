@@ -32,6 +32,8 @@
 		AA0000010000000000000014 /* SplatSpikeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000116 /* SplatSpikeView.swift */; };
 		AA0000010000000000000017 /* NarrationComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000117 /* NarrationComposer.swift */; };
 		AA0000010000000000000018 /* NarrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000118 /* NarrationService.swift */; };
+		AA0000010000000000000019 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000119 /* SpeechRecognizer.swift */; };
+		AA000001000000000000001A /* ConversationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000011A /* ConversationService.swift */; };
 		AA0000010000000000000023 /* world_a236ea24_100k.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000123 /* world_a236ea24_100k.spz */; };
 		AA0000010000000000000015 /* MetalSplatter in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000010000000000000902 /* MetalSplatter */; };
 		AA0000010000000000000016 /* SplatIO in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000010000000000000903 /* SplatIO */; };
@@ -65,6 +67,8 @@
 		AA0000010000000000000116 /* SplatSpikeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSpikeView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000117 /* NarrationComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationComposer.swift; sourceTree = "<group>"; };
 		AA0000010000000000000118 /* NarrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationService.swift; sourceTree = "<group>"; };
+		AA0000010000000000000119 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
+		AA000001000000000000011A /* ConversationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationService.swift; sourceTree = "<group>"; };
 		AA0000010000000000000123 /* world_a236ea24_100k.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = world_a236ea24_100k.spz; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -116,6 +120,8 @@
 				AA0000010000000000000116 /* SplatSpikeView.swift */,
 				AA0000010000000000000117 /* NarrationComposer.swift */,
 				AA0000010000000000000118 /* NarrationService.swift */,
+				AA0000010000000000000119 /* SpeechRecognizer.swift */,
+				AA000001000000000000011A /* ConversationService.swift */,
 				AA0000010000000000000306 /* SpikeAssets */,
 			);
 			path = Sources;
@@ -256,6 +262,8 @@
 				AA0000010000000000000014 /* SplatSpikeView.swift in Sources */,
 				AA0000010000000000000017 /* NarrationComposer.swift in Sources */,
 				AA0000010000000000000018 /* NarrationService.swift in Sources */,
+				AA0000010000000000000019 /* SpeechRecognizer.swift in Sources */,
+				AA000001000000000000001A /* ConversationService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -391,6 +399,8 @@
 				"INFOPLIST_FILE[sdk=xrsimulator*]" = "Config/Info-visionOS.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Visiting Artisan";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Visiting Artisan uses the microphone so you can talk with the guide in your world.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Your speech is turned into text so your world's guide can understand and respond.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -432,6 +442,8 @@
 				"INFOPLIST_FILE[sdk=xrsimulator*]" = "Config/Info-visionOS.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Visiting Artisan";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Visiting Artisan uses the microphone so you can talk with the guide in your world.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Your speech is turned into text so your world's guide can understand and respond.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

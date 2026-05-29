@@ -104,7 +104,7 @@ If the image asset is missing, both fall back to a grey sphere — so the flow a
 |---|---|---|
 | **v2 live generation** | new `SkyboxService`, replaces `WorldCatalog.resolve` in `AppState.finishQuiz()` | `World.imageURL` already exists for remote images |
 | **v4 · 6a entry narration** | `NarrationService` (TTS) + `NarrationComposer` (text), triggered in `iOSWorldView.task` | done — on-device `AVSpeechSynthesizer`, no deps/keys/permissions; mascot = reused `OrbView` |
-| **v4 · 6b AI voice companion** | new `ConversationService`, activated in `.world` phase; reuses `NarrationService` as its TTS stage | spike first (speech-to-chat, cloud LLM — needs key/package approval); deepen into a reflection mentor later |
+| **v4 · 6b AI voice companion** | `ConversationService` + `SpeechRecognizer`, owned by `iOSWorldView`; reuses `NarrationService` for TTS | done (spike) — push-to-talk on the mascot: `SFSpeechRecognizer` STT → Claude Messages API over URLSession (Haiku 4.5, grounded in `AxisScores`) → TTS. Needs mic/speech permission + local `Secrets.anthropicAPIKey`. Deepen into a reflection mentor later |
 | **v5 AI-generated walkable worlds** | new display pipeline (splat/mesh) replacing the sphere | World Labs Marble; significant display-layer change |
 | **More quiz questions** | append to `QuizData.questions` | UI auto-adapts (progress dots, one-per-screen) |
 | **New worlds** | add to `WorldCatalog.all` + Assets | update `resolve()` mapping |

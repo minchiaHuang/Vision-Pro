@@ -20,4 +20,10 @@ import Foundation
 enum Secrets {
     /// World Labs API key. Empty by default; replace locally only.
     static let worldLabsAPIKey: String = ""
+
+    /// Anthropic API key for the Phase 6b voice conversation (Claude Messages API).
+    /// Empty by default; replace locally only. With an empty key, `ConversationService`
+    /// reports "Missing API key" and the conversation stays inert (TTS entry narration
+    /// still works, since 6a needs no key).
+    static let anthropicAPIKey: String = ""
 }
