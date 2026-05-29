@@ -64,6 +64,16 @@ enum WorldCatalog {
         return fallback
     }
 
+    /// Returns the `World` whose title/blurb matches the given archetype,
+    /// aligning overlay copy with the USDZ scene the user actually sees.
+    static func world(for archetype: WorldArchetype) -> World {
+        switch archetype {
+        case .openNature:   return byId("open_nature")
+        case .cozyCommunal: return byId("calm_communal")
+        case .solitaryPath: return byId("quiet_solitary")
+        }
+    }
+
     private static func byId(_ id: String) -> World {
         all.first { $0.id == id } ?? fallback
     }

@@ -43,8 +43,8 @@ final class AppState {
                 let scores = Scorer.score(self.answers)
                 self.axisScores = scores
                 self.worldParams = WorldMapper.map(scores)
-                // 顯示仍暫由 v1 查表驅動；Phase 2 改由 worldParams 驅動 USDZ 世界。
-                self.world = WorldCatalog.resolve(from: self.answers)
+                // title/blurb 從 archetype 衍生，確保 overlay 文字與 USDZ 場景一致。
+                self.world = WorldCatalog.world(for: self.worldParams!.archetype)
                 self.phase = .world
             }
         }
