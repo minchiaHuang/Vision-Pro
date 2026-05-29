@@ -70,13 +70,17 @@ struct iOSWorldView: View {
     @Environment(AppState.self) private var appState
     @State private var showOverlay = false
     @State private var showHint = true
+    @State private var walkable = false
 
     var body: some View {
         GeometryReader { proxy in
             let isLandscape = proxy.size.width > proxy.size.height
 
             ZStack {
-                if let world = appState.world {
+                if walkable, let splatURL = appState.generatedSplatURL {
+                    SplatWorldView(remoteURL: splatURL)
+                        .ignoresSafeArea()
+                } else if let world = appState.world {
                     Immersive360View(world: world, overrideImage: appState.generatedPano)
                         .ignoresSafeArea()
                 }
@@ -111,6 +115,13 @@ struct iOSWorldView: View {
                             }
                         }
                         .frame(maxWidth: isLandscape ? 680 : 560)
+
+                        if appState.generatedSplatURL != nil {
+                            Button(walkable ? "Panorama view" : "Walk inside (3D)") {
+                                walkable.toggle()
+                            }
+                            .buttonStyle(SecondaryPillButtonStyle())
+                        }
 
                         Button("Start over") { appState.restart() }
                             .buttonStyle(PrimaryPillButtonStyle())

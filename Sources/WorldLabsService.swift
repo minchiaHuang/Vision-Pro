@@ -19,6 +19,12 @@ final class WorldLabsService {
 
     private(set) var status: Status = .idle
 
+    /// Set once generation completes: the world's id and the remote (public CDN)
+    /// `.spz` URL for the walkable 3D splat. Downloaded on demand by the world phase.
+    private(set) var worldId: String?
+    private(set) var splatRemoteURL: URL?
+
+    private let splatResolution = "100k"   //体積/品質平衡;按需下載
     private let apiKey = Secrets.worldLabsAPIKey
     private let base = "https://api.worldlabs.ai/marble/v1"
     private let model = "marble-1.0-draft"
@@ -86,16 +92,20 @@ final class WorldLabsService {
             }
 
             if op.done == true {
-                // Operation snapshot may have null pano_url for draft model.
-                // Fall back to GET /worlds/{world_id} which reflects current asset state.
+                // GET /worlds/{id} is the reliable source for current assets (the
+                // operation snapshot may carry a null pano_url for the draft model),
+                // and it also yields the splat spz_urls in the same call.
+                if let worldId = op.metadata?.world_id {
+                    self.worldId = worldId
+                    let assets = try await fetchAssets(worldId: worldId)
+                    self.splatRemoteURL = assets.spz
+                    if let pano = assets.pano { return pano }
+                }
                 if let pano = op.response?.assets?.imagery?.pano_url,
                    let url = URL(string: pano) {
                     return url
                 }
-                guard let worldId = op.metadata?.world_id else {
-                    throw SpikeError.message("World finished but no pano_url and no world_id in metadata.")
-                }
-                return try await fetchPanoURL(worldId: worldId)
+                throw SpikeError.message("World finished but no pano_url available.")
             }
 
             let pct = op.metadata?.progress?.status == "SUCCEEDED" ? 100
@@ -105,11 +115,12 @@ final class WorldLabsService {
         throw SpikeError.message("Timed out waiting for world generation.")
     }
 
-    // MARK: - Fetch pano from worlds endpoint
+    // MARK: - Fetch assets from worlds endpoint
 
-    /// GET /worlds/{worldId} returns top-level `assets` with current pano_url,
-    /// which may be populated after the operation completes. Retries briefly.
-    private func fetchPanoURL(worldId: String) async throws -> URL {
+    /// GET /worlds/{worldId} returns top-level `assets` with the current pano_url
+    /// and splat spz_urls, which may populate shortly after the operation completes.
+    /// Retries briefly until the panorama is present; returns the splat URL if ready.
+    private func fetchAssets(worldId: String) async throws -> (pano: URL?, spz: URL?) {
         for attempt in 1...5 {
             if attempt > 1 { try await Task.sleep(for: .seconds(5)) }
             var request = URLRequest(url: URL(string: "\(base)/worlds/\(worldId)")!)
@@ -117,10 +128,9 @@ final class WorldLabsService {
             let (data, response) = try await URLSession.shared.data(for: request)
             try ensureOK(response, data: data)
             let decoded = try JSONDecoder().decode(WorldGetResponse.self, from: data)
-            if let pano = decoded.assets?.imagery?.pano_url,
-               let url = URL(string: pano) {
-                return url
-            }
+            let pano = decoded.assets?.imagery?.pano_url.flatMap { URL(string: $0) }
+            let spz = decoded.assets?.splats?.spz_urls?[splatResolution].flatMap { URL(string: $0) }
+            if pano != nil { return (pano, spz) }
         }
         throw SpikeError.message("Panorama URL not available after retries.")
     }
@@ -191,6 +201,8 @@ private struct WorldGetResponse: Decodable {
 
 private struct WorldObject: Decodable {
     let assets: Assets?
-    struct Assets: Decodable { let imagery: Imagery? }
+    struct Assets: Decodable { let imagery: Imagery?; let splats: Splats? }
     struct Imagery: Decodable { let pano_url: String? }
+    // 3D Gaussian splat. spz_urls keys: "100k" / "500k" / "full_res" (public CDN).
+    struct Splats: Decodable { let spz_urls: [String: String]? }
 }

@@ -21,6 +21,8 @@ struct WorldLabsTestView: View {
     /// (iPad) / immersive (visionOS), reusing the quiz flow's world views.
     private func routeToWorld(_ image: UIImage) {
         appState.generatedPano = image
+        appState.generatedSplatURL = service.splatRemoteURL
+        appState.generatedWorldId = service.worldId
         appState.world = World(
             id: "worldlabs",
             title: prompt,

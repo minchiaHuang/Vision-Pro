@@ -21,6 +21,12 @@ final class AppState {
     /// views render this image instead of `world.imageName`.
     var generatedPano: UIImage?
 
+    /// Remote (public CDN) `.spz` URL for the generated world's walkable 3D splat,
+    /// plus its world id. Set when a World Labs world is generated; the world phase
+    /// downloads the splat on demand when the user switches to "walkable".
+    var generatedSplatURL: URL?
+    var generatedWorldId: String?
+
     /// quiz 答完 → 進 loading → 解析世界 → 進 world。
     func finishQuiz() {
         phase = .loading
@@ -39,6 +45,8 @@ final class AppState {
         answers = QuizAnswers()
         world = nil
         generatedPano = nil
+        generatedSplatURL = nil
+        generatedWorldId = nil
         phase = .splash
     }
 }

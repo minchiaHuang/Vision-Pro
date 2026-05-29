@@ -5,7 +5,7 @@ import SwiftUI
 // the user walk around it (6DoF) via touch + PS5 controller. When `launchIntoSpike`
 // is true the app boots straight into the splat viewer, bypassing the normal flow.
 enum SplatSpikeDebug {
-    static let launchIntoSpike = true
+    static let launchIntoSpike = false
 
     /// Bundled spike asset (file name without extension). Downloaded from the
     /// existing world a236ea24 (500k variant). Spike-only; not a shipping asset.
@@ -25,10 +25,12 @@ import MetalSplatter
 import SplatIO
 import os
 
-/// SwiftUI wrapper around the Metal splat viewer. Owns the `WorldCameraRig` and
+/// Walkable splat viewer for a local `.spz` file. Owns the `WorldCameraRig` and
 /// `GamepadManager` so touch gestures and the renderer's per-frame gamepad poll
 /// mutate the same first-person rig (same pattern as `USDZTestView`).
-struct SplatSpikeView: View {
+struct SplatSceneView: View {
+    let splatFileURL: URL
+
     @State private var rig = WorldCameraRig()
     @State private var gamepad = GamepadManager()
     @State private var lastDrag: CGSize = .zero
@@ -37,7 +39,7 @@ struct SplatSpikeView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            SplatMetalView(rig: rig, gamepad: gamepad)
+            SplatMetalView(rig: rig, gamepad: gamepad, splatFileURL: splatFileURL)
                 .ignoresSafeArea()
                 .gesture(lookGesture)
                 .simultaneousGesture(dollyGesture)
@@ -82,7 +84,7 @@ struct SplatSpikeView: View {
 
             Text(gamepad.isConnected
                  ? "Left stick move · right stick look · R2/L2 up/down · ○ reset"
-                 : "Drag to look · pinch to move · \(SplatSpikeDebug.bundledSplat).spz")
+                 : "Drag to look · pinch to move")
                 .font(.footnote)
                 .foregroundStyle(.white.opacity(0.7))
                 .padding(.bottom, 20)
@@ -90,13 +92,76 @@ struct SplatSpikeView: View {
     }
 }
 
+/// DEV-only standalone entry (`SplatSpikeDebug.launchIntoSpike`) — renders the
+/// bundled spike asset. The real app reaches walkable worlds via `SplatWorldView`.
+struct SplatSpikeView: View {
+    var body: some View {
+        if let url = Bundle.main.url(forResource: SplatSpikeDebug.bundledSplat, withExtension: "spz") {
+            SplatSceneView(splatFileURL: url)
+        } else {
+            Text("Bundled \(SplatSpikeDebug.bundledSplat).spz not found").padding()
+        }
+    }
+}
+
+/// Downloads a World Labs `.spz` from its public CDN URL (reusing a prior download
+/// in the caches dir), then shows the walkable scene. Used by the world phase when
+/// the user switches to "walkable".
+struct SplatWorldView: View {
+    let remoteURL: URL
+
+    @State private var localURL: URL?
+    @State private var failed = false
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            if let localURL {
+                SplatSceneView(splatFileURL: localURL)
+            } else if failed {
+                Text("Couldn't load the walkable world.")
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.8))
+            } else {
+                VStack(spacing: 14) {
+                    ProgressView().tint(.white)
+                    Text("Loading walkable world…")
+                        .font(.footnote)
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+            }
+        }
+        .task(id: remoteURL) {
+            do { localURL = try await SplatDownloader.fetch(remoteURL) }
+            catch { failed = true }
+        }
+    }
+}
+
+/// Caches a downloaded `.spz` so re-entering "walkable" doesn't re-download.
+enum SplatDownloader {
+    static func fetch(_ remote: URL) async throws -> URL {
+        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        let dest = caches.appendingPathComponent("worldlabs-\(remote.lastPathComponent)")
+        if FileManager.default.fileExists(atPath: dest.path) { return dest }
+        let (tmp, response) = try await URLSession.shared.download(from: remote)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            throw URLError(.badServerResponse)
+        }
+        try? FileManager.default.removeItem(at: dest)
+        try FileManager.default.moveItem(at: tmp, to: dest)
+        return dest
+    }
+}
+
 /// Bridges an `MTKView` + `SplatSpikeRenderer` into SwiftUI.
 private struct SplatMetalView: UIViewRepresentable {
     let rig: WorldCameraRig
     let gamepad: GamepadManager
+    let splatFileURL: URL
 
     func makeCoordinator() -> SplatSpikeRenderer {
-        SplatSpikeRenderer(rig: rig, gamepad: gamepad)
+        SplatSpikeRenderer(rig: rig, gamepad: gamepad, splatFileURL: splatFileURL)
     }
 
     func makeUIView(context: Context) -> MTKView {
@@ -122,6 +187,7 @@ final class SplatSpikeRenderer: NSObject, MTKViewDelegate {
 
     private let rig: WorldCameraRig
     private let gamepad: GamepadManager
+    private let splatFileURL: URL
 
     private var device: MTLDevice!
     private var commandQueue: MTLCommandQueue!
@@ -138,9 +204,10 @@ final class SplatSpikeRenderer: NSObject, MTKViewDelegate {
     private var lastTimestamp: CFTimeInterval?
     private var drawableSize: CGSize = .zero
 
-    init(rig: WorldCameraRig, gamepad: GamepadManager) {
+    init(rig: WorldCameraRig, gamepad: GamepadManager, splatFileURL: URL) {
         self.rig = rig
         self.gamepad = gamepad
+        self.splatFileURL = splatFileURL
         super.init()
     }
 
@@ -164,10 +231,7 @@ final class SplatSpikeRenderer: NSObject, MTKViewDelegate {
     }
 
     private func load() async {
-        guard let url = Bundle.main.url(forResource: SplatSpikeDebug.bundledSplat, withExtension: "spz") else {
-            Self.log.error("Bundled .spz not found: \(SplatSpikeDebug.bundledSplat).spz")
-            return
-        }
+        let url = splatFileURL
         do {
             let renderer = try SplatRenderer(device: device,
                                              colorFormat: .bgra8Unorm_srgb,
