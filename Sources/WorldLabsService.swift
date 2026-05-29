@@ -86,16 +86,43 @@ final class WorldLabsService {
             }
 
             if op.done == true {
-                guard let pano = op.response?.assets?.imagery?.pano_url,
-                      let url = URL(string: pano) else {
-                    throw SpikeError.message("World finished but no panorama URL was returned.")
+                // Operation snapshot may have null pano_url for draft model.
+                // Fall back to GET /worlds/{world_id} which reflects current asset state.
+                if let pano = op.response?.assets?.imagery?.pano_url,
+                   let url = URL(string: pano) {
+                    return url
                 }
-                return url
+                guard let worldId = op.metadata?.world_id else {
+                    throw SpikeError.message("World finished but no pano_url and no world_id in metadata.")
+                }
+                return try await fetchPanoURL(worldId: worldId)
             }
 
-            status = .generating(progress: op.metadata?.progress_percentage ?? 0)
+            let pct = op.metadata?.progress?.status == "SUCCEEDED" ? 100
+                : (op.metadata?.progress?.status == "IN_PROGRESS" ? 50 : 0)
+            status = .generating(progress: pct)
         }
         throw SpikeError.message("Timed out waiting for world generation.")
+    }
+
+    // MARK: - Fetch pano from worlds endpoint
+
+    /// GET /worlds/{worldId} returns top-level `assets` with current pano_url,
+    /// which may be populated after the operation completes. Retries briefly.
+    private func fetchPanoURL(worldId: String) async throws -> URL {
+        for attempt in 1...5 {
+            if attempt > 1 { try await Task.sleep(for: .seconds(5)) }
+            var request = URLRequest(url: URL(string: "\(base)/worlds/\(worldId)")!)
+            request.setValue(apiKey, forHTTPHeaderField: "WLT-Api-Key")
+            let (data, response) = try await URLSession.shared.data(for: request)
+            try ensureOK(response, data: data)
+            let decoded = try JSONDecoder().decode(WorldGetResponse.self, from: data)
+            if let pano = decoded.assets?.imagery?.pano_url,
+               let url = URL(string: pano) {
+                return url
+            }
+        }
+        throw SpikeError.message("Panorama URL not available after retries.")
     }
 
     // MARK: - Download
@@ -149,7 +176,17 @@ private struct OperationResponse: Decodable {
     let response: WorldObject?
 
     struct ErrorInfo: Decodable { let code: String?; let message: String? }
-    struct Metadata: Decodable { let progress_percentage: Int?; let world_id: String? }
+    struct Metadata: Decodable {
+        let world_id: String?
+        let progress: ProgressInfo?
+        struct ProgressInfo: Decodable { let status: String? }
+    }
+}
+
+private struct WorldGetResponse: Decodable {
+    // Top-level "assets" from GET /worlds/{id} reflects current state.
+    // NOT response.assets — that is a stale operation snapshot.
+    let assets: WorldObject.Assets?
 }
 
 private struct WorldObject: Decodable {

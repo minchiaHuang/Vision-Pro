@@ -1,5 +1,6 @@
 import SwiftUI
 import Observation
+import UIKit
 
 /// App 流程的階段。
 enum AppPhase {
@@ -15,6 +16,10 @@ final class AppState {
     var phase: AppPhase = .splash
     var answers = QuizAnswers()
     var world: World?
+
+    /// Runtime panorama from World Labs (not a bundled asset). When set, the world
+    /// views render this image instead of `world.imageName`.
+    var generatedPano: UIImage?
 
     /// quiz 答完 → 進 loading → 解析世界 → 進 world。
     func finishQuiz() {
@@ -33,6 +38,7 @@ final class AppState {
     func restart() {
         answers = QuizAnswers()
         world = nil
+        generatedPano = nil
         phase = .splash
     }
 }

@@ -77,7 +77,7 @@ struct iOSWorldView: View {
 
             ZStack {
                 if let world = appState.world {
-                    Immersive360View(world: world)
+                    Immersive360View(world: world, overrideImage: appState.generatedPano)
                         .ignoresSafeArea()
                 }
 

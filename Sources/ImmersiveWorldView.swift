@@ -9,19 +9,23 @@ struct ImmersiveWorldView: View {
 
     var body: some View {
         RealityView { content in
-            let sphere = await makeSkySphere(imageName: appState.world?.imageName ?? WorldCatalog.fallback.imageName)
+            let sphere = await makeSkySphere(
+                override: appState.generatedPano,
+                imageName: appState.world?.imageName ?? WorldCatalog.fallback.imageName
+            )
             content.add(sphere)
         }
     }
 
-    private func makeSkySphere(imageName: String) async -> Entity {
+    /// Prefers a runtime panorama (e.g. World Labs) when present, else the bundled asset.
+    private func makeSkySphere(override: UIImage?, imageName: String) async -> Entity {
         let mesh = MeshResource.generateSphere(radius: 1000)
         var material = UnlitMaterial()
 
-        if let cgImage = UIImage(named: imageName)?.cgImage,
+        if let cgImage = (override ?? UIImage(named: imageName))?.cgImage,
            let texture = try? await TextureResource(
             image: cgImage,
-            withName: imageName,
+            withName: nil,
             options: .init(semantic: .color)
            ) {
             material.color = .init(tint: .white, texture: .init(texture))
