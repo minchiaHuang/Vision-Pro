@@ -27,6 +27,11 @@ final class AppState {
     var generatedSplatURL: URL?
     var generatedWorldId: String?
 
+    /// 隱藏連續分數（研究方向 6 底層）與映射出的世界參數（方向 7）。
+    /// Phase 3 起算出並保存；Phase 2 起由顯示層消費 `worldParams`。
+    var axisScores: AxisScores?
+    var worldParams: WorldParams?
+
     /// quiz 答完 → 進 loading → 解析世界 → 進 world。
     func finishQuiz() {
         phase = .loading
@@ -34,6 +39,11 @@ final class AppState {
             // 模擬「生成世界」的過場（v2 這裡會是真的 API 呼叫）
             try? await Task.sleep(for: .seconds(2))
             await MainActor.run {
+                // 研究方向 6→7：先算隱藏連續分數，再映射成世界參數。
+                let scores = Scorer.score(self.answers)
+                self.axisScores = scores
+                self.worldParams = WorldMapper.map(scores)
+                // 顯示仍暫由 v1 查表驅動；Phase 2 改由 worldParams 驅動 USDZ 世界。
                 self.world = WorldCatalog.resolve(from: self.answers)
                 self.phase = .world
             }
@@ -44,6 +54,8 @@ final class AppState {
     func restart() {
         answers = QuizAnswers()
         world = nil
+        axisScores = nil
+        worldParams = nil
         generatedPano = nil
         generatedSplatURL = nil
         generatedWorldId = nil
