@@ -9,7 +9,7 @@ import GameController
 // bypassing the splash / quiz / world flow. Set back to `false` before any
 // real demo or submit so the normal experience returns.
 enum USDZDebug {
-    static let launchIntoTest = true
+    static let launchIntoTest = false
 
     /// USDZ resources bundled with the app (file name without extension).
     static let models = [
@@ -64,10 +64,32 @@ final class WorldCameraRig {
         initialPitch = 0
     }
 
+    /// Camera-less setup for renderers that consume a view matrix directly (e.g. the
+    /// MetalSplatter splat path) instead of a RealityKit `PerspectiveCamera`.
+    func configure(position: SIMD3<Float>, span: Float) {
+        self.camera = nil
+        self.position = position
+        self.span = span
+        self.yaw = 0
+        self.pitch = 0
+        initialPosition = position
+        initialYaw = 0
+        initialPitch = 0
+    }
+
     func apply() {
         camera?.position = position
         camera?.orientation = simd_quatf(angle: yaw, axis: [0, 1, 0])
             * simd_quatf(angle: pitch, axis: [1, 0, 0])
+    }
+
+    /// World→view matrix for the splat renderer: the inverse of the camera's world
+    /// transform `T(position) · R(yaw,pitch)`. Same orientation convention as `apply()`.
+    func viewMatrix() -> simd_float4x4 {
+        let r = simd_quatf(angle: yaw, axis: [0, 1, 0]) * simd_quatf(angle: pitch, axis: [1, 0, 0])
+        var world = matrix_float4x4(r)
+        world.columns.3 = SIMD4(position, 1)
+        return simd_inverse(world)
     }
 
     /// Integrates one frame of gamepad input. No-op (apply still runs) when no

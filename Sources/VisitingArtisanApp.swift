@@ -26,6 +26,8 @@ struct VisitingArtisanApp: App {
             Group {
                 if USDZDebug.launchIntoTest {
                     USDZTestView()
+                } else if SplatSpikeDebug.launchIntoSpike {
+                    SplatSpikeView()
                 } else {
                     RootView()
                 }
