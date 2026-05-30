@@ -18,7 +18,7 @@ xcuserdata/
 .build/
 .swiftpm/
 
-# CocoaPods / Carthage (若之後用到)
+# CocoaPods / Carthage (if used later)
 Pods/
 Carthage/Build/
 

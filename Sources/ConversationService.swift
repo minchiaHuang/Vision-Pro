@@ -183,7 +183,7 @@ final class ConversationService {
         #endif
     }
 
-    // MARK: - Grounded system prompt (research 方向 4 tone)
+    // MARK: - Grounded system prompt (research direction 4 tone)
 
     private static func makeSystemPrompt(world: World, scores: AxisScores,
                                          params: WorldParams, hopeFreeText: String) -> String {

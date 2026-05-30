@@ -2,7 +2,7 @@ import SwiftUI
 import Observation
 import UIKit
 
-/// App 流程的階段。
+/// Stages of the app flow.
 enum AppPhase {
     case splash
     case quiz
@@ -10,7 +10,7 @@ enum AppPhase {
     case world
 }
 
-/// 全域狀態（quiz 答案、決定出來的世界、目前在哪一步）。
+/// Global state (quiz answers, the resolved world, and the current step).
 @Observable
 final class AppState {
     var phase: AppPhase = .splash
@@ -27,30 +27,33 @@ final class AppState {
     var generatedSplatURL: URL?
     var generatedWorldId: String?
 
-    /// 隱藏連續分數（研究方向 6 底層）與映射出的世界參數（方向 7）。
-    /// Phase 3 起算出並保存；Phase 2 起由顯示層消費 `worldParams`。
+    /// Hidden continuous scores (the bottom layer of research direction 6) and the world
+    /// parameters they map to (direction 7). Computed and stored from Phase 3 on; the
+    /// display layer consumes `worldParams` from Phase 2 on.
     var axisScores: AxisScores?
     var worldParams: WorldParams?
 
-    /// quiz 答完 → 進 loading → 解析世界 → 進 world。
+    /// Quiz done -> loading -> resolve the world -> enter the world.
     func finishQuiz() {
         phase = .loading
         Task {
-            // 模擬「生成世界」的過場（v2 這裡會是真的 API 呼叫）
+            // Simulate the "generating world" transition (v2: this becomes a real API call).
             try? await Task.sleep(for: .seconds(2))
             await MainActor.run {
-                // 研究方向 6→7：先算隱藏連續分數，再映射成世界參數。
+                // Research direction 6->7: compute the hidden continuous scores first,
+                // then map them into world parameters.
                 let scores = Scorer.score(self.answers)
                 self.axisScores = scores
                 self.worldParams = WorldMapper.map(scores)
-                // title/blurb 從 archetype 衍生，確保 overlay 文字與 USDZ 場景一致。
+                // title/blurb are derived from the archetype, keeping the overlay text
+                // consistent with the USDZ scene.
                 self.world = WorldCatalog.world(for: self.worldParams!.archetype)
                 self.phase = .world
             }
         }
     }
 
-    /// 重新開始。
+    /// Restart from the beginning.
     func restart() {
         answers = QuizAnswers()
         world = nil

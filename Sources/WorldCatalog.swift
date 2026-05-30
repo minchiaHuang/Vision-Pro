@@ -49,7 +49,7 @@ enum WorldCatalog {
     }
 }
 
-// MARK: - Continuous scoring + mapping (research 方向 6 → 方向 7)
+// MARK: - Continuous scoring + mapping (research direction 6 → direction 7)
 
 /// Turns the research 4+1 axis quiz answers into the hidden continuous `AxisScores`.
 /// Each axis is the mean of its 3 this-or-that sliders (each already 0...1).
@@ -73,13 +73,13 @@ enum Scorer {
 }
 
 /// Maps the hidden `AxisScores` to concrete `WorldParams` for the display layer.
-/// Values follow the research 方向 7 mapping table; tune the constants freely.
+/// Values follow the research direction 7 mapping table; tune the constants freely.
 enum WorldMapper {
     static func map(_ s: AxisScores) -> WorldParams {
         let calm = clamp01(s.calmVivid)
-        // 軸2: explore = open, stable = enclosed. Clamp so the world is NEVER
+        // axis 2: explore = open, stable = enclosed. Clamp so the world is NEVER
         // fully open (always one refuge) nor fully sealed (always one opening)
-        // — research 方向 7 鐵則.
+        // — an iron rule of the research direction 7 mapping.
         let openness = clamp(1 - s.exploreStable, low: 0.15, high: 0.95)
         let biophilic = lerp(0.3, 1.0, clamp01(s.expressionConnection))
 

@@ -1,10 +1,10 @@
 import Foundation
 
-/// Research 4+1 axis quiz data (研究方向 3: PVQ portrait / this-or-that / hope direction).
-/// Questions use autonomy-supportive language (研究方向 4): no "should/must", both poles positive.
+/// Research 4+1 axis quiz data (research direction 3: PVQ portrait / this-or-that / hope direction).
+/// Questions use autonomy-supportive language (research direction 4): no "should/must", both poles positive.
 enum QuizData {
 
-    // MARK: - Axis 1: 自主 ↔ 歸屬 (Q1–Q3)
+    // MARK: - Axis 1: autonomy <-> belonging (Q1–Q3)
 
     static let axis1: [ThisOrThat] = [
         ThisOrThat(
@@ -27,7 +27,7 @@ enum QuizData {
         ),
     ]
 
-    // MARK: - Axis 2: 探索 ↔ 穩定 (Q4–Q6)
+    // MARK: - Axis 2: explore <-> stable (Q4–Q6)
 
     static let axis2: [ThisOrThat] = [
         ThisOrThat(
@@ -50,7 +50,7 @@ enum QuizData {
         ),
     ]
 
-    // MARK: - Axis 3: 自我表達 ↔ 集體連結 (Q7–Q9)
+    // MARK: - Axis 3: self-expression <-> collective connection (Q7–Q9)
 
     static let axis3: [ThisOrThat] = [
         ThisOrThat(
@@ -73,7 +73,7 @@ enum QuizData {
         ),
     ]
 
-    // MARK: - Axis 4: 平靜 ↔ 生機 (Q10–Q12, state axis)
+    // MARK: - Axis 4: calm <-> vivid (Q10–Q12, state axis)
 
     static let axis4: [ThisOrThat] = [
         ThisOrThat(
@@ -107,7 +107,7 @@ enum QuizData {
         "What are you reaching for right now?",
     ]
 
-    // MARK: - Q14: Hope direction (軸5, non-bipolar)
+    // MARK: - Q14: Hope direction (axis 5, non-bipolar)
 
     /// Four directions mapped 1-to-1 to `HopeDirection` cases in `Scorer`.
     static let hopeOptions: [ChoiceOption] = [

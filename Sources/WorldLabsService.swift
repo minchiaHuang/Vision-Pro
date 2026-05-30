@@ -24,7 +24,7 @@ final class WorldLabsService {
     private(set) var worldId: String?
     private(set) var splatRemoteURL: URL?
 
-    private let splatResolution = "100k"   //体積/品質平衡;按需下載
+    private let splatResolution = "100k"   // volume/quality balance; downloaded on demand
     private let apiKey = Secrets.worldLabsAPIKey
     private let base = "https://api.worldlabs.ai/marble/v1"
     private let model = "marble-1.0-draft"

@@ -263,7 +263,7 @@ private func colorFromKelvin(_ kelvin: Float) -> UIColor {
 }
 
 /// Returns evenly-spaced glow-orb ModelEntities on the scene's floor perimeter.
-/// `count == 0` returns empty (no companions). Used for 軸1 social density.
+/// `count == 0` returns empty (no companions). Used for axis 1 social density.
 private func companionOrbs(count: Int, bounds: BoundingBox, span: Float) -> [ModelEntity] {
     guard count > 0 else { return [] }
     let perimeter = max(bounds.extents.x, bounds.extents.z) * 0.45
@@ -285,8 +285,8 @@ private func companionOrbs(count: Int, bounds: BoundingBox, span: Float) -> [Mod
 
 /// Production walk-in world driven by `WorldParams`.
 /// Loads the USDZ for `params.archetype`, then tunes:
-///   - 軸4: DirectionalLight intensity + color temperature + saturation overlay
-///   - 軸1: ambient companion orbs (social density)
+///   - axis 4: DirectionalLight intensity + color temperature + saturation overlay
+///   - axis 1: ambient companion orbs (social density)
 /// Drag to look, pinch to move, ○ to reset (PS5/DualSense). Reuses `WorldCameraRig`.
 struct ParametricWorldView: View {
     let params: WorldParams
@@ -337,7 +337,7 @@ struct ParametricWorldView: View {
                                       bounds.center.y + bounds.extents.y * 0.15,
                                       bounds.center.z)
 
-                // 軸4: three directional lights with intensity + color temperature.
+                // axis 4: three directional lights with intensity + color temperature.
                 let warmth = colorFromKelvin(ep.colorTemperature)
                 for (dir, mult): (SIMD3<Float>, Float) in [
                     ([1, 1, 1], 1.0), ([-1, 0.6, -0.6], 0.55), ([0, 0.4, 1], 0.35)
@@ -349,7 +349,7 @@ struct ParametricWorldView: View {
                     content.add(light)
                 }
 
-                // 軸1: companion orbs placed on the floor perimeter.
+                // axis 1: companion orbs placed on the floor perimeter.
                 for orb in companionOrbs(count: ep.socialDensity, bounds: bounds, span: span) {
                     content.add(orb)
                 }
@@ -386,7 +386,7 @@ struct ParametricWorldView: View {
                 .onEnded { _ in lastMag = 1 })
             .ignoresSafeArea()
 
-            // 軸4: saturation — SwiftUI grey overlay on top of RealityKit scene.
+            // axis 4: saturation — SwiftUI grey overlay on top of RealityKit scene.
             // saturation 1.1 (vivid) → opacity ≈ 0 (full color)
             // saturation 0.5 (calm)  → opacity = 0.5 (noticeably desaturated)
             Color.gray

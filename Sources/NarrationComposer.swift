@@ -4,7 +4,7 @@ import Foundation
 /// user first steps into their world. Pure text, no I/O, so it is trivially
 /// unit-testable.
 ///
-/// Design (research 方向 4 tone): warm and invitational, never evaluative.
+/// Design (research direction 4 tone): warm and invitational, never evaluative.
 /// It explains the world by tracing each visible feature back to what the user
 /// leaned toward — framing every lean as a *direction*, not a deficiency. It
 /// reads only the hidden `AxisScores` + hope direction; the open-ended free text
@@ -47,7 +47,7 @@ enum NarrationComposer {
                     ? "You leaned toward space of your own, so I kept the world unhurried and uncrowded — room that's simply yours."
                     : "You leaned toward closeness, so soft companions glow nearby, enough to feel held."),
 
-            // 軸2: explore ↔ stable maps to openness (explore = open, stable = sheltered).
+            // axis 2: explore <-> stable maps to openness (explore = open, stable = sheltered).
             Lean(salience: abs(s.exploreStable - 0.5), order: 2,
                  sentence: s.exploreStable < 0.5
                     ? "You leaned toward wandering, so the horizon opens wide, with a path that invites you onward."
@@ -65,7 +65,7 @@ enum NarrationComposer {
         ]
     }
 
-    // MARK: - Hope direction (軸5) — the trajectory, never a verdict on now.
+    // MARK: - Hope direction (axis 5) — the trajectory, never a verdict on now.
 
     private static func hopeSentence(_ hope: HopeDirection) -> String {
         let direction: String

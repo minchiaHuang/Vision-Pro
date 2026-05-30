@@ -12,8 +12,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 }
 #endif
 
-/// App 進入點。
-/// ⚠️ 這支取代 Xcode 預設產生的 VisitingArtisanApp.swift（把內容貼過去）。
+/// App entry point.
+/// ⚠️ This replaces the VisitingArtisanApp.swift that Xcode generates by default
+/// (paste this content over it).
 @main
 struct VisitingArtisanApp: App {
     #if os(iOS)
@@ -36,7 +37,7 @@ struct VisitingArtisanApp: App {
         }
 
         #if os(visionOS)
-        // visionOS 專用：真沉浸的 ImmersiveSpace
+        // visionOS only: the truly immersive ImmersiveSpace
         ImmersiveSpace(id: "world") {
             ImmersiveWorldView()
                 .environment(appState)
