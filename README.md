@@ -41,6 +41,71 @@ Vision-Pro/
 └── Sources/           ← Swift source used by the Xcode target
 ```
 
+## Data model
+
+> The app has **no persistent database** — state lives in memory for a single session
+> (`AppState`). The diagram below is an entity view of the core Swift types and the
+> quiz → world pipeline that transforms them.
+
+```mermaid
+erDiagram
+    THIS_OR_THAT {
+        string id
+        string question
+        string leftLabel
+        string rightLabel
+    }
+    CHOICE_OPTION {
+        string id
+        string label
+        string symbol
+    }
+    QUIZ_ANSWERS {
+        double sliders "12 values, 0..1 (left..right pole)"
+        string hope "ownPath | people | explore | stable"
+        string hopeFreeText "optional"
+    }
+    AXIS_SCORES {
+        double autonomyBelonging
+        double exploreStable
+        double expressionConnection
+        double calmVivid
+        enum hope "HopeDirection"
+    }
+    WORLD_PARAMS {
+        enum archetype "openNature | cozyCommunal | solitaryPath"
+        float lightIntensity
+        float colorTemperature
+        double saturation
+        int socialDensity
+        double openness
+        double biophilicDensity
+        enum focal "HopeDirection"
+    }
+    WORLD {
+        string id
+        string title
+        string imageName
+        string imageURL "optional (v2 remote)"
+        string blurb
+    }
+    APP_STATE {
+        enum phase "splash | quiz | loading | world"
+    }
+
+    THIS_OR_THAT }o--|| QUIZ_ANSWERS : "12 sliders feed"
+    CHOICE_OPTION }o--|| QUIZ_ANSWERS : "hope choice feeds"
+    QUIZ_ANSWERS ||--|| AXIS_SCORES : "Scorer.score()"
+    AXIS_SCORES ||--|| WORLD_PARAMS : "WorldMapper.map()"
+    WORLD_PARAMS ||--|| WORLD : "WorldCatalog.world(for:)"
+    APP_STATE ||--|| QUIZ_ANSWERS : holds
+    APP_STATE ||--o| AXIS_SCORES : derives
+    APP_STATE ||--o| WORLD_PARAMS : derives
+    APP_STATE ||--o| WORLD : resolves
+```
+
+Pipeline in one line: **`QuizData` questions → `QuizAnswers` → `Scorer` → `AxisScores` → `WorldMapper` → `WorldParams` → `WorldCatalog` → `World`** (see `Sources/Models.swift` and `Sources/WorldCatalog.swift`).
+
 ## Getting started
 
 See [SETUP.md](SETUP.md) — open `VisitingArtisan.xcodeproj` and run.
