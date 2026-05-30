@@ -102,14 +102,27 @@ struct WarmBackground: View {
 
 // MARK: - Orb
 
-/// Glowing amber orb used on splash and loading ("Weaving") screens.
+/// Glowing amber orb used on splash and loading ("Weaving") screens, and as the
+/// world's voice-companion mascot. `isSpeaking` makes it breathe stronger and
+/// glow warmer (the guide is talking); `isListening` adds a cool cyan ring (the
+/// guide is hearing the visitor). Both default off, so existing call sites are
+/// unaffected.
 struct OrbView: View {
     var size: CGFloat = 180
+    var isSpeaking: Bool = false
+    var isListening: Bool = false
     @State private var pulse = false
     @State private var spin = false
 
     var body: some View {
         ZStack {
+            // Listening ring — cool cyan, only while hearing the visitor.
+            Circle()
+                .strokeBorder(Color.cyan.opacity(isListening ? 0.8 : 0), lineWidth: 2)
+                .frame(width: size * 1.45, height: size * 1.45)
+                .scaleEffect(isListening ? (pulse ? 1.06 : 0.98) : 1.0)
+                .animation(.easeInOut(duration: 0.5), value: isListening)
+
             Circle()
                 .strokeBorder(VATheme.amber.opacity(0.35), lineWidth: 0.5)
                 .frame(width: size * 1.45, height: size * 1.45)
@@ -124,8 +137,10 @@ struct OrbView: View {
                     )
                 )
                 .frame(width: size, height: size)
-                .shadow(color: VATheme.amber.opacity(0.45), radius: 40)
-                .scaleEffect(pulse ? 1.04 : 1.0)
+                .shadow(color: VATheme.amber.opacity(isSpeaking ? 0.7 : 0.45),
+                        radius: isSpeaking ? 56 : 40)
+                .scaleEffect(pulse ? (isSpeaking ? 1.12 : 1.04) : 1.0)
+                .animation(.easeInOut(duration: 0.4), value: isSpeaking)
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) {

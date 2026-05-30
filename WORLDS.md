@@ -1,25 +1,26 @@
-# v1 — 生成 3 張預先準備的 360° 世界圖
+# v1 — Producing the 3 pre-baked 360° world images
 
-> v1 不接 API，用手動生好的 360° 圖打包進 app。
-> 關鍵：圖必須是 **equirectangular（等距長方）格式，長寬比 2:1**，才能正確貼在球體上。
+> v1 does not call any API; it bundles manually generated 360° images into the app.
+> Key constraint: each image must be **equirectangular format with a 2:1 aspect ratio**,
+> so it maps correctly onto the sphere.
 
 ---
 
-## 要生成的 3 張（對應 WorldCatalog.swift）
+## The 3 images to produce (matching WorldCatalog.swift)
 
-| Assets 圖名 | 世界 | Quiz 觸發（cultural + physical） |
+| Asset name | World | Quiz trigger (cultural + physical) |
 |---|---|---|
-| `world_calm_communal` | 溫暖共處空間（不空、有連結感） | communal / home |
-| `world_open_nature` | 開闊自然（山、海、留白） | nature / explore / active |
-| `world_quiet_solitary` | 安靜獨處空間（留白、靜） | still / rest |
+| `world_calm_communal` | Warm communal space (not empty, a sense of connection) | communal / home |
+| `world_open_nature` | Open nature (mountains, sea, breathing room) | nature / explore / active |
+| `world_quiet_solitary` | Quiet solitary space (negative space, stillness) | still / rest |
 
 ---
 
-## 方法 A — Skybox AI（推薦，免費 tier，原生 equirectangular）
+## Method A — Skybox AI (recommended; free tier, natively equirectangular)
 
-1. 開 https://skybox.blockadelabs.com/
-2. 註冊免費帳號
-3. 每張用對應 prompt 生成：
+1. Open https://skybox.blockadelabs.com/
+2. Sign up for a free account
+3. Generate each image with the matching prompt:
 
 **world_calm_communal**
 ```
@@ -39,32 +40,36 @@ A quiet solitary space, still water, soft diffused light, minimal and calm,
 nothing to prove, peaceful emptiness, equirectangular 360 panorama
 ```
 
-4. 下載每張（Skybox 輸出本來就是 2:1 equirectangular）→ 重新命名成上表的圖名
+4. Download each one (Skybox output is already 2:1 equirectangular) and rename it to the
+   asset name in the table above.
 
 ---
 
-## 方法 B — 其他工具（備案）
+## Method B — Other tools (fallback)
 
-| 工具 | 備註 |
+| Tool | Notes |
 |---|---|
-| https://www.blockadelabs.com（同上） | 最直接，原生 360° |
-| Midjourney `--ar 2:1` + 加 "equirectangular 360 panorama" | 比例對，但接縫可能不完美 |
-| Poly / 既有 HDRI 素材庫 | 真實 360°，但非個人化 |
+| https://www.blockadelabs.com (same as above) | Most direct; natively 360° |
+| Midjourney `--ar 2:1` + adding "equirectangular 360 panorama" | Correct ratio, but seams may not be perfect |
+| Poly / existing HDRI asset libraries | Truly 360°, but not personalised |
 
-⚠️ 一般 Midjourney/DALL-E 直出的圖**不是真 equirectangular**，貼到球體上接縫和極點會變形。優先用 Skybox AI。
-
----
-
-## 放進 Xcode
-
-1. 開 `Assets.xcassets`
-2. 把 3 張圖拖進去
-3. 圖名必須**完全等於**：`world_calm_communal`、`world_open_nature`、`world_quiet_solitary`
-4. ⌘R 跑起來測試
+⚠️ Images produced directly by typical Midjourney/DALL-E **are not true equirectangular**;
+they distort at the seam and poles when mapped onto a sphere. Prefer Skybox AI.
 
 ---
 
-## 還沒生圖也能跑
+## Adding them to Xcode
 
-`Immersive360View` / `ImmersiveWorldView` 找不到圖時會 fallback 成深灰球體，
-所以你可以**先跑通整個 flow**（splash → quiz → loading → 世界環視），再補圖。
+1. Open `Assets.xcassets`
+2. Drag the 3 images in
+3. The asset names must **exactly equal**: `world_calm_communal`, `world_open_nature`,
+   `world_quiet_solitary`
+4. Press ⌘R to run and test
+
+---
+
+## You can run before generating the images
+
+When `Immersive360View` / `ImmersiveWorldView` can't find an image, it falls back to a dark
+grey sphere, so you can **get the whole flow working first** (splash → quiz → loading →
+looking around the world) and add the images later.

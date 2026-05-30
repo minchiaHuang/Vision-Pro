@@ -1,18 +1,30 @@
 import Foundation
 
-/// 五題混合題型的作答結果。
-/// energy/minutes 有預設值；need/help/week 需使用者選擇。
-struct QuizAnswers {
-    var energy: Double = 0.45      // Q1 slider: 0 = stillness, 1 = energy
-    var need: String? = nil        // Q2 image grid: quiet/connection/movement/creativity
-    var help: String? = nil        // Q3 icon grid: alone/talk/move/make
-    var week: String? = nil        // Q4 image grid: exam/sleep/home/focus
-    var minutes: Int = 10          // Q5 time row
-
-    var isComplete: Bool { need != nil && help != nil && week != nil }
+/// One this-or-that slider question (both poles are positive — no bad answer).
+/// Left pole = score 0, right pole = score 1.
+struct ThisOrThat: Identifiable {
+    let id: String
+    let question: String
+    let leftLabel: String
+    let rightLabel: String
 }
 
-/// 單選題的一個選項。`image` 為對應的世界 asset 名（圖卡用），`symbol` 為 SF Symbol（icon 卡用）。
+/// Answers from the 4+1 axis quiz (research direction 3).
+struct QuizAnswers {
+    /// 12 this-or-that slider values, 0...1 (0 = left pole, 1 = right pole).
+    /// Index groups: [0-2] = axis1 autonomy<->belonging, [3-5] = axis2 explore<->stable,
+    ///               [6-8] = axis3 expression<->connection, [9-11] = axis4 calm<->vivid.
+    var sliders: [Double] = Array(repeating: 0.5, count: 12)
+    /// Q14 hope direction — option id string ("ownPath" / "people" / "explore" / "stable").
+    var hope: String? = nil
+    /// Q15 free text — optional; used for world naming / atmosphere micro-tuning.
+    var hopeFreeText: String = ""
+
+    var isComplete: Bool { hope != nil }
+}
+
+/// One option of a single-choice question. `image` is the matching world asset name
+/// (for image cards); `symbol` is an SF Symbol (for icon cards).
 struct ChoiceOption: Identifiable, Hashable {
     let id: String
     let label: String
@@ -20,13 +32,13 @@ struct ChoiceOption: Identifiable, Hashable {
     var symbol: String? = nil
 }
 
-/// 一個生成（v1 為預先準備）的沉浸式世界。
+/// A generated immersive world (pre-baked in v1).
 struct World: Identifiable {
     let id: String
-    let title: String       // 顯示在世界裡的一句話
-    let imageName: String   // v1：打包進 Assets 的 360° 圖名稱
-    let imageURL: URL?      // v2：API 回傳的遠端圖
-    let blurb: String       // 補充說明
+    let title: String       // A one-line phrase shown inside the world
+    let imageName: String   // v1: name of the 360° image bundled in Assets
+    let imageURL: URL?      // v2: remote image returned by the API
+    let blurb: String       // Supporting description
 
     init(id: String, title: String, imageName: String, imageURL: URL? = nil, blurb: String = "") {
         self.id = id
@@ -35,4 +47,63 @@ struct World: Identifiable {
         self.imageURL = imageURL
         self.blurb = blurb
     }
+}
+
+// MARK: - Self-alignment scores (research direction 6: the hidden continuous layer)
+
+/// The direction the user wants to grow toward (research axis 5, non-bipolar).
+/// Drives the world's distant focal point — never a good/bad score.
+enum HopeDirection {
+    case ownPath    // More at ease being yourself
+    case people     // Closer to other people
+    case explore    // Braver about exploring
+    case stable     // More grounded and settled
+}
+
+/// The hidden bottom layer: where the user sits on each 4+1 axis.
+/// Bipolar axes are 0...1 (0 = left pole, 1 = right pole — see comments).
+/// Fed to `WorldMapper.map` to produce `WorldParams` (research direction 7).
+struct AxisScores {
+    var autonomyBelonging: Double    // axis 1  0 = autonomy, 1 = belonging
+    var exploreStable: Double        // axis 2  0 = explore, 1 = stable
+    var expressionConnection: Double // axis 3  0 = self-expression, 1 = collective connection
+    var calmVivid: Double            // axis 4 (state) 0 = calm, 1 = vivid
+    var hope: HopeDirection          // axis 5  direction vector
+
+    static let neutral = AxisScores(
+        autonomyBelonging: 0.5, exploreStable: 0.5,
+        expressionConnection: 0.5, calmVivid: 0.5, hope: .ownPath
+    )
+}
+
+/// Coarse base world chosen from the structural axes. Research keeps a few
+/// authored base structures and varies appearance continuously on top, rather
+/// than a fixed preset per personality. Maps to a bundled USDZ.
+enum WorldArchetype {
+    case openNature     // Open nature       → Free_Low_Poly_Forest
+    case cozyCommunal   // Cozy communal     → Cozy_living_room_baked
+    case solitaryPath   // Solitary / path   → FREE_Dirt_Road_Through_Forest
+
+    /// Bundled USDZ resource name (no extension). Matches `USDZDebug.models`.
+    var usdzName: String {
+        switch self {
+        case .openNature:   return "Free_Low_Poly_Forest"
+        case .cozyCommunal: return "Cozy_living_room_baked"
+        case .solitaryPath: return "FREE_Dirt_Road_Through_Forest"
+        }
+    }
+}
+
+/// The middle layer: concrete, continuously-tunable parameters the display layer
+/// applies on top of a base world (research direction 7). Not discrete presets — two
+/// users with the same archetype still differ because these values differ.
+struct WorldParams {
+    var archetype: WorldArchetype   // coarse base (axis 2 / axis 3)
+    var lightIntensity: Float       // axis 4 → DirectionalLight intensity
+    var colorTemperature: Float     // axis 4 → Kelvin; calm = cooler, vivid = warmer
+    var saturation: Double          // axis 4 → 0.5 (desaturated) … 1.1 (saturated)
+    var socialDensity: Int          // axis 1 → ambient companions / lanterns to show
+    var openness: Double            // axis 2 → 0 (enclosed refuge) … 1 (open prospect)
+    var biophilicDensity: Double    // axis 3 → 0.3 (sparse personal) … 1 (lush shared)
+    var focal: HopeDirection        // axis 5 → distant focal direction
 }

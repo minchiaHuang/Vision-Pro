@@ -24,6 +24,19 @@
 		AA000001000000000000000F /* WorldLabsTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000111 /* WorldLabsTestView.swift */; };
 		AA0000010000000000000010 /* MotionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000112 /* MotionManager.swift */; };
 		AA0000010000000000000011 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000113 /* DesignSystem.swift */; };
+		AA0000010000000000000012 /* USDZTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000114 /* USDZTestView.swift */; };
+		AA0000010000000000000013 /* GamepadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000115 /* GamepadManager.swift */; };
+		AA0000010000000000000020 /* Cozy_living_room_baked.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000120 /* Cozy_living_room_baked.usdz */; };
+		AA0000010000000000000021 /* Free_Low_Poly_Forest.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000121 /* Free_Low_Poly_Forest.usdz */; };
+		AA0000010000000000000022 /* FREE_Dirt_Road_Through_Forest.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000122 /* FREE_Dirt_Road_Through_Forest.usdz */; };
+		AA0000010000000000000014 /* SplatSpikeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000116 /* SplatSpikeView.swift */; };
+		AA0000010000000000000017 /* NarrationComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000117 /* NarrationComposer.swift */; };
+		AA0000010000000000000018 /* NarrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000118 /* NarrationService.swift */; };
+		AA0000010000000000000019 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000119 /* SpeechRecognizer.swift */; };
+		AA000001000000000000001A /* ConversationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000011A /* ConversationService.swift */; };
+		AA0000010000000000000023 /* world_a236ea24_100k.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000123 /* world_a236ea24_100k.spz */; };
+		AA0000010000000000000015 /* MetalSplatter in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000010000000000000902 /* MetalSplatter */; };
+		AA0000010000000000000016 /* SplatIO in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000010000000000000903 /* SplatIO */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +59,17 @@
 		AA0000010000000000000111 /* WorldLabsTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldLabsTestView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000112 /* MotionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionManager.swift; sourceTree = "<group>"; };
 		AA0000010000000000000113 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
+		AA0000010000000000000114 /* USDZTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USDZTestView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000115 /* GamepadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamepadManager.swift; sourceTree = "<group>"; };
+		AA0000010000000000000120 /* Cozy_living_room_baked.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Cozy_living_room_baked.usdz; sourceTree = "<group>"; };
+		AA0000010000000000000121 /* Free_Low_Poly_Forest.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Free_Low_Poly_Forest.usdz; sourceTree = "<group>"; };
+		AA0000010000000000000122 /* FREE_Dirt_Road_Through_Forest.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = FREE_Dirt_Road_Through_Forest.usdz; sourceTree = "<group>"; };
+		AA0000010000000000000116 /* SplatSpikeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSpikeView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000117 /* NarrationComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationComposer.swift; sourceTree = "<group>"; };
+		AA0000010000000000000118 /* NarrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationService.swift; sourceTree = "<group>"; };
+		AA0000010000000000000119 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
+		AA000001000000000000011A /* ConversationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationService.swift; sourceTree = "<group>"; };
+		AA0000010000000000000123 /* world_a236ea24_100k.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = world_a236ea24_100k.spz; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,6 +77,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA0000010000000000000015 /* MetalSplatter in Frameworks */,
+				AA0000010000000000000016 /* SplatIO in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -64,6 +90,7 @@
 			children = (
 				AA0000010000000000000302 /* Sources */,
 				AA0000010000000000000304 /* Config */,
+				AA0000010000000000000305 /* USDZ */,
 				AA000001000000000000010C /* Assets.xcassets */,
 				AA0000010000000000000303 /* Products */,
 			);
@@ -88,8 +115,34 @@
 				AA0000010000000000000111 /* WorldLabsTestView.swift */,
 				AA0000010000000000000112 /* MotionManager.swift */,
 				AA0000010000000000000113 /* DesignSystem.swift */,
+				AA0000010000000000000114 /* USDZTestView.swift */,
+				AA0000010000000000000115 /* GamepadManager.swift */,
+				AA0000010000000000000116 /* SplatSpikeView.swift */,
+				AA0000010000000000000117 /* NarrationComposer.swift */,
+				AA0000010000000000000118 /* NarrationService.swift */,
+				AA0000010000000000000119 /* SpeechRecognizer.swift */,
+				AA000001000000000000011A /* ConversationService.swift */,
+				AA0000010000000000000306 /* SpikeAssets */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		AA0000010000000000000306 /* SpikeAssets */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000010000000000000123 /* world_a236ea24_100k.spz */,
+			);
+			path = SpikeAssets;
+			sourceTree = "<group>";
+		};
+		AA0000010000000000000305 /* USDZ */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000010000000000000120 /* Cozy_living_room_baked.usdz */,
+				AA0000010000000000000121 /* Free_Low_Poly_Forest.usdz */,
+				AA0000010000000000000122 /* FREE_Dirt_Road_Through_Forest.usdz */,
+			);
+			path = USDZ;
 			sourceTree = "<group>";
 		};
 		AA0000010000000000000303 /* Products */ = {
@@ -124,6 +177,10 @@
 			dependencies = (
 			);
 			name = VisitingArtisan;
+			packageProductDependencies = (
+				AA0000010000000000000902 /* MetalSplatter */,
+				AA0000010000000000000903 /* SplatIO */,
+			);
 			productName = VisitingArtisan;
 			productReference = AA000001000000000000010D /* VisitingArtisan.app */;
 			productType = "com.apple.product-type.application";
@@ -152,6 +209,9 @@
 				Base,
 			);
 			mainGroup = AA0000010000000000000301;
+			packageReferences = (
+				AA0000010000000000000901 /* XCRemoteSwiftPackageReference "MetalSplatter" */,
+			);
 			productRefGroup = AA0000010000000000000303 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -167,6 +227,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA000001000000000000000C /* Assets.xcassets in Resources */,
+				AA0000010000000000000020 /* Cozy_living_room_baked.usdz in Resources */,
+				AA0000010000000000000021 /* Free_Low_Poly_Forest.usdz in Resources */,
+				AA0000010000000000000022 /* FREE_Dirt_Road_Through_Forest.usdz in Resources */,
+				AA0000010000000000000023 /* world_a236ea24_100k.spz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -193,6 +257,13 @@
 				AA000001000000000000000F /* WorldLabsTestView.swift in Sources */,
 				AA0000010000000000000010 /* MotionManager.swift in Sources */,
 				AA0000010000000000000011 /* DesignSystem.swift in Sources */,
+				AA0000010000000000000012 /* USDZTestView.swift in Sources */,
+				AA0000010000000000000013 /* GamepadManager.swift in Sources */,
+				AA0000010000000000000014 /* SplatSpikeView.swift in Sources */,
+				AA0000010000000000000017 /* NarrationComposer.swift in Sources */,
+				AA0000010000000000000018 /* NarrationService.swift in Sources */,
+				AA0000010000000000000019 /* SpeechRecognizer.swift in Sources */,
+				AA000001000000000000001A /* ConversationService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -315,7 +386,8 @@
 		AA0000010000000000000803 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+					ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = MCD2V89BPF;
@@ -327,6 +399,8 @@
 				"INFOPLIST_FILE[sdk=xrsimulator*]" = "Config/Info-visionOS.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Visiting Artisan";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Visiting Artisan uses the microphone so you can talk with the guide in your world.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Your speech is turned into text so your world's guide can understand and respond.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -355,7 +429,8 @@
 		AA0000010000000000000804 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+					ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = MCD2V89BPF;
@@ -367,6 +442,8 @@
 				"INFOPLIST_FILE[sdk=xrsimulator*]" = "Config/Info-visionOS.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Visiting Artisan";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Visiting Artisan uses the microphone so you can talk with the guide in your world.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Your speech is turned into text so your world's guide can understand and respond.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -414,6 +491,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AA0000010000000000000901 /* XCRemoteSwiftPackageReference "MetalSplatter" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scier/MetalSplatter.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA0000010000000000000902 /* MetalSplatter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA0000010000000000000901 /* XCRemoteSwiftPackageReference "MetalSplatter" */;
+			productName = MetalSplatter;
+		};
+		AA0000010000000000000903 /* SplatIO */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA0000010000000000000901 /* XCRemoteSwiftPackageReference "MetalSplatter" */;
+			productName = SplatIO;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AA0000010000000000000601 /* Project object */;
 }

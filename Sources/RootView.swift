@@ -70,17 +70,12 @@ struct LoadingView: View {
     @Environment(AppState.self) private var appState
 
     private var weavingCopy: String {
-        let a = appState.answers
-        let energyWord = a.energy < 0.35 ? "stillness"
-            : (a.energy > 0.65 ? "bright energy" : "warm focus")
-        let place: String
-        switch a.week {
-        case "sleep": place = "first light over the mountains"
-        case "home":  place = "an open coastal horizon"
-        case "exam", "focus": place = "a lamp-lit reading terrace"
-        default: place = "a quiet forest stream"
+        switch appState.answers.hope {
+        case "people":  return "Drawing the warmth of others\ninto your world."
+        case "explore": return "Opening a horizon\nyou haven't yet seen."
+        case "stable":  return "Laying down something\nyou can return to."
+        default:        return "Shaping a world\nthat fits the shape of you."
         }
-        return "Threading \(energyWord)\nthrough \(place)."
     }
 
     var body: some View {
