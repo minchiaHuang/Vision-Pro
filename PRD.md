@@ -1,52 +1,59 @@
 # Visiting Artisan — PRD & Technical Architecture
 
-> Apple Vision Pro app　|　AFP project + 個人 portfolio
-> 文件版本：v0.1（2026-05-25）
+> Apple Vision Pro app　|　AFP project + personal portfolio
+> Document version: v0.1 (2026-05-25)
 
 ---
 
 ## 1. Product Overview
 
-**一句話：** 一個透過「Who are you?」quiz 生成你專屬沉浸式世界的 app，讓大學生*感受*——而不只是理解——自己的平衡長什麼樣子。
+**In one line:** an app that generates your own immersive world from a "Who are you?" quiz,
+letting university students *feel* — not just understand — what their balance looks like.
 
 | | |
 |---|---|
-| **App 名稱** | Visiting Artisan |
-| **平台** | Apple Vision Pro（主）＋ iPad/iPhone（驗證 + 日常入口） |
+| **App name** | Visiting Artisan |
+| **Platform** | Apple Vision Pro (primary) + iPad/iPhone (validation + daily entry point) |
 | **Challenge Statement** | Helping individuals achieve balance through authentic self-alignment |
 | **App Statement** | An app that helps university students understand who they are, by guiding them through a personalised quiz and immersing themselves in a world that they describe, letting them feel what their authentic self feels like. |
-| **核心信念** | Self-alignment = Balance。你無法對齊一個你不認識的自己，所以「理解你是誰」是「達成平衡」的前置必要條件。 |
+| **Core belief** | Self-alignment = Balance. You can't align with a self you don't know, so "understanding who you are" is a necessary precondition for "achieving balance". |
 
-**範圍界定（誠實標註）：** 這個產品做的是「**發現 + 體驗**」——第一面鏡子，讓抽象的平衡變成你站得進去、感受得到的東西。**日常維持**是後續方向，不在 v1–v3 範疇。
+**Scope (stated honestly):** this product is about "**discovery + experience**" — the first
+mirror, turning abstract balance into something you can step into and feel. **Daily
+maintenance** is a later direction and is out of scope for v1–v3.
 
 ---
 
 ## 2. Target User
 
-**主要 persona：Aisha Mensah — "I Am What I Produce"**（成就驅動型，詳見 AFP day-05 筆記）
+**Primary persona: Aisha Mensah — "I Am What I Produce"** (achievement-driven; see the
+AFP day-05 notes)
 
-- 22 歲，大二 IT，UTS
-- 把生產力/成就等同於整體健康；除了「高成就學生」之外不知道自己是誰
-- 會跳過任何像「自我反思」的工具
-- **進入點（Hook）：** 不是 wellness、是科技新鮮感——「2 分鐘 quiz 生成你專屬的 Vision Pro 世界」對她是好玩、低承諾、可炫的東西。wellness gap 在她進來後才被動浮現。
+- 22 years old, second-year IT student, UTS
+- Equates productivity/achievement with overall wellbeing; doesn't know who she is beyond
+  being a "high-achieving student"
+- Skips anything that looks like a "self-reflection" tool
+- **Hook (entry point):** not wellness, but tech novelty — "a 2-minute quiz generates your
+  own Vision Pro world" is fun, low-commitment, and shareable to her. The wellness gap only
+  surfaces passively after she's in.
 
 ---
 
 ## 3. Core User Flow
 
 ```
-Splash（App 名稱）
+Splash (app name)
     ↓
-"Who are you?" Quiz（3 維度，每維度 1–2 題）
+"Who are you?" Quiz (3 dimensions, 1–2 questions each)
     ↓
-"Building your world…"（過場 / loading）
+"Building your world…" (transition / loading)
     ↓
-你的沉浸式世界（360° 環境）
+Your immersive world (360° environment)
     ↓
-（v3+）daily 入口：回到你的空間
+(v3+) daily entry point: return to your space
 ```
 
-對應 user stories：
+Corresponding user stories:
 1. As a user, I want to answer a "Who are you?" quiz so that I can get my own personalised immersive world.
 2. As a user, I want to step into my generated world so that I can *feel* — not just understand — what my balance looks like.
 3. As a user, I want to return to my space so that I can rebalance in daily life.
@@ -55,136 +62,149 @@ Splash（App 名稱）
 
 ## 4. Quiz Design
 
-> ⚠️ **這一塊需要更多 research**（見 §9）。以下是 working draft，不是定稿。
+> ⚠️ **This section needs more research** (see §9). The following is a working draft, not final.
 
-3 個維度，每個維度的答案會映射成生成世界的視覺參數：
+3 dimensions; the answer for each dimension maps to a visual parameter of the generated world:
 
-| 維度 | 問題（draft） | 選項 | 影響世界的什麼 |
+| Dimension | Question (draft) | Options | What it affects in the world |
 |---|---|---|---|
-| **Emotional** | When you feel off-balance, what do you need most? | Quiet alone / Talk to someone / Move your body / Create something | 氛圍、光線、色溫 |
-| **Cultural** | Where do you feel most like yourself? | In nature / Around people / At home / Somewhere new | 場景元素：共處空間 vs 獨處空間、文化符號 |
-| **Physical** | How does your body recharge? | Stillness / Movement / Sensory calm / Rest | 地景型態：開闊動態 vs 靜謐留白 |
+| **Emotional** | When you feel off-balance, what do you need most? | Quiet alone / Talk to someone / Move your body / Create something | Mood, lighting, colour temperature |
+| **Cultural** | Where do you feel most like yourself? | In nature / Around people / At home / Somewhere new | Scene elements: communal vs solitary space, cultural symbols |
+| **Physical** | How does your body recharge? | Stillness / Movement / Sensory calm / Rest | Landscape type: open and dynamic vs quiet and spare |
 
-**Cultural 維度的機制（差異化關鍵）：**
-- 集體/家庭導向 → 溫暖共處空間、聚會場景、熟悉文化符號（不是空無一人）
-- 個人/獨立導向 → 開闊獨處空間、安靜、留白
-- vs 西方中心競品（TRIPP 等）：別人的「平衡」預設是空靈海灘；對集體文化背景的人，平衡可能是熱鬧的家庭廚房。
+**The Cultural dimension's mechanism (the key differentiator):**
+- Collective/family-oriented → warm communal space, gathering scenes, familiar cultural
+  symbols (not deserted)
+- Individual/independent-oriented → open solitary space, quiet, negative space
+- vs Western-centric competitors (TRIPP, etc.): their default "balance" is an ethereal
+  beach; for people from collective cultural backgrounds, balance might be a lively family
+  kitchen.
 
 ---
 
 ## 5. Technical Architecture
 
-**策略：一個 Xcode 專案，兩個 target，共用核心邏輯。**
+**Strategy: one Xcode project, two targets, sharing the core logic.**
 
 ```
-┌─ Shared（iPad + visionOS 共用，純 Swift，無 UI 依賴）──┐
+┌─ Shared (used by iPad + visionOS, pure Swift, no UI dependency) ──┐
 │  Models/                                               │
 │    QuizQuestion, QuizAnswer, QuizResult                │
 │    World (id, title, imageName/imageURL, description)  │
 │  Logic/                                                │
 │    PromptBuilder   : QuizResult → text prompt          │
-│    WorldResolver   : QuizResult → World（v1 查表）      │
-│    SkyboxService   : prompt → 360° image（v2 才接 API） │
+│    WorldResolver   : QuizResult → World (v1 lookup)    │
+│    SkyboxService   : prompt → 360° image (API in v2)   │
 └─────────────────────────────────────────────────────────┘
-            ↓ 顯示層分平台
+            ↓ display layer splits by platform
   iOS/iPadOS target:
     QuizView (SwiftUI) → WorldView
-    360 viewer：RealityKit 球體 mesh，內側貼 equirectangular 圖
-    觸控拖曳 / CoreMotion 陀螺儀環視
+    360 viewer: RealityKit sphere mesh, equirectangular image on the inner wall
+    touch drag / CoreMotion gyroscope to look around
   visionOS target:
-    QuizView (SwiftUI，windowed)
-    ImmersiveSpace：球體 skybox，真沉浸
+    QuizView (SwiftUI, windowed)
+    ImmersiveSpace: sphere skybox, true immersion
 ```
 
-**為什麼這樣分：**
-- Quiz UI 和邏輯兩平台 100% 共用（SwiftUI + 純 Swift model）
-- 只有「世界怎麼顯示」分平台：iPad 是可環視的 360°（驗證用），visionOS 是真沉浸
-- 沒有 Vision Pro 在手時，iPad/模擬器就能跑完整套流程
+**Why split it this way:**
+- Quiz UI and logic are 100% shared across both platforms (SwiftUI + pure Swift models)
+- Only "how the world is displayed" splits by platform: iPad is a look-around 360° (for
+  validation), visionOS is true immersion
+- Without a Vision Pro on hand, the iPad/simulator can still run the full flow
 
-**360° 顯示原理（兩平台共通）：**
-- 建一個大球體 mesh，法線翻向內側
-- 把 equirectangular（2:1）360° 圖當材質貼在球體內壁
-- 相機放在球心 → 看出去就是環繞環境
-- visionOS 用 `ImmersiveSpace` + RealityKit；iPad 用 `RealityView` 或 SceneKit，相機隨手勢/陀螺儀轉
+**360° display principle (common to both platforms):**
+- Build a large sphere mesh with normals flipped inward
+- Apply the equirectangular (2:1) 360° image as the material on the sphere's inner wall
+- Place the camera at the sphere's centre → looking outward gives a surrounding environment
+- visionOS uses `ImmersiveSpace` + RealityKit; iPad uses `RealityView` or SceneKit, with the
+  camera rotating by gesture/gyroscope
 
 ---
 
-## 6. End-to-End Pipeline（「整套能不能跑」）
+## 6. End-to-End Pipeline ("can the whole thing run")
 
 ```
-Quiz 答案（QuizResult）
+Quiz answers (QuizResult)
     ↓ PromptBuilder
 text prompt
-  例："calm, warm communal interior, soft light, gathering space"
+  e.g. "calm, warm communal interior, soft light, gathering space"
     ↓
-  v1: WorldResolver 查表 → 對應一張預先生成的打包圖   ← 不需網路/API
-  v2: SkyboxService → Skybox AI REST API → 即時 360° 圖 ← 需 API key
+  v1: WorldResolver lookup → a matching pre-generated bundled image   ← no network/API
+  v2: SkyboxService → Skybox AI REST API → live 360° image            ← needs API key
     ↓
 World(image)
-    ↓ 顯示層
-  iPad：球體 360° 環視
-  visionOS：ImmersiveSpace 真沉浸
+    ↓ display layer
+  iPad: sphere 360° look-around
+  visionOS: ImmersiveSpace true immersion
 ```
 
-**v1 完全本地、零外部依賴就能跑完整套**——這就是「先了解整套下來能不能跑」的答案：能。
+**v1 runs the full flow entirely locally with zero external dependencies** — that is the
+answer to "let's first see whether the whole thing runs end to end": yes.
 
-> **顯示層 note：** v1/v2 的 `SkyboxService` 對應 **Skybox AI API**（360° equirectangular → 球體貼圖），
-> 現有 `Immersive360View` / `ImmersiveWorldView` 直接吃這種圖。
-> v4 改用 Marble 時，顯示層要從「球體貼圖」換成「splat / mesh 場景」——是**另一條顯示管線**（見 §6.5 決策）。
+> **Display-layer note:** the `SkyboxService` of v1/v2 maps to the **Skybox AI API** (360°
+> equirectangular → sphere texture); the existing `Immersive360View` / `ImmersiveWorldView`
+> consume that kind of image directly.
+> When v4 switches to Marble, the display layer must change from "sphere texture" to
+> "splat / mesh scene" — that is **a separate display pipeline** (see the §6.5 decision).
 
 ---
 
-## 6.5 World Generation Backend — 決策
+## 6.5 World Generation Backend — Decision
 
-> 世界生成靠外部產品。市面分兩類，差別決定整個顯示管線與工程難度。已查證 2026 最新狀態。
+> World generation relies on an external product. The market splits into two categories, and
+> the difference drives the whole display pipeline and engineering effort. Verified against
+> the latest 2026 status.
 
-| 類型 | 代表 | 體驗 | 進 Vision Pro |
+| Category | Representative | Experience | Into Vision Pro |
 |---|---|---|---|
-| **360° skybox** | **Skybox AI**（Blockade Labs） | 站著環視、被包圍（不能走動） | ✅ 簡單：球體內壁貼 equirectangular 圖 |
-| **可走動 3D 世界** | **World Labs Marble** | 6DOF 走動探索 | ⚠️ 重：Gaussian splat / mesh 渲染 |
+| **360° skybox** | **Skybox AI** (Blockade Labs) | Stand and look around, surrounded (can't walk) | ✅ Simple: equirectangular image on a sphere's inner wall |
+| **Walkable 3D world** | **World Labs Marble** | 6DOF walk-around exploration | ⚠️ Heavy: Gaussian splat / mesh rendering |
 
-### ✅ 決策：v1–v3 用 Skybox AI；v4 stretch 升級 Marble
+### ✅ Decision: use Skybox AI for v1–v3; upgrade to Marble as a v4 stretch
 
-**為什麼 Skybox AI 先行：**
-- 完全匹配現有架構（球體 skybox），程式碼零重寫
-- 官方有 visionOS / Vision Pro spatial 專屬支援
-- 情感目標（被你的世界包圍、感受平衡）360° 環視已足夠沉浸
-- 學生可行 + 便宜；符合「without AI unless needed」（v1 預生圖）
+**Why Skybox AI first:**
+- Fully matches the existing architecture (sphere skybox); zero code rewrite
+- Official visionOS / Vision Pro spatial support
+- For the emotional goal (being surrounded by your world, feeling balance), 360°
+  look-around is immersive enough
+- Feasible and cheap for a student; aligns with "without AI unless needed" (v1 pre-baked images)
 
-### 查證事實（2026）
+### Verified facts (2026)
 
-| 產品 | 重點 |
+| Product | Highlights |
 |---|---|
-| **Skybox AI** | equirectangular 最高 8K（Business 16K）；官方 visionOS/Vision Pro spatial 支援頁；**API 在 Business $112/mo**；手動生圖 Essential $20/mo 或免費試 |
-| **World Labs Marble** | text/image/video → 可走動 3D 世界；匯出 Gaussian splat(PLY)/mesh(GLB)/video；有 **World API**；可在 Vision Pro 原生觀看；PLY→USDZ 需 NVIDIA Omniverse NuRec |
-| **中間方案** | visionOS 26 Photos 內建一鍵 **Spatial Scene**（Apple 開源 on-device gaussian splatting, SHARP）——單圖 → 體積場景，可當輕量探索路線 |
+| **Skybox AI** | equirectangular up to 8K (Business 16K); official visionOS/Vision Pro spatial support page; **API is on Business at $112/mo**; manual generation on Essential $20/mo or a free trial |
+| **World Labs Marble** | text/image/video → walkable 3D world; export Gaussian splat (PLY)/mesh (GLB)/video; has a **World API**; viewable natively on Vision Pro; PLY→USDZ needs NVIDIA Omniverse NuRec |
+| **Middle option** | visionOS 26 Photos has a built-in one-tap **Spatial Scene** (Apple open-source on-device Gaussian splatting, SHARP) — single image → volumetric scene; a viable lightweight exploration path |
 
-> 💰 **成本提醒：** Skybox **API 僅 Business $112/mo**。所以 v1/v2 盡量用**手動生圖 / Essential tier**，
-> 真的需要「quiz → 即時生成」才接 API，避免太早燒預算。
+> 💰 **Cost reminder:** Skybox's **API is only on Business at $112/mo**. So for v1/v2, lean on
+> **manual generation / the Essential tier**, and only call the API when you genuinely need
+> "quiz → live generation", to avoid burning budget too early.
 
-來源：
-- [Skybox AI for Spatial Applications（Vision Pro/XR）](https://www.blockadelabs.com/industries/skybox-ai-for-spatial-applications)
-- [Skybox API 文件](https://api-documentation.blockadelabs.com/api/skybox.html)
+Sources:
+- [Skybox AI for Spatial Applications (Vision Pro/XR)](https://www.blockadelabs.com/industries/skybox-ai-for-spatial-applications)
+- [Skybox API documentation](https://api-documentation.blockadelabs.com/api/skybox.html)
 - [World Labs — Marble World Model](https://www.worldlabs.ai/blog/marble-world-model)
-- [Marble Mesh Export 文件](https://docs.worldlabs.ai/marble/export/mesh)
-- [MetalSplatter（visionOS splat 渲染，開源）](https://github.com/scier/MetalSplatter)
+- [Marble Mesh Export documentation](https://docs.worldlabs.ai/marble/export/mesh)
+- [MetalSplatter (open-source visionOS splat rendering)](https://github.com/scier/MetalSplatter)
 
 ---
 
-## 7. 分階段（Phasing）
+## 7. Phasing
 
-| 階段 | 目標 | 顯示 | 世界來源 | 外部申請 |
+| Phase | Goal | Display | World source | External sign-up |
 |---|---|---|---|---|
-| **v1** | 整套 flow 跑得通 | iPad + visionOS 模擬器 | 3–4 張預生 360° 圖，查表對應 | ❌ 無 |
-| **v2** | 接真 AI 即時生成（360°） | 同上 | Skybox AI API（prompt → 360°） | ✅ Skybox API（Business $112/mo） |
-| **v3** | 真沉浸部署（仍 360°） | Vision Pro 實機 | 同 v2 | Apple Developer（免費 tier 跑自己裝置） |
-| **v4（stretch / 野心）** | 可走動 3D 世界 | Vision Pro，6DOF 探索 | World Labs Marble（World API → splat / mesh） | Marble API + splat 渲染整合 |
+| **v1** | The whole flow runs | iPad + visionOS simulator | 3–4 pre-baked 360° images, matched via lookup | ❌ None |
+| **v2** | Connect real AI live generation (360°) | Same as above | Skybox AI API (prompt → 360°) | ✅ Skybox API (Business $112/mo) |
+| **v3** | True immersive deployment (still 360°) | Vision Pro device | Same as v2 | Apple Developer (free tier runs on your own device) |
+| **v4 (stretch / ambition)** | Walkable 3D world | Vision Pro, 6DOF exploration | World Labs Marble (World API → splat / mesh) | Marble API + splat rendering integration |
 
-> v4 是「能走進去探索」的升級路線；顯示層要換管線（球體貼圖 → splat/mesh）。先把 v1–v3 跑穩再說。
+> v4 is the "walk in and explore" upgrade path; the display layer must change pipelines
+> (sphere texture → splat/mesh). Get v1–v3 stable first.
 
 ---
 
-## 8. Data Model（v1）
+## 8. Data Model (v1)
 
 ```swift
 struct QuizQuestion: Identifiable {
@@ -197,62 +217,67 @@ struct QuizQuestion: Identifiable {
 struct QuizOption: Identifiable {
     let id: String
     let label: String
-    let tag: String            // 用來組 prompt / 查表的關鍵字
+    let tag: String            // keyword used to build the prompt / do the lookup
 }
 
 struct QuizResult {
-    var answers: [Dimension: String]   // dimension → 選到的 tag
+    var answers: [Dimension: String]   // dimension → chosen tag
 }
 
 struct World: Identifiable {
     let id: String
     let title: String          // e.g. "This is what balance feels like for you"
-    let imageName: String      // v1：打包進 app 的 asset 名
-    let imageURL: URL?         // v2：API 回傳
+    let imageName: String      // v1: asset name bundled into the app
+    let imageURL: URL?         // v2: returned by the API
     let blurb: String
 }
 ```
 
 ---
 
-## 9. 還需要的 Research（誠實列出缺口）
+## 9. Research Still Needed (gaps stated honestly)
 
-> 這些是 v1 之後要補的，不影響 v1 跑起來，但影響產品說服力。
+> These are to be filled in after v1. They don't affect v1 running, but they affect the
+> product's persuasiveness.
 
-1. **個性化問題設計** — 目前 quiz 題目是 working draft。需要 research：
-   - 哪些問題真的能問出「self-alignment / authentic self」，而不只是偏好？
-   - 文化維度怎麼問才不淺薄、不刻板印象？
-   - 幾題才夠（太少不準，太多 Aisha 會跳出）？
-2. **答案 → 世界的 mapping** — 什麼樣的視覺真的讓人感覺「對齊自己」？需要使用者測試。
-3. **Aisha 進入後的 gap surfacing** — 她進來後，app 怎麼被動讓她看見「你以為的自己 vs 生成的世界」之間的落差？
-4. **「achieve」的延伸** — daily 入口、rebalance 機制（v3+ 範疇）。
-5. **v4 Marble 可行性** — quiz → Marble prompt 的個人化成本/延遲、Gaussian splat 在 Vision Pro 的渲染效能，都需要實測才能確認 v4 值不值得做。
+1. **Personalised question design** — the current quiz questions are a working draft. Research needed:
+   - Which questions truly elicit "self-alignment / authentic self" rather than mere preference?
+   - How to ask the cultural dimension without being shallow or stereotyping?
+   - How many questions are enough (too few is inaccurate, too many and Aisha bails)?
+2. **Answer → world mapping** — what kind of visuals actually make someone feel "aligned with
+   themselves"? Needs user testing.
+3. **Surfacing Aisha's gap after entry** — once she's in, how does the app passively let her
+   see the gap between "the self she assumed" and "the generated world"?
+4. **Extending toward "achieve"** — daily entry point, rebalance mechanism (v3+ scope).
+5. **v4 Marble feasibility** — the personalisation cost/latency of quiz → Marble prompt, and
+   the rendering performance of Gaussian splat on Vision Pro, both need real measurement to
+   confirm whether v4 is worth doing.
 
 ---
 
 ## 10. Tech Stack
 
-| 項目 | 選擇 |
+| Item | Choice |
 |---|---|
-| 語言 | Swift |
+| Language | Swift |
 | UI | SwiftUI |
-| 3D / 360° | RealityKit（球體 skybox） |
-| 沉浸 | visionOS `ImmersiveSpace` |
-| iPad 環視 | `RealityView` + CoreMotion / 手勢 |
-| 網路（v2） | URLSession → Skybox AI REST API |
-| 生圖（v2） | Skybox AI（Blockade Labs），text → 8K 360° equirectangular |
-| 生世界（v4 stretch） | World Labs Marble（World API）→ Gaussian splat / mesh |
-| splat 渲染（v4） | MetalSplatter（開源）或 mesh(GLB) 匯入 RealityKit；或 PLY→USDZ via Omniverse NuRec |
-| 輕量中間方案 | visionOS 26 內建 Spatial Scene（單圖 → 體積場景） |
+| 3D / 360° | RealityKit (sphere skybox) |
+| Immersion | visionOS `ImmersiveSpace` |
+| iPad look-around | `RealityView` + CoreMotion / gestures |
+| Networking (v2) | URLSession → Skybox AI REST API |
+| Image generation (v2) | Skybox AI (Blockade Labs), text → 8K 360° equirectangular |
+| World generation (v4 stretch) | World Labs Marble (World API) → Gaussian splat / mesh |
+| Splat rendering (v4) | MetalSplatter (open source) or mesh (GLB) imported into RealityKit; or PLY→USDZ via Omniverse NuRec |
+| Lightweight middle option | visionOS 26 built-in Spatial Scene (single image → volumetric scene) |
 | IDE | Xcode 26.5 |
 
 ---
 
 ## 11. v1 Definition of Done
 
-- [ ] App 啟動 → Splash → Quiz（3 維度）
-- [ ] 答完 quiz → loading 過場
-- [ ] 根據答案查表 → 顯示對應的預先生成 360° 世界
-- [ ] iPad：可拖曳/陀螺儀環視整個世界
-- [ ] visionOS 模擬器：ImmersiveSpace 沉浸顯示
-- [ ] 至少 3 種答案組合 → 3 個明顯不同的世界（讓人感受到「個人化」）
+- [ ] App launches → Splash → Quiz (3 dimensions)
+- [ ] Quiz done → loading transition
+- [ ] Lookup by answers → display the matching pre-generated 360° world
+- [ ] iPad: drag/gyroscope to look around the whole world
+- [ ] visionOS simulator: immersive display via ImmersiveSpace
+- [ ] At least 3 answer combinations → 3 noticeably different worlds (so personalisation is felt)

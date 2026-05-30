@@ -18,12 +18,14 @@ xcuserdata/
 .build/
 .swiftpm/
 
-# CocoaPods / Carthage (若之後用到)
+# CocoaPods / Carthage (if used later)
 Pods/
 Carthage/Build/
 
-# Secrets — API keys 絕對不能進 repo（v2 Skybox API key）
-Secrets.swift
+# Secrets — never commit real API keys. The Sources/Secrets.swift stub
+# IS committed (empty placeholder keys); developers override values
+# locally without committing changes. Use *.env / APIKeys.plist for any
+# additional out-of-band secrets.
 *.env
 .env
 APIKeys.plist

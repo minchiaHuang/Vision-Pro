@@ -1,7 +1,7 @@
 import Foundation
 
-/// 五題混合題型的作答結果。
-/// energy/minutes 有預設值；need/help/week 需使用者選擇。
+/// Answers from the five mixed-format quiz questions.
+/// energy/minutes have defaults; need/help/week must be chosen by the user.
 struct QuizAnswers {
     var energy: Double = 0.45      // Q1 slider: 0 = stillness, 1 = energy
     var need: String? = nil        // Q2 image grid: quiet/connection/movement/creativity
@@ -12,7 +12,8 @@ struct QuizAnswers {
     var isComplete: Bool { need != nil && help != nil && week != nil }
 }
 
-/// 單選題的一個選項。`image` 為對應的世界 asset 名（圖卡用），`symbol` 為 SF Symbol（icon 卡用）。
+/// One option of a single-choice question. `image` is the matching world asset name
+/// (for image cards); `symbol` is an SF Symbol (for icon cards).
 struct ChoiceOption: Identifiable, Hashable {
     let id: String
     let label: String
@@ -20,13 +21,13 @@ struct ChoiceOption: Identifiable, Hashable {
     var symbol: String? = nil
 }
 
-/// 一個生成（v1 為預先準備）的沉浸式世界。
+/// A generated immersive world (pre-baked in v1).
 struct World: Identifiable {
     let id: String
-    let title: String       // 顯示在世界裡的一句話
-    let imageName: String   // v1：打包進 Assets 的 360° 圖名稱
-    let imageURL: URL?      // v2：API 回傳的遠端圖
-    let blurb: String       // 補充說明
+    let title: String       // A one-line phrase shown inside the world
+    let imageName: String   // v1: name of the 360° image bundled in Assets
+    let imageURL: URL?      // v2: remote image returned by the API
+    let blurb: String       // Supporting description
 
     init(id: String, title: String, imageName: String, imageURL: URL? = nil, blurb: String = "") {
         self.id = id

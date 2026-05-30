@@ -25,6 +25,26 @@ No external API key is required for v1. The repo includes sample 360° images fr
 
 ---
 
+## Secrets / API keys
+
+`Sources/Secrets.swift` **is committed to the repo with empty placeholder keys** so that a
+fresh clone builds out of the box. There are no real keys in this repo, and you must never
+commit one.
+
+- v1 needs no key — with the empty `worldLabsAPIKey`, the experimental "World Labs" entry
+  point simply reports "Missing API key" and stays inert. The main flow is unaffected.
+- For local experiments with a real key, edit `Sources/Secrets.swift` locally and keep the
+  change unstaged. For extra safety against accidental commits:
+
+  ```bash
+  git update-index --skip-worktree Sources/Secrets.swift
+  ```
+
+- For any additional out-of-band secrets, use a `*.env` file or `APIKeys.plist` — both are
+  gitignored.
+
+---
+
 ## Run in Xcode
 
 1. Open `VisitingArtisan.xcodeproj`.

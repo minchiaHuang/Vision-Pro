@@ -3,7 +3,8 @@ import SwiftUI
 import RealityKit
 import UIKit
 
-/// visionOS：真沉浸。把 360° 圖貼在大球體內壁，使用者的頭就是相機（頭部追蹤）。
+/// visionOS: true immersion. Maps the 360° image onto the inner wall of a large sphere;
+/// the user's head is the camera (head tracking).
 struct ImmersiveWorldView: View {
     @Environment(AppState.self) private var appState
 
@@ -30,7 +31,7 @@ struct ImmersiveWorldView: View {
         }
 
         let entity = ModelEntity(mesh: mesh, materials: [material])
-        entity.scale = SIMD3(-1, 1, 1)   // 翻面，貼圖朝內
+        entity.scale = SIMD3(-1, 1, 1)   // Flip inside-out so the texture faces inward
         return entity
     }
 }
