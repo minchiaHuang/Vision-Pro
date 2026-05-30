@@ -29,3 +29,7 @@ Carthage/Build/
 *.env
 .env
 APIKeys.plist
+
+# Local tooling / scratch — never tracked
+.claude/
+doc/
