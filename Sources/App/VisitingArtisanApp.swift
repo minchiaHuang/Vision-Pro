@@ -25,13 +25,8 @@ struct VisitingArtisanApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if USDZDebug.launchIntoTest {
-                    USDZTestView()
-                } else if SplatSpikeDebug.launchIntoSpike {
-                    SplatSpikeView()
-                } else {
-                    RootView()
-                }
+                // DEV: in-app launcher to test each feature. Swap to RootView() before shipping.
+                DevMenuView()
             }
             .environment(appState)
         }

@@ -53,6 +53,17 @@ final class AppState {
         }
     }
 
+    /// DEV ONLY — preload a neutral default world so the dev menu's "World" option
+    /// can jump straight into `WorldView`, skipping the quiz.
+    func loadDefaultWorldForTesting() {
+        let scores = AxisScores.neutral
+        axisScores = scores
+        let params = WorldMapper.map(scores)
+        worldParams = params
+        world = WorldCatalog.world(for: params.archetype)
+        phase = .world
+    }
+
     /// Restart from the beginning.
     func restart() {
         answers = QuizAnswers()
