@@ -212,6 +212,12 @@ Sources:
 > (microphone → STT → cloud LLM → TTS)**, kept as a spike, requiring prior approval of the
 > package/keys; decide whether to invest fully only after feeling the latency on a real
 > device — don't commit to finishing it before headset validation.
+> **TTS decision (2026-05-31):** ship the loop on the built-in `AVSpeechSynthesizer`
+> first (only a Claude/`anthropicAPIKey` is required); **ElevenLabs is the preferred
+> voice upgrade** for naturalness and is expected to be worth adding later, but is held
+> back until AVSpeech has been heard on-device — it costs a second network hop, money,
+> and offline robustness. `ConversationService.narrator` is already abstracted, so
+> swapping in an ElevenLabs TTS backend is a clean, isolated change.
 > v5 upgrades "pre-made walkable scenes" into "AI-generated walkable worlds" (the display
 > layer keeps the splat/mesh pipeline). v6 deploys the finished product onto Vision Pro hardware.
 
@@ -287,7 +293,7 @@ struct World: Identifiable {
 | Splat rendering (v5) | MetalSplatter (open source) or mesh (GLB) imported into RealityKit; or PLY→USDZ via Omniverse NuRec |
 | Lightweight middle option | visionOS 26 built-in Spatial Scene (single image → volumetric scene) |
 | Speech input STT (v4) | Speech framework / iOS 26 SpeechAnalyzer |
-| Speech output TTS (v4) | AVSpeechSynthesizer (or a more natural third-party/cloud TTS) |
+| Speech output TTS (v4) | **Now:** on-device `AVSpeechSynthesizer` (zero key, instant, offline-safe). **Preferred upgrade:** ElevenLabs cloud TTS — noticeably warmer/more natural, the single biggest lever on the companion's emotional feel; deferred until we've heard AVSpeech on-device, since it adds a second network round-trip, cost, and a live-network dependency for demos |
 | Conversation AI (v4) | LLM — on-device Foundation Models or a cloud API |
 | Spatial audio (v4, visionOS) | RealityKit spatial audio, positioning the companion's voice inside the world |
 | IDE | Xcode 26.5 |
