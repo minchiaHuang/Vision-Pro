@@ -31,7 +31,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
         case .world: return "Default world, skips the quiz"
         case .voice: return "Tap the orb to talk · ASR / LLM / TTS"
         case .usdz:  return "RealityKit USDZ, first person"
-        case .splat: return "World Labs Gaussian splat"
+        case .splat: return "Generate or open a World Labs splat"
         }
     }
 
@@ -141,7 +141,7 @@ private struct DevFeatureContainer: View {
         case .usdz:
             USDZTestView()
         case .splat:
-            SplatSpikeView()
+            SplatLibraryView()
         }
     }
 }
