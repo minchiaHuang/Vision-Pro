@@ -26,4 +26,14 @@ enum Secrets {
     /// reports "Missing API key" and the conversation stays inert (TTS entry narration
     /// still works, since 6a needs no key).
     static let anthropicAPIKey: String = ""
+
+    /// ElevenLabs API key for cloud TTS (Phase 6 voice). Empty by default; replace
+    /// locally only. With an empty key, the companion falls back to on-device
+    /// AVSpeech, so a fresh clone still builds and speaks offline.
+    static let elevenLabsAPIKey: String = ""
+
+    /// Azure Speech API key for cloud TTS (Phase 6 voice, region southeastasia).
+    /// Empty by default; replace locally only. With an empty key the companion
+    /// falls back to ElevenLabs (if set) or on-device AVSpeech.
+    static let azureSpeechKey: String = ""
 }
