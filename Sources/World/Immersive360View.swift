@@ -102,7 +102,9 @@ struct Immersive360View: View {
         let mesh = MeshResource.generateSphere(radius: 1000)
         var material = UnlitMaterial()
 
-        let cgImage = (overrideImage ?? UIImage(named: world.imageName))?.cgImage
+        // Asset lookup + image decode is the expensive part; do it off the main
+        // actor so it doesn't block the frame that presents the panorama.
+        let cgImage = await Self.decodePanorama(override: overrideImage, imageName: world.imageName)
         if let cgImage,
            let texture = try? await TextureResource(
             image: cgImage,
@@ -117,6 +119,13 @@ struct Immersive360View: View {
         let entity = ModelEntity(mesh: mesh, materials: [material])
         entity.scale = SIMD3(-1, 1, 1)
         return entity
+    }
+
+    /// Decodes the panorama CGImage on a background task (off the main actor).
+    private static func decodePanorama(override: UIImage?, imageName: String) async -> CGImage? {
+        await Task.detached(priority: .userInitiated) {
+            (override ?? UIImage(named: imageName))?.cgImage
+        }.value
     }
 
     private func clampedPitch(_ pitch: Float) -> Float {

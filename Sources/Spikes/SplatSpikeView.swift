@@ -244,7 +244,7 @@ final class SplatSpikeRenderer: NSObject, MTKViewDelegate {
                 Self.log.error("Splat file decoded to 0 points")
                 return
             }
-            frameScene(points)
+            await frameScene(points)
             let chunk = try SplatChunk(device: device, from: points)
             _ = await renderer.addChunk(chunk)
             self.splat = renderer
@@ -257,14 +257,18 @@ final class SplatSpikeRenderer: NSObject, MTKViewDelegate {
     /// Centroid + mean radius → scene calibration (recentre + upright flip), clip
     /// planes, and rig movement scale. The rig starts at the capture point (origin
     /// of the calibrated space) so the user stands inside the world.
-    private func frameScene(_ points: [SplatPoint]) {
-        var sum = SIMD3<Float>.zero
-        for p in points { sum += p.position }
-        let center = sum / Float(points.count)
+    private func frameScene(_ points: [SplatPoint]) async {
+        // Centroid + mean radius are O(n) over the full point cloud (100k+ points).
+        // Run the loops off the main actor so a large splat doesn't freeze the UI.
+        let (center, meanRadius) = await Task.detached(priority: .userInitiated) {
+            var sum = SIMD3<Float>.zero
+            for p in points { sum += p.position }
+            let center = sum / Float(points.count)
 
-        var distSum: Float = 0
-        for p in points { distSum += simd_length(p.position - center) }
-        let meanRadius = max(distSum / Float(points.count), 0.001)
+            var distSum: Float = 0
+            for p in points { distSum += simd_length(p.position - center) }
+            return (center, max(distSum / Float(points.count), 0.001))
+        }.value
 
         sceneCalibration = translation(-center.x, -center.y, -center.z)
         frameDistance = meanRadius * 3

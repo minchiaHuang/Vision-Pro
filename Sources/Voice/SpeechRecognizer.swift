@@ -62,7 +62,12 @@ final class SpeechRecognizer {
         task = recognizer.recognitionTask(with: request) { [weak self] result, _ in
             guard let self, let result else { return }
             let text = result.bestTranscription.formattedString
-            Task { @MainActor in self.transcript = text }
+            // Partial results often repeat the same string; skip no-op writes so
+            // observers (e.g. the listening UI) don't re-render needlessly.
+            Task { @MainActor in
+                guard self.transcript != text else { return }
+                self.transcript = text
+            }
         }
     }
 
