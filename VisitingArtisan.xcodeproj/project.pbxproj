@@ -36,6 +36,9 @@
 		AA0000010000000000000018 /* NarrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000118 /* NarrationService.swift */; };
 		AA0000010000000000000019 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000119 /* SpeechRecognizer.swift */; };
 		AA000001000000000000001A /* ConversationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000011A /* ConversationService.swift */; };
+		AA00000100000000000000F4 /* SpeechVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F4 /* SpeechVoice.swift */; };
+		AA00000100000000000000F5 /* ElevenLabsVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F5 /* ElevenLabsVoice.swift */; };
+		AA00000100000000000000F6 /* AzureVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F6 /* AzureVoice.swift */; };
 		AA0000010000000000000023 /* world_a236ea24_100k.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000123 /* world_a236ea24_100k.spz */; };
 		AA0000010000000000000015 /* MetalSplatter in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000010000000000000902 /* MetalSplatter */; };
 		AA0000010000000000000016 /* SplatIO in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000010000000000000903 /* SplatIO */; };
@@ -73,6 +76,9 @@
 		AA0000010000000000000118 /* NarrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationService.swift; sourceTree = "<group>"; };
 		AA0000010000000000000119 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
 		AA000001000000000000011A /* ConversationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationService.swift; sourceTree = "<group>"; };
+		AA00000100000000000001F4 /* SpeechVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechVoice.swift; sourceTree = "<group>"; };
+		AA00000100000000000001F5 /* ElevenLabsVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabsVoice.swift; sourceTree = "<group>"; };
+		AA00000100000000000001F6 /* AzureVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AzureVoice.swift; sourceTree = "<group>"; };
 		AA0000010000000000000123 /* world_a236ea24_100k.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = world_a236ea24_100k.spz; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -152,6 +158,9 @@
 				AA0000010000000000000119 /* SpeechRecognizer.swift */,
 				AA0000010000000000000118 /* NarrationService.swift */,
 				AA0000010000000000000117 /* NarrationComposer.swift */,
+				AA00000100000000000001F4 /* SpeechVoice.swift */,
+				AA00000100000000000001F5 /* ElevenLabsVoice.swift */,
+				AA00000100000000000001F6 /* AzureVoice.swift */,
 				AA00000100000000000001F2 /* VoiceTestView.swift */,
 			);
 			path = Voice;
@@ -328,6 +337,9 @@
 				AA0000010000000000000018 /* NarrationService.swift in Sources */,
 				AA0000010000000000000019 /* SpeechRecognizer.swift in Sources */,
 				AA000001000000000000001A /* ConversationService.swift in Sources */,
+				AA00000100000000000000F4 /* SpeechVoice.swift in Sources */,
+				AA00000100000000000000F5 /* ElevenLabsVoice.swift in Sources */,
+				AA00000100000000000000F6 /* AzureVoice.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

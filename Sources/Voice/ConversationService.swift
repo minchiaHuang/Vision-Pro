@@ -21,8 +21,15 @@ final class ConversationService {
     private(set) var lastError: String?
 
     private let stt = SpeechRecognizer()
-    /// Reused for all spoken output (entry narration + conversation replies).
+    /// On-device AVSpeech voice — always available; the fallback for all output.
     let narrator: NarrationService
+    /// Cloud voice — the primary output when a key is present, else nil.
+    /// Azure is preferred over ElevenLabs when both keys are set.
+    private let cloud: (any CloudVoice)?
+    /// Circuit breaker: set once the cloud voice hits a permanent error (bad key /
+    /// missing scope / plan-blocked voice), so we stop wasting a failing round-trip
+    /// on every line and use AVSpeech directly for the rest of the session.
+    private var cloudDisabled = false
 
     private var systemPrompt = ""
     private var history: [Message] = []
@@ -35,10 +42,27 @@ final class ConversationService {
         let n = NarrationService()
         n.managesAudioSession = false   // ConversationService owns the audio session
         self.narrator = n
+
+        // Cloud TTS is the primary voice when a key is set (Azure preferred, else
+        // ElevenLabs); otherwise pure AVSpeech. Its `onFailure` hands the unspoken
+        // text back so we fall back to AVSpeech — the guide is never left silent
+        // (no key / no network / quota exhausted).
+        if !Secrets.azureSpeechKey.isEmpty {
+            self.cloud = AzureVoice()
+        } else if !Secrets.elevenLabsAPIKey.isEmpty {
+            self.cloud = ElevenLabsVoice()
+        } else {
+            self.cloud = nil
+        }
+        cloud?.onFailure = { [weak self] text, permanent in
+            guard let self else { return }
+            if permanent { self.cloudDisabled = true }   // stop retrying the cloud this session
+            self.narrator.speak(text)
+        }
     }
 
-    /// True while the guide is talking — drives the mascot's speaking glow.
-    var isSpeaking: Bool { narrator.isSpeaking }
+    /// True while the guide is talking (cloud or AVSpeech) — drives the speaking glow.
+    var isSpeaking: Bool { (cloud?.isSpeaking ?? false) || narrator.isSpeaking }
     /// True while listening for the visitor — drives the mascot's listening ring.
     var isListening: Bool { turn == .listening }
 
@@ -53,7 +77,19 @@ final class ConversationService {
     /// Speaks the 6a entry narration through the shared TTS voice.
     func speakEntry(_ text: String) {
         activatePlaybackSession()
-        narrator.speak(text)
+        routeSpeak(text)
+    }
+
+    /// Routes spoken output through the cloud voice when available, else AVSpeech.
+    /// The cloud voice falls back to AVSpeech on failure via its `onFailure` hook.
+    private func routeSpeak(_ text: String) {
+        if let cloud, !cloudDisabled { cloud.speak(text) } else { narrator.speak(text) }
+    }
+
+    /// Stops whichever voice is currently talking.
+    private func stopSpeaking() {
+        cloud?.stop()
+        narrator.stop()
     }
 
     // MARK: - Push-to-talk
@@ -63,7 +99,7 @@ final class ConversationService {
     func beginListening() async {
         guard turn == .idle else { return }
         lastError = nil
-        narrator.stop()
+        stopSpeaking()
         guard await stt.requestAuthorization() else {
             lastError = "Microphone or speech permission is needed to talk with your guide."
             return
@@ -93,7 +129,8 @@ final class ConversationService {
                 // Back to idle so a tap can barge in; `isSpeaking` drives the
                 // mascot's speaking glow while the reply is read aloud.
                 turn = .idle
-                narrator.speak(reply)
+                activatePlaybackSession()
+                routeSpeak(reply)
             } catch {
                 lastError = Self.describe(error)
                 turn = .idle
@@ -104,7 +141,7 @@ final class ConversationService {
     /// Fully stops the conversation (leaving the world / starting over).
     func stop() {
         stt.stop()
-        narrator.stop()
+        stopSpeaking()
         deactivateSession()
         turn = .idle
     }

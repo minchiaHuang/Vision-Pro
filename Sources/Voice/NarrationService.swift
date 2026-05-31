@@ -9,7 +9,7 @@ import AVFAudio
 /// LLM → TTS), which will reuse this as its text-to-speech stage rather than
 /// renaming it.
 @Observable
-final class NarrationService: NSObject, AVSpeechSynthesizerDelegate {
+final class NarrationService: NSObject, AVSpeechSynthesizerDelegate, SpeechVoice {
 
     private let synth = AVSpeechSynthesizer()
 
