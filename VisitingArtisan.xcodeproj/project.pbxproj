@@ -32,6 +32,7 @@
 		AA0000010000000000000021 /* Free_Low_Poly_Forest.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000121 /* Free_Low_Poly_Forest.usdz */; };
 		AA0000010000000000000022 /* FREE_Dirt_Road_Through_Forest.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000122 /* FREE_Dirt_Road_Through_Forest.usdz */; };
 		AA0000010000000000000014 /* SplatSpikeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000116 /* SplatSpikeView.swift */; };
+		AA000001000000000000001B /* SplatLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000124 /* SplatLibraryView.swift */; };
 		AA0000010000000000000017 /* NarrationComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000117 /* NarrationComposer.swift */; };
 		AA0000010000000000000018 /* NarrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000118 /* NarrationService.swift */; };
 		AA0000010000000000000019 /* SpeechRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000119 /* SpeechRecognizer.swift */; };
@@ -72,6 +73,7 @@
 		AA0000010000000000000121 /* Free_Low_Poly_Forest.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Free_Low_Poly_Forest.usdz; sourceTree = "<group>"; };
 		AA0000010000000000000122 /* FREE_Dirt_Road_Through_Forest.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = FREE_Dirt_Road_Through_Forest.usdz; sourceTree = "<group>"; };
 		AA0000010000000000000116 /* SplatSpikeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSpikeView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000124 /* SplatLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatLibraryView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000117 /* NarrationComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationComposer.swift; sourceTree = "<group>"; };
 		AA0000010000000000000118 /* NarrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationService.swift; sourceTree = "<group>"; };
 		AA0000010000000000000119 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
@@ -170,6 +172,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0000010000000000000116 /* SplatSpikeView.swift */,
+				AA0000010000000000000124 /* SplatLibraryView.swift */,
 				AA0000010000000000000110 /* WorldLabsService.swift */,
 				AA0000010000000000000111 /* WorldLabsTestView.swift */,
 				AA0000010000000000000114 /* USDZTestView.swift */,
@@ -333,6 +336,7 @@
 				AA00000100000000000000F3 /* DevMenuView.swift in Sources */,
 				AA0000010000000000000013 /* GamepadManager.swift in Sources */,
 				AA0000010000000000000014 /* SplatSpikeView.swift in Sources */,
+				AA000001000000000000001B /* SplatLibraryView.swift in Sources */,
 				AA0000010000000000000017 /* NarrationComposer.swift in Sources */,
 				AA0000010000000000000018 /* NarrationService.swift in Sources */,
 				AA0000010000000000000019 /* SpeechRecognizer.swift in Sources */,
