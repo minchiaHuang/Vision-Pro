@@ -11,11 +11,16 @@ import GameController
 struct WorldView: View {
     @Environment(AppState.self) private var appState
 
+    /// Optional override for the "leave the world" action. When nil (default), the
+    /// world's exit button restarts the warm flow via `AppState.restart()`. The Oops
+    /// flow passes a closure to return to its own Exit screen instead.
+    var onExit: (() -> Void)? = nil
+
     var body: some View {
         #if os(visionOS)
-        VisionWorldPanel()
+        VisionWorldPanel(onExit: onExit)
         #else
-        iOSWorldView()
+        iOSWorldView(onExit: onExit)
         #endif
     }
 }
@@ -29,6 +34,7 @@ struct VisionWorldPanel: View {
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
     @State private var isOpen = false
+    var onExit: (() -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 22) {
@@ -47,6 +53,21 @@ struct VisionWorldPanel: View {
                     .multilineTextAlignment(.center)
             }
 
+            // Voice companion — entry narration (6a) + push-to-talk conversation (6b).
+            if let world = appState.world,
+               let scores = appState.axisScores,
+               let params = appState.worldParams {
+                VoiceMascot(
+                    size: 96,
+                    configure: { convo in
+                        convo.configure(world: world, scores: scores, params: params,
+                                        hopeFreeText: appState.answers.hopeFreeText)
+                    },
+                    welcome: { NarrationComposer.entryNarration(world: world, scores: scores, params: params) }
+                )
+                .padding(.vertical, 4)
+            }
+
             Button(isOpen ? "Leave the world" : "Step into your world") {
                 Task {
                     if isOpen {
@@ -61,7 +82,9 @@ struct VisionWorldPanel: View {
             }
             .buttonStyle(PrimaryPillButtonStyle())
 
-            Button("Start over") { appState.restart() }
+            Button(onExit == nil ? "Start over" : "Leave") {
+                if let onExit { onExit() } else { appState.restart() }
+            }
                 .buttonStyle(SecondaryPillButtonStyle())
         }
         .frame(maxWidth: 520)
@@ -76,49 +99,7 @@ struct iOSWorldView: View {
     @State private var showOverlay = false
     @State private var showHint = true
     @State private var walkable = false
-    @State private var convo = ConversationService()
-
-    /// The guide's entry-narration text, composed from the user's scores.
-    private func entryNarrationText() -> String? {
-        guard let world = appState.world,
-              let scores = appState.axisScores,
-              let params = appState.worldParams else { return nil }
-        return NarrationComposer.entryNarration(world: world, scores: scores, params: params)
-    }
-
-    /// Grounds the guide in this world and speaks the welcome once on entry.
-    private func startGuide() {
-        guard let world = appState.world,
-              let scores = appState.axisScores,
-              let params = appState.worldParams else { return }
-        convo.configure(world: world, scores: scores, params: params,
-                        hopeFreeText: appState.answers.hopeFreeText)
-        if let text = entryNarrationText() { convo.speakEntry(text) }
-    }
-
-    /// Short tap on the mascot = push-to-talk (start listening / send turn).
-    private func tapMascot() {
-        if convo.isListening {
-            convo.finishListeningAndReply()
-        } else if convo.turn == .idle {
-            Task { await convo.beginListening() }
-        }
-    }
-
-    /// Long-press the mascot to replay the welcome narration.
-    private func replayWelcome() {
-        if let text = entryNarrationText() { convo.speakEntry(text) }
-    }
-
-    /// One-line status shown under the mascot.
-    private var mascotCaption: String {
-        switch convo.turn {
-        case .listening: return "Listening… tap to send"
-        case .thinking:  return "Thinking…"
-        case .speaking:  return "Speaking…"
-        case .idle:      return convo.isSpeaking ? "Speaking…" : "Tap to talk"
-        }
-    }
+    var onExit: (() -> Void)? = nil
 
     var body: some View {
         GeometryReader { proxy in
@@ -174,7 +155,9 @@ struct iOSWorldView: View {
                             .buttonStyle(SecondaryPillButtonStyle())
                         }
 
-                        Button("Start over") { appState.restart() }
+                        Button(onExit == nil ? "Start over" : "Leave world") {
+                            if let onExit { onExit() } else { appState.restart() }
+                        }
                             .buttonStyle(PrimaryPillButtonStyle())
                     }
                     .padding(.horizontal, isLandscape ? 32 : 24)
@@ -198,36 +181,28 @@ struct iOSWorldView: View {
 
                 // Voice-companion mascot — entry narration (6a) + push-to-talk
                 // conversation (6b). Tap to talk, long-press to replay the welcome.
-                VStack {
-                    HStack {
-                        Spacer()
-                        VStack(spacing: 6) {
-                            OrbView(size: 76,
-                                    isSpeaking: convo.isSpeaking,
-                                    isListening: convo.isListening)
-                                .contentShape(Circle())
-                                .onTapGesture { tapMascot() }
-                                .onLongPressGesture { replayWelcome() }
-                                .accessibilityLabel("Talk with your world's guide")
-
-                            Text(mascotCaption)
-                                .font(.caption2)
-                                .foregroundStyle(.white.opacity(0.7))
-                                .shadow(radius: 4)
-
-                            if let err = convo.lastError {
-                                Text(err)
-                                    .font(.caption2)
-                                    .foregroundStyle(.yellow.opacity(0.9))
-                                    .multilineTextAlignment(.center)
-                                    .frame(maxWidth: 220)
-                                    .shadow(radius: 4)
-                            }
+                if let world = appState.world,
+                   let scores = appState.axisScores,
+                   let params = appState.worldParams {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            VoiceMascot(
+                                size: 76,
+                                onContentBackground: true,
+                                autoSpeakDelay: .milliseconds(900),
+                                configure: { convo in
+                                    convo.configure(world: world, scores: scores, params: params,
+                                                    hopeFreeText: appState.answers.hopeFreeText)
+                                },
+                                welcome: { NarrationComposer.entryNarration(world: world, scores: scores, params: params) }
+                            )
+                            .frame(maxWidth: 220)
+                            .padding(.trailing, isLandscape ? 28 : 20)
+                            .padding(.top, isLandscape ? 16 : 24)
                         }
-                        .padding(.trailing, isLandscape ? 28 : 20)
-                        .padding(.top, isLandscape ? 16 : 24)
+                        Spacer()
                     }
-                    Spacer()
                 }
             }
             .onTapGesture {
@@ -238,12 +213,6 @@ struct iOSWorldView: View {
                 try? await Task.sleep(for: .seconds(2))
                 showHint = false
             }
-            .task {
-                // A short beat so the world has rendered before the guide speaks.
-                try? await Task.sleep(for: .milliseconds(900))
-                startGuide()
-            }
-            .onDisappear { convo.stop() }
         }
     }
 }

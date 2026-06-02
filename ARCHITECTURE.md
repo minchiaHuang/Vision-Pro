@@ -104,7 +104,7 @@ If the image asset is missing, both fall back to a grey sphere — so the flow a
 |---|---|---|
 | **v2 live generation** | new `SkyboxService`, replaces `WorldCatalog.resolve` in `AppState.finishQuiz()` | `World.imageURL` already exists for remote images |
 | **v4 · 6a entry narration** | `NarrationService` (TTS) + `NarrationComposer` (text), triggered in `iOSWorldView.task` | done — on-device `AVSpeechSynthesizer`, no deps/keys/permissions; mascot = reused `OrbView` |
-| **v4 · 6b AI voice companion** | `ConversationService` + `SpeechRecognizer`, owned by `iOSWorldView`; reuses `NarrationService` for TTS | done (spike) — push-to-talk on the mascot: `SFSpeechRecognizer` STT → Claude Messages API over URLSession (Haiku 4.5, grounded in `AxisScores`) → TTS. Needs mic/speech permission + local `Secrets.anthropicAPIKey`. Deepen into a reflection mentor later |
+| **v4 · 6b AI voice companion** | `ConversationService` + `SpeechRecognizer`, wired into `iOSWorldView` (iOS) AND `VisionWorldPanel` (visionOS); reuses `NarrationService` for TTS | done (spike) — push-to-talk on the mascot: `SFSpeechRecognizer` STT → Claude Messages API over URLSession (Haiku 4.5, grounded in `AxisScores`) → TTS. Needs mic/speech permission + local `Secrets.anthropicAPIKey`. visionOS orb lives on the control panel; a floating orb *inside* the immersive space (`ImmersiveWorldView` RealityKit attachment + gesture) is future work. Deepen into a reflection mentor later |
 | **v5 AI-generated walkable worlds** | new display pipeline (splat/mesh) replacing the sphere | World Labs Marble; significant display-layer change |
 | **More quiz questions** | append to `QuizData.questions` | UI auto-adapts (progress dots, one-per-screen) |
 | **New worlds** | add to `WorldCatalog.all` + Assets | update `resolve()` mapping |
@@ -116,3 +116,23 @@ If the image asset is missing, both fall back to a grey sphere — so the flow a
 - Platform-specific files are guarded with `#if os(visionOS)` / `#if !os(visionOS)`.
 - Core logic has zero UIKit/RealityKit dependency → testable & shared.
 - API keys never committed (see `.gitignore`); v2 keys go in an untracked `Secrets.swift`.
+
+---
+
+## 8. Oops flow (visionOS glass front-end)
+
+A second, self-contained flow under `Sources/Oops/`, reachable from the Dev Menu as
+**"Oops Flow"** (`DevFeature.oops`). It is a faithful SwiftUI port of the dark glass
+visionOS prototype: Opening → Home → Safety → Privacy → Quiz (6 reflective questions) →
+Generating → Preview → World → Exit. Its own coordinator (`OopsFlowView`) holds the
+screen + answer state; it does **not** use `AppState.phase`.
+
+**Known limitation — answers do not drive the world yet.** The Oops Quiz captures its
+6 answers in memory (`OopsAnswers`) but they are **not** mapped to `WorldParams`.
+"Enter Now" calls `AppState.loadDefaultWorld()` (neutral params) and shows the existing
+3D `WorldView`. Future work: map the free-text/slider answers → `WorldParams` (a small
+heuristic or an LLM call), replacing the neutral default. The `Generating` screen is a
+timed placeholder whose `onDone()` contract is the natural seam for a real generation call.
+
+The Q1 mic is wired to the shared `SpeechRecognizer` (`QuizDictation` in `OopsQuiz.swift`)
+for live dictation; the sidebar chat/photos icons remain decorative.

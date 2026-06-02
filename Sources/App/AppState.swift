@@ -37,8 +37,10 @@ final class AppState {
     func finishQuiz() {
         phase = .loading
         Task {
-            // Simulate the "generating world" transition (v2: this becomes a real API call).
-            try? await Task.sleep(for: .seconds(2))
+            // A brief "generating world" beat so the loading screen registers
+            // (v2: this becomes a real API call). Kept short — the scoring below
+            // is instant, so a long sleep only adds perceived slowness.
+            try? await Task.sleep(for: .milliseconds(600))
             await MainActor.run {
                 // Research direction 6->7: compute the hidden continuous scores first,
                 // then map them into world parameters.
@@ -53,14 +55,21 @@ final class AppState {
         }
     }
 
-    /// DEV ONLY — preload a neutral default world so the dev menu's "World" option
-    /// can jump straight into `WorldView`, skipping the quiz.
-    func loadDefaultWorldForTesting() {
+    /// Populate a neutral default world (scores/params/world) WITHOUT touching `phase`.
+    /// Used by the Oops flow, which renders `WorldView` directly rather than via the
+    /// `phase`-driven `RootView`.
+    func loadDefaultWorld() {
         let scores = AxisScores.neutral
         axisScores = scores
         let params = WorldMapper.map(scores)
         worldParams = params
         world = WorldCatalog.world(for: params.archetype)
+    }
+
+    /// DEV ONLY — preload a neutral default world so the dev menu's "World" option
+    /// can jump straight into `WorldView`, skipping the quiz.
+    func loadDefaultWorldForTesting() {
+        loadDefaultWorld()
         phase = .world
     }
 

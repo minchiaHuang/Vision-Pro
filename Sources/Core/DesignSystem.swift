@@ -114,6 +114,12 @@ struct OrbView: View {
     @State private var pulse = false
     @State private var spin = false
 
+    /// Orb is "active" while the guide is speaking or hearing the visitor.
+    /// The decorative rotating ring only animates while active, so an idle
+    /// orb (splash/loading mascot) does not keep CoreAnimation's render loop
+    /// busy with a perpetual rotation.
+    private var isActive: Bool { isSpeaking || isListening }
+
     var body: some View {
         ZStack {
             // Listening ring — cool cyan, only while hearing the visitor.
@@ -127,6 +133,7 @@ struct OrbView: View {
                 .strokeBorder(VATheme.amber.opacity(0.35), lineWidth: 0.5)
                 .frame(width: size * 1.45, height: size * 1.45)
                 .rotationEffect(.degrees(spin ? 360 : 0))
+                .opacity(isActive ? 1 : 0)
 
             Circle()
                 .fill(
@@ -143,12 +150,24 @@ struct OrbView: View {
                 .animation(.easeInOut(duration: 0.4), value: isSpeaking)
         }
         .onAppear {
+            // Gentle breathing — the orb's core identity, kept always on.
             withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) {
                 pulse = true
             }
+            updateSpin()
+        }
+        .onChange(of: isActive) { _, _ in updateSpin() }
+    }
+
+    /// Starts the perpetual rotation only while active; stops it when idle so
+    /// the render loop can settle on splash/loading screens.
+    private func updateSpin() {
+        if isActive {
             withAnimation(.linear(duration: 18).repeatForever(autoreverses: false)) {
                 spin = true
             }
+        } else {
+            withAnimation(.linear(duration: 0.3)) { spin = false }
         }
     }
 }
