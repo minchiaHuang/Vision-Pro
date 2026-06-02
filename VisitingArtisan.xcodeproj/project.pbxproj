@@ -40,7 +40,14 @@
 		AA00000100000000000000F4 /* SpeechVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F4 /* SpeechVoice.swift */; };
 		AA00000100000000000000F5 /* ElevenLabsVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F5 /* ElevenLabsVoice.swift */; };
 		AA00000100000000000000F6 /* AzureVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F6 /* AzureVoice.swift */; };
+		AA0000010000000000000036 /* VoiceMascot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000136 /* VoiceMascot.swift */; };
 		AA0000010000000000000023 /* world_a236ea24_100k.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000123 /* world_a236ea24_100k.spz */; };
+		AA0000010000000000000030 /* OopsGlassKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000130 /* OopsGlassKit.swift */; };
+		AA0000010000000000000031 /* OopsFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000131 /* OopsFlow.swift */; };
+		AA0000010000000000000032 /* OopsContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000132 /* OopsContent.swift */; };
+		AA0000010000000000000033 /* OopsOnboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000133 /* OopsOnboarding.swift */; };
+		AA0000010000000000000034 /* OopsQuiz.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000134 /* OopsQuiz.swift */; };
+		AA0000010000000000000035 /* OopsWorldScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000135 /* OopsWorldScreens.swift */; };
 		AA0000010000000000000015 /* MetalSplatter in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000010000000000000902 /* MetalSplatter */; };
 		AA0000010000000000000016 /* SplatIO in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000010000000000000903 /* SplatIO */; };
 /* End PBXBuildFile section */
@@ -81,7 +88,14 @@
 		AA00000100000000000001F4 /* SpeechVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechVoice.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F5 /* ElevenLabsVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabsVoice.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F6 /* AzureVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AzureVoice.swift; sourceTree = "<group>"; };
+		AA0000010000000000000136 /* VoiceMascot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceMascot.swift; sourceTree = "<group>"; };
 		AA0000010000000000000123 /* world_a236ea24_100k.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = world_a236ea24_100k.spz; sourceTree = "<group>"; };
+		AA0000010000000000000130 /* OopsGlassKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsGlassKit.swift; sourceTree = "<group>"; };
+		AA0000010000000000000131 /* OopsFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsFlow.swift; sourceTree = "<group>"; };
+		AA0000010000000000000132 /* OopsContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsContent.swift; sourceTree = "<group>"; };
+		AA0000010000000000000133 /* OopsOnboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsOnboarding.swift; sourceTree = "<group>"; };
+		AA0000010000000000000134 /* OopsQuiz.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsQuiz.swift; sourceTree = "<group>"; };
+		AA0000010000000000000135 /* OopsWorldScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsWorldScreens.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -118,6 +132,7 @@
 				AA000001000000000000030B /* Spikes */,
 				AA000001000000000000030C /* DevMenu */,
 				AA000001000000000000030D /* Core */,
+				AA000001000000000000030E /* Oops */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -163,6 +178,7 @@
 				AA00000100000000000001F4 /* SpeechVoice.swift */,
 				AA00000100000000000001F5 /* ElevenLabsVoice.swift */,
 				AA00000100000000000001F6 /* AzureVoice.swift */,
+				AA0000010000000000000136 /* VoiceMascot.swift */,
 				AA00000100000000000001F2 /* VoiceTestView.swift */,
 			);
 			path = Voice;
@@ -199,6 +215,19 @@
 				AA000001000000000000010F /* Secrets.swift */,
 			);
 			path = Core;
+			sourceTree = "<group>";
+		};
+		AA000001000000000000030E /* Oops */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000010000000000000131 /* OopsFlow.swift */,
+				AA0000010000000000000130 /* OopsGlassKit.swift */,
+				AA0000010000000000000132 /* OopsContent.swift */,
+				AA0000010000000000000133 /* OopsOnboarding.swift */,
+				AA0000010000000000000134 /* OopsQuiz.swift */,
+				AA0000010000000000000135 /* OopsWorldScreens.swift */,
+			);
+			path = Oops;
 			sourceTree = "<group>";
 		};
 		AA0000010000000000000306 /* SpikeAssets */ = {
@@ -344,6 +373,13 @@
 				AA00000100000000000000F4 /* SpeechVoice.swift in Sources */,
 				AA00000100000000000000F5 /* ElevenLabsVoice.swift in Sources */,
 				AA00000100000000000000F6 /* AzureVoice.swift in Sources */,
+				AA0000010000000000000036 /* VoiceMascot.swift in Sources */,
+				AA0000010000000000000030 /* OopsGlassKit.swift in Sources */,
+				AA0000010000000000000031 /* OopsFlow.swift in Sources */,
+				AA0000010000000000000032 /* OopsContent.swift in Sources */,
+				AA0000010000000000000033 /* OopsOnboarding.swift in Sources */,
+				AA0000010000000000000034 /* OopsQuiz.swift in Sources */,
+				AA0000010000000000000035 /* OopsWorldScreens.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
