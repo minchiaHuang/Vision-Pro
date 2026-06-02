@@ -261,15 +261,40 @@ struct SplatLibraryView: View {
 
 #else
 
-/// Splat rendering is iOS/iPadOS-only in this spike; placeholder so the dev menu
-/// compiles on visionOS. `onClose` is accepted for API parity but unused — the
-/// container keeps its own floating back button on visionOS.
+/// visionOS Dev entry to the walkable splat world: opens the bundled spike `.spz`
+/// in the CompositorServices full-immersion space (`SplatVisionRenderer`), so the
+/// path is testable without a World Labs generation. `onClose` returns to the menu.
 struct SplatLibraryView: View {
     let onClose: () -> Void
 
+    @Environment(\.openImmersiveSpace) private var openImmersiveSpace
+    @State private var message: String?
+
     var body: some View {
-        Text("Splat runs on iOS/iPadOS only.")
-            .padding()
+        VStack(spacing: 22) {
+            Text("Walkable splat world")
+                .font(.title2.weight(.semibold))
+            Text("Renders a Gaussian splat in a full-immersion space. Drag with a game controller to move; head tracking looks around.")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 460)
+
+            Button("Enter bundled splat world") {
+                guard let url = Bundle.main.url(forResource: SplatSpikeDebug.bundledSplat,
+                                                withExtension: "spz") else {
+                    message = "Bundled \(SplatSpikeDebug.bundledSplat).spz not found"
+                    return
+                }
+                Task { await openImmersiveSpace(id: "splat", value: url) }
+            }
+            .buttonStyle(.borderedProminent)
+
+            if let message {
+                Text(message).font(.footnote).foregroundStyle(.orange)
+            }
+        }
+        .padding(40)
     }
 }
 
