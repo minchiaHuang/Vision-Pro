@@ -261,40 +261,186 @@ struct SplatLibraryView: View {
 
 #else
 
-/// visionOS Dev entry to the walkable splat world: opens the bundled spike `.spz`
-/// in the CompositorServices full-immersion space (`SplatVisionRenderer`), so the
-/// path is testable without a World Labs generation. `onClose` returns to the menu.
+// MARK: - Library screen (visionOS)
+
+/// DEV-only dev-menu entry: generate a world from a prompt or reopen a previous one,
+/// then walk into its splat. Mirrors the iOS `SplatLibraryView` section-for-section,
+/// reusing the same shared store (`SplatLibrary` / `SplatSeeds`) and `WorldLabsService`.
+/// The only platform difference: a walkable world is opened in the CompositorServices
+/// full-immersion space (`openImmersiveSpace(id: "splat", value:)`, rendered by
+/// `SplatVisionRenderer`) instead of a navigation push. The renderer downloads + caches
+/// remote CDN `.spz` URLs itself, so both bundled and generated worlds open the same way.
 struct SplatLibraryView: View {
+    /// Returns to the dev menu. Surfaced as the list root's leading toolbar item
+    /// so the container can omit its floating back button (no double back).
     let onClose: () -> Void
 
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
-    @State private var message: String?
+
+    @State private var service = WorldLabsService()
+    @State private var prompt = "A cozy artisan's workshop with wooden workbenches, hanging tools, and warm afternoon light through a window"
+    @State private var saved: [SavedSplatWorld] = SplatLibrary.load()
+    /// Shown when a generation finished without a splat URL, or a bundled seed is missing.
+    @State private var errorMessage: String?
 
     var body: some View {
-        VStack(spacing: 22) {
-            Text("Walkable splat world")
-                .font(.title2.weight(.semibold))
-            Text("Renders a Gaussian splat in a full-immersion space. Drag with a game controller to move; head tracking looks around.")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 460)
-
-            Button("Enter bundled splat world") {
-                guard let url = Bundle.main.url(forResource: SplatSpikeDebug.bundledSplat,
-                                                withExtension: "spz") else {
-                    message = "Bundled \(SplatSpikeDebug.bundledSplat).spz not found"
-                    return
-                }
-                Task { await openImmersiveSpace(id: "splat", value: url) }
+        NavigationStack {
+            List {
+                generateSection
+                historySection
             }
-            .buttonStyle(.borderedProminent)
-
-            if let message {
-                Text(message).font(.footnote).foregroundStyle(.orange)
+            .navigationTitle("Splat")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: onClose) {
+                        Image(systemName: "chevron.left")
+                    }
+                    .accessibilityLabel("Back to menu")
+                }
+            }
+            .onChange(of: service.status) { _, newValue in
+                if case .ready = newValue { handleGenerated() }
             }
         }
-        .padding(40)
+    }
+
+    // MARK: Generate
+
+    private var generateSection: some View {
+        Section("Generate a new world") {
+            TextField("Describe a world", text: $prompt, axis: .vertical)
+                .lineLimit(2...4)
+                .disabled(isBusy)
+
+            statusBody
+
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+
+            Button(isBusy ? "Generating…" : "Generate world") {
+                errorMessage = nil
+                Task { await service.run(prompt: prompt) }
+            }
+            .disabled(isBusy || prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+    }
+
+    @ViewBuilder
+    private var statusBody: some View {
+        switch service.status {
+        case .idle:
+            Text("Generation takes ~5 minutes and uses paid API credits.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        case .generating(let progress):
+            VStack(alignment: .leading, spacing: 8) {
+                ProgressView(value: Double(progress), total: 100)
+                    .animation(.linear(duration: 6), value: progress)
+                Text("Building your world… \(progress)%  (~5 min)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        case .downloading:
+            HStack(spacing: 10) {
+                ProgressView()
+                Text("Downloading…").font(.footnote).foregroundStyle(.secondary)
+            }
+        case .failed(let message):
+            Text(message)
+                .font(.footnote)
+                .foregroundStyle(.red)
+        case .ready:
+            EmptyView()
+        }
+    }
+
+    /// On a successful generation, persist the new world (if it has a splat URL) and
+    /// walk straight into it. The panorama produced by `run` is ignored here.
+    private func handleGenerated() {
+        guard let spzURL = service.splatRemoteURL, let worldId = service.worldId else {
+            errorMessage = "World generated but no splat (.spz) URL was available."
+            return
+        }
+        let world = SavedSplatWorld(id: worldId,
+                                    name: prompt.trimmingCharacters(in: .whitespacesAndNewlines),
+                                    spzURL: spzURL,
+                                    createdAt: Date())
+        SplatLibrary.add(world)
+        saved = SplatLibrary.load()
+        enter(spzURL)
+    }
+
+    private var isBusy: Bool {
+        switch service.status {
+        case .generating, .downloading: return true
+        default: return false
+        }
+    }
+
+    // MARK: History
+
+    @ViewBuilder
+    private var historySection: some View {
+        Section("Previously generated") {
+            ForEach(SplatSeeds.all) { seed in
+                Button { open(seed.source) } label: {
+                    worldRow(title: seed.name, subtitle: "Sample · \(seed.id)")
+                }
+            }
+
+            ForEach(saved) { world in
+                Button { enter(world.spzURL) } label: {
+                    worldRow(title: world.name.isEmpty ? world.id : world.name,
+                             subtitle: world.id)
+                }
+            }
+            .onDelete(perform: deleteSaved)
+        }
+    }
+
+    private func worldRow(title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.body)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+    }
+
+    private func deleteSaved(_ offsets: IndexSet) {
+        for index in offsets { SplatLibrary.remove(id: saved[index].id) }
+        saved = SplatLibrary.load()
+    }
+
+    // MARK: Enter the immersive splat space
+
+    /// Resolves a seed's source to a URL and opens the walkable world. Bundled seeds
+    /// resolve to their packaged `.spz`; remote seeds pass their CDN URL straight through.
+    private func open(_ source: SeedSource) {
+        switch source {
+        case .bundled(let resource):
+            guard let url = Bundle.main.url(forResource: resource, withExtension: "spz") else {
+                errorMessage = "Bundled \(resource).spz not found"
+                return
+            }
+            enter(url)
+        case .remote(let url):
+            enter(url)
+        }
+    }
+
+    /// Opens the CompositorServices full-immersion splat space. `SplatVisionRenderer`
+    /// downloads + caches remote URLs, so both bundled files and CDN URLs work here.
+    private func enter(_ url: URL) {
+        errorMessage = nil
+        Task { await openImmersiveSpace(id: "splat", value: url) }
     }
 }
 
