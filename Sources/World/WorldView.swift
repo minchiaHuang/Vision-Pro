@@ -33,7 +33,10 @@ struct VisionWorldPanel: View {
     @Environment(AppState.self) private var appState
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
-    @State private var isOpen = false
+    // Which Immersive Space is open ("world", "splat", "usdz", or nil) is shared
+    // app-wide via ImmersiveSpaceController, so switching spaces across screens never
+    // overlaps two open requests (which visionOS rejects with a warning).
+    @Environment(ImmersiveSpaceController.self) private var spaces
     var onExit: (() -> Void)? = nil
 
     var body: some View {
@@ -68,33 +71,36 @@ struct VisionWorldPanel: View {
                 .padding(.vertical, 4)
             }
 
-            Button(isOpen ? "Leave the world" : "Step into your world") {
+            Button(spaces.currentSpaceID == "world" ? "Leave the world" : "Step into your world") {
                 Task {
-                    if isOpen {
-                        await dismissImmersiveSpace()
-                        isOpen = false
+                    if spaces.currentSpaceID == "world" {
+                        await spaces.dismiss { await dismissImmersiveSpace() }
                     } else {
-                        if case .opened = await openImmersiveSpace(id: "world") {
-                            isOpen = true
-                        }
+                        await spaces.present(id: "world",
+                                             dismiss: { await dismissImmersiveSpace() },
+                                             open: { await openImmersiveSpace(id: "world") })
                     }
                 }
             }
             .buttonStyle(PrimaryPillButtonStyle())
+            .disabled(spaces.isTransitioning)
 
             // Walkable 6DoF splat world (CompositorServices), mirroring the iOS
             // "Walk inside (3D)" toggle. Only shown once a splat has been generated.
             if let splatURL = appState.generatedSplatURL {
-                Button("Walk inside (3D)") {
+                Button(spaces.currentSpaceID == "splat" ? "Leave 3D world" : "Walk inside (3D)") {
                     Task {
-                        if isOpen {
-                            await dismissImmersiveSpace()
-                            isOpen = false
+                        if spaces.currentSpaceID == "splat" {
+                            await spaces.dismiss { await dismissImmersiveSpace() }
+                        } else {
+                            await spaces.present(id: "splat",
+                                                 dismiss: { await dismissImmersiveSpace() },
+                                                 open: { await openImmersiveSpace(id: "splat", value: splatURL) })
                         }
-                        await openImmersiveSpace(id: "splat", value: splatURL)
                     }
                 }
                 .buttonStyle(SecondaryPillButtonStyle())
+                .disabled(spaces.isTransitioning)
             }
 
             Button(onExit == nil ? "Start over" : "Leave") {

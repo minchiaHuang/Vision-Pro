@@ -134,11 +134,10 @@ final class SplatVisionRenderer: @unchecked Sendable {
         _ = await renderer.addChunk(chunk)
 
         // Hand the finished scene to the render thread (adopted once, then owned there).
-        loadLock.lock()
-        pendingScene = LoadedScene(splat: renderer,
-                                   calibration: calibration,
-                                   initialLocomotion: initialLocomotion)
-        loadLock.unlock()
+        let scene = LoadedScene(splat: renderer,
+                                calibration: calibration,
+                                initialLocomotion: initialLocomotion)
+        loadLock.withLock { pendingScene = scene }
         Self.log.info("Loaded splat: \(rawPoints.count) points → \(points.count) after cap")
     }
 

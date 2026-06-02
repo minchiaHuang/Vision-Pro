@@ -276,6 +276,8 @@ struct SplatLibraryView: View {
     let onClose: () -> Void
 
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
+    @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
+    @Environment(ImmersiveSpaceController.self) private var spaces
 
     @State private var service = WorldLabsService()
     @State private var prompt = "A cozy artisan's workshop with wooden workbenches, hanging tools, and warm afternoon light through a window"
@@ -440,7 +442,11 @@ struct SplatLibraryView: View {
     /// downloads + caches remote URLs, so both bundled files and CDN URLs work here.
     private func enter(_ url: URL) {
         errorMessage = nil
-        Task { await openImmersiveSpace(id: "splat", value: url) }
+        Task {
+            await spaces.present(id: "splat",
+                                 dismiss: { await dismissImmersiveSpace() },
+                                 open: { await openImmersiveSpace(id: "splat", value: url) })
+        }
     }
 }
 
