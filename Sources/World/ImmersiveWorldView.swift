@@ -3,18 +3,33 @@ import SwiftUI
 import RealityKit
 import UIKit
 
-/// visionOS: true immersion. Maps the 360° image onto the inner wall of a large sphere;
-/// the user's head is the camera (head tracking).
+/// visionOS: true immersion. Two paths, mirroring the iOS `iOSWorldView` priority:
+///   - parametric USDZ walk-in world when `worldParams` is set (the production experience);
+///   - 360° panorama sphere otherwise (e.g. the World Labs panorama-only flow).
+/// The user's head is the camera (head tracking) — there is no `PerspectiveCamera` or
+/// `WorldCameraRig`; locomotion is left to the device's own head/room tracking.
 struct ImmersiveWorldView: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
         RealityView { content in
-            let sphere = await makeSkySphere(
-                override: appState.generatedPano,
-                imageName: appState.world?.imageName ?? WorldCatalog.fallback.imageName
-            )
-            content.add(sphere)
+            if let params = appState.worldParams,
+               let build = await ParametricWorldBuilder.build(params: params) {
+                // Rest the model's floor at the origin and centre it horizontally so the user
+                // stands inside the world. Saturation (axis 4) is intentionally skipped here:
+                // the iOS version applies it via a full-screen SwiftUI `.blendMode(.saturation)`
+                // overlay, which has no immersive-space equivalent — revisit in the polish round.
+                build.container.position = SIMD3(-build.bounds.center.x,
+                                                 -build.bounds.min.y,
+                                                 -build.bounds.center.z)
+                content.add(build.container)
+            } else {
+                let sphere = await makeSkySphere(
+                    override: appState.generatedPano,
+                    imageName: appState.world?.imageName ?? WorldCatalog.fallback.imageName
+                )
+                content.add(sphere)
+            }
         }
     }
 
