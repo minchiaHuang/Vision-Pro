@@ -85,7 +85,7 @@ private enum SplatRoute: Hashable {
 /// `SplatWorldView` / `SplatSceneView` for rendering.
 struct SplatLibraryView: View {
     @State private var service = WorldLabsService()
-    @State private var prompt = "A calm sunlit room with warm wood, plants, and soft morning light"
+    @State private var prompt = "A cozy artisan's workshop with wooden workbenches, hanging tools, and warm afternoon light through a window"
     @State private var route: SplatRoute?
     @State private var saved: [SavedSplatWorld] = SplatLibrary.load()
     /// Shown when a generation finished but yielded no walkable splat URL.
@@ -142,6 +142,7 @@ struct SplatLibraryView: View {
         case .generating(let progress):
             VStack(alignment: .leading, spacing: 8) {
                 ProgressView(value: Double(progress), total: 100)
+                    .animation(.linear(duration: 6), value: progress)
                 Text("Building your world… \(progress)%  (~5 min)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
