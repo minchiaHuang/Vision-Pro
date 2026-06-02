@@ -24,13 +24,26 @@ final class WorldLabsService {
     private(set) var worldId: String?
     private(set) var splatRemoteURL: URL?
 
-    private let splatResolution = "100k"   // volume/quality balance; downloaded on demand
+    // Splat point-cloud density: "100k" / "500k" / "full_res". Higher = sharper but
+    // larger download, slower decode, and more memory. "full_res" can be millions of
+    // points: load it on a real device in the Release scheme, not Debug. Switching
+    // resolution does NOT cost extra credits (same world, different download).
+    private let splatResolution = "full_res"
     private let apiKey = Secrets.worldLabsAPIKey
     private let base = "https://api.worldlabs.ai/marble/v1"
-    private let model = "marble-1.0-draft"
+    // World-generation model. "marble-1.1" = current standard (better lighting,
+    // contrast, fidelity than the old "marble-1.0-draft"; 1,500 credits/world).
+    // "marble-1.1-plus" costs more but builds bigger worlds for outdoor/large
+    // indoor prompts (= a larger walkable 6DoF bubble).
+    private let model = "marble-1.1"
 
     private let pollInterval: Duration = .seconds(6)
     private let maxPolls = 120   // ~12 minutes ceiling
+
+    /// The API reports only a status string (PENDING/IN_PROGRESS/SUCCEEDED) with no
+    /// numeric percent, so the progress bar is *estimated* from elapsed time over this
+    /// typical generation duration, and held below 100 until the operation is done.
+    private let expectedDuration: Double = 300   // ~5 min, typical
 
     func run(prompt: String) async {
         guard !apiKey.isEmpty else {
@@ -77,6 +90,7 @@ final class WorldLabsService {
     // MARK: - Poll
 
     private func pollUntilPano(operationId: String) async throws -> URL {
+        let start = Date()
         for _ in 0..<maxPolls {
             try await Task.sleep(for: pollInterval)
 
@@ -108,8 +122,10 @@ final class WorldLabsService {
                 throw SpikeError.message("World finished but no pano_url available.")
             }
 
-            let pct = op.metadata?.progress?.status == "SUCCEEDED" ? 100
-                : (op.metadata?.progress?.status == "IN_PROGRESS" ? 50 : 0)
+            // No numeric progress from the API — estimate from elapsed time so the
+            // bar advances steadily, capped below 100 until the operation completes.
+            let elapsed = Date().timeIntervalSince(start)
+            let pct = min(95, Int(elapsed / expectedDuration * 100))
             status = .generating(progress: pct)
         }
         throw SpikeError.message("Timed out waiting for world generation.")
