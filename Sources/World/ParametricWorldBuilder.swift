@@ -13,6 +13,7 @@ struct ParametricWorldBuild {
     let eye: SIMD3<Float>
 }
 
+@MainActor
 enum ParametricWorldBuilder {
     /// Loads the archetype USDZ and tunes it from `params`:
     ///   - axis 4: three DirectionalLights with intensity + colour temperature

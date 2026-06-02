@@ -273,6 +273,8 @@ struct USDZTestView: View {
     @State private var gamepad = GamepadManager()
 
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
+    @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
+    @Environment(ImmersiveSpaceController.self) private var spaces
 
     private var modelName: String { USDZDebug.models[modelIndex] }
 
@@ -320,7 +322,11 @@ struct USDZTestView: View {
             // First-person walk-in (full-immersion space). Drag the preview above to
             // pre-orient; walk with a controller once inside (head tracking looks around).
             Button("Walk inside") {
-                Task { await openImmersiveSpace(id: "usdz", value: modelName) }
+                Task {
+                    await spaces.present(id: "usdz",
+                                         dismiss: { await dismissImmersiveSpace() },
+                                         open: { await openImmersiveSpace(id: "usdz", value: modelName) })
+                }
             }
             .buttonStyle(.borderedProminent)
 
