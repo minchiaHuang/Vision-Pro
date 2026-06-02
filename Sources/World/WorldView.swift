@@ -82,6 +82,21 @@ struct VisionWorldPanel: View {
             }
             .buttonStyle(PrimaryPillButtonStyle())
 
+            // Walkable 6DoF splat world (CompositorServices), mirroring the iOS
+            // "Walk inside (3D)" toggle. Only shown once a splat has been generated.
+            if let splatURL = appState.generatedSplatURL {
+                Button("Walk inside (3D)") {
+                    Task {
+                        if isOpen {
+                            await dismissImmersiveSpace()
+                            isOpen = false
+                        }
+                        await openImmersiveSpace(id: "splat", value: splatURL)
+                    }
+                }
+                .buttonStyle(SecondaryPillButtonStyle())
+            }
+
             Button(onExit == nil ? "Start over" : "Leave") {
                 if let onExit { onExit() } else { appState.restart() }
             }

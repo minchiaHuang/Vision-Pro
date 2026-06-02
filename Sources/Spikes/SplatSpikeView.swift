@@ -17,6 +17,24 @@ enum SplatSpikeDebug {
     static let ignoreGamepad = false
 }
 
+/// Caches a downloaded `.spz` so re-entering a walkable world doesn't re-download.
+/// Platform-agnostic (Foundation only) — reused by both the iOS `SplatSpikeRenderer`
+/// and the visionOS `SplatVisionRenderer`.
+enum SplatDownloader {
+    static func fetch(_ remote: URL) async throws -> URL {
+        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        let dest = caches.appendingPathComponent("worldlabs-\(remote.lastPathComponent)")
+        if FileManager.default.fileExists(atPath: dest.path) { return dest }
+        let (tmp, response) = try await URLSession.shared.download(from: remote)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            throw URLError(.badServerResponse)
+        }
+        try? FileManager.default.removeItem(at: dest)
+        try FileManager.default.moveItem(at: tmp, to: dest)
+        return dest
+    }
+}
+
 #if !os(visionOS)
 import MetalKit
 import Metal
@@ -135,22 +153,6 @@ struct SplatWorldView: View {
             do { localURL = try await SplatDownloader.fetch(remoteURL) }
             catch { failed = true }
         }
-    }
-}
-
-/// Caches a downloaded `.spz` so re-entering "walkable" doesn't re-download.
-enum SplatDownloader {
-    static func fetch(_ remote: URL) async throws -> URL {
-        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-        let dest = caches.appendingPathComponent("worldlabs-\(remote.lastPathComponent)")
-        if FileManager.default.fileExists(atPath: dest.path) { return dest }
-        let (tmp, response) = try await URLSession.shared.download(from: remote)
-        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-            throw URLError(.badServerResponse)
-        }
-        try? FileManager.default.removeItem(at: dest)
-        try FileManager.default.moveItem(at: tmp, to: dest)
-        return dest
     }
 }
 

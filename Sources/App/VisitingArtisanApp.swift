@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(visionOS)
+import CompositorServices
+#endif
 #if os(iOS)
 import UIKit
 
@@ -37,6 +40,17 @@ struct VisitingArtisanApp: App {
             ImmersiveWorldView()
                 .environment(appState)
         }
+
+        // visionOS only: walkable Gaussian-splat world (CompositorServices). The
+        // `.spz` URL is passed as the space's value; full immersion replaces the room.
+        ImmersiveSpace(id: "splat", for: URL.self) { $url in
+            CompositorLayer(configuration: SplatLayerConfiguration()) { layerRenderer in
+                if let url {
+                    SplatVisionRenderer.startRendering(layerRenderer, splatURL: url)
+                }
+            }
+        }
+        .immersionStyle(selection: .constant(.full), in: .full)
         #endif
     }
 }
