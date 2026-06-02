@@ -232,39 +232,6 @@ struct iOSWorldView: View {
     }
 }
 
-// MARK: - ParametricWorldView helpers
-
-/// 3-keyframe linear interpolation of Kelvin → UIColor.
-/// 3500 K = amber warm, 5500 K = neutral white, 7000 K = cool blue-white.
-private func colorFromKelvin(_ kelvin: Float) -> UIColor {
-    if kelvin <= 5500 {
-        let t = CGFloat((kelvin - 3500) / (5500 - 3500))
-        return UIColor(red: 1.0, green: 0.76 + 0.24 * t, blue: 0.44 + 0.56 * t, alpha: 1)
-    } else {
-        let t = CGFloat((kelvin - 5500) / (7000 - 5500))
-        return UIColor(red: 1.0 - 0.15 * t, green: 1.0 - 0.07 * t, blue: 1.0, alpha: 1)
-    }
-}
-
-/// Returns evenly-spaced glow-orb ModelEntities on the scene's floor perimeter.
-/// `count == 0` returns empty (no companions). Used for axis 1 social density.
-private func companionOrbs(count: Int, bounds: BoundingBox, span: Float) -> [ModelEntity] {
-    guard count > 0 else { return [] }
-    let perimeter = max(bounds.extents.x, bounds.extents.z) * 0.45
-    let floorY = bounds.min.y + span * 0.05
-    let orbRadius = span * 0.02
-    return (0..<count).map { i in
-        let angle = Float(i) * (.pi * 2 / Float(count))
-        let mesh = MeshResource.generateSphere(radius: orbRadius)
-        let mat = UnlitMaterial(color: UIColor(white: 0.9, alpha: 0.8))
-        let orb = ModelEntity(mesh: mesh, materials: [mat])
-        orb.position = SIMD3<Float>(bounds.center.x + cos(angle) * perimeter,
-                                     floorY,
-                                     bounds.center.z + sin(angle) * perimeter)
-        return orb
-    }
-}
-
 // MARK: - ParametricWorldView
 
 /// Production walk-in world driven by `WorldParams`.
@@ -310,33 +277,15 @@ struct ParametricWorldView: View {
             Color.black.ignoresSafeArea()
 
             RealityView { content in
-                guard let model = try? await Entity(named: params.archetype.usdzName) else {
+                // Model + lights + orbs are assembled by the shared builder (also used by the
+                // visionOS immersive path). iOS adds its own camera + rig on top.
+                guard let build = await ParametricWorldBuilder.build(params: ep) else {
                     status = .failed; return
                 }
-                content.add(model)
+                content.add(build.container)
 
-                let bounds = model.visualBounds(relativeTo: nil)
-                let span = max(bounds.extents.x, max(bounds.extents.y, bounds.extents.z))
-                let eye = SIMD3<Float>(bounds.center.x,
-                                      bounds.center.y + bounds.extents.y * 0.15,
-                                      bounds.center.z)
-
-                // axis 4: three directional lights with intensity + color temperature.
-                let warmth = colorFromKelvin(ep.colorTemperature)
-                for (dir, mult): (SIMD3<Float>, Float) in [
-                    ([1, 1, 1], 1.0), ([-1, 0.6, -0.6], 0.55), ([0, 0.4, 1], 0.35)
-                ] {
-                    let light = DirectionalLight()
-                    light.light.intensity = ep.lightIntensity * mult
-                    light.light.color = warmth
-                    light.look(at: .zero, from: dir, relativeTo: nil)
-                    content.add(light)
-                }
-
-                // axis 1: companion orbs placed on the floor perimeter.
-                for orb in companionOrbs(count: ep.socialDensity, bounds: bounds, span: span) {
-                    content.add(orb)
-                }
+                let span = build.span
+                let eye = build.eye
 
                 // Camera + WorldCameraRig (same pattern as USDZTestView).
                 let camera = PerspectiveCamera()

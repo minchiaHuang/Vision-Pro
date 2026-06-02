@@ -18,6 +18,7 @@
 		AA0000010000000000000009 /* VisitingArtisanApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000109 /* VisitingArtisanApp.swift */; };
 		AA000001000000000000000A /* WorldCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000010A /* WorldCatalog.swift */; };
 		AA000001000000000000000B /* WorldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000010B /* WorldView.swift */; };
+		AA0000010000000000000037 /* ParametricWorldBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000137 /* ParametricWorldBuilder.swift */; };
 		AA000001000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000010C /* Assets.xcassets */; };
 		AA000001000000000000000D /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000010F /* Secrets.swift */; };
 		AA000001000000000000000E /* WorldLabsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000110 /* WorldLabsService.swift */; };
@@ -66,6 +67,7 @@
 		AA0000010000000000000109 /* VisitingArtisanApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitingArtisanApp.swift; sourceTree = "<group>"; };
 		AA000001000000000000010A /* WorldCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCatalog.swift; sourceTree = "<group>"; };
 		AA000001000000000000010B /* WorldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000137 /* ParametricWorldBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParametricWorldBuilder.swift; sourceTree = "<group>"; };
 		AA000001000000000000010C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA000001000000000000010D /* VisitingArtisan.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VisitingArtisan.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA000001000000000000010E /* Info-visionOS.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-visionOS.plist"; sourceTree = "<group>"; };
@@ -198,6 +200,7 @@
 			isa = PBXGroup;
 			children = (
 				AA000001000000000000010B /* WorldView.swift */,
+				AA0000010000000000000137 /* ParametricWorldBuilder.swift */,
 				AA000001000000000000010A /* WorldCatalog.swift */,
 				AA0000010000000000000105 /* PromptBuilder.swift */,
 				AA0000010000000000000102 /* Immersive360View.swift */,
@@ -361,6 +364,7 @@
 				AA0000010000000000000009 /* VisitingArtisanApp.swift in Sources */,
 				AA000001000000000000000A /* WorldCatalog.swift in Sources */,
 				AA000001000000000000000B /* WorldView.swift in Sources */,
+				AA0000010000000000000037 /* ParametricWorldBuilder.swift in Sources */,
 				AA000001000000000000000D /* Secrets.swift in Sources */,
 				AA000001000000000000000E /* WorldLabsService.swift in Sources */,
 				AA000001000000000000000F /* WorldLabsTestView.swift in Sources */,
