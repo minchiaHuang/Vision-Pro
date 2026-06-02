@@ -55,14 +55,21 @@ final class AppState {
         }
     }
 
-    /// DEV ONLY — preload a neutral default world so the dev menu's "World" option
-    /// can jump straight into `WorldView`, skipping the quiz.
-    func loadDefaultWorldForTesting() {
+    /// Populate a neutral default world (scores/params/world) WITHOUT touching `phase`.
+    /// Used by the Oops flow, which renders `WorldView` directly rather than via the
+    /// `phase`-driven `RootView`.
+    func loadDefaultWorld() {
         let scores = AxisScores.neutral
         axisScores = scores
         let params = WorldMapper.map(scores)
         worldParams = params
         world = WorldCatalog.world(for: params.archetype)
+    }
+
+    /// DEV ONLY — preload a neutral default world so the dev menu's "World" option
+    /// can jump straight into `WorldView`, skipping the quiz.
+    func loadDefaultWorldForTesting() {
+        loadDefaultWorld()
         phase = .world
     }
 

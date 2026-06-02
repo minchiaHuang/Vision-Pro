@@ -7,6 +7,7 @@ import SwiftUI
 
 /// One testable feature reachable from the dev menu.
 enum DevFeature: String, Identifiable, CaseIterable {
+    case oops
     case full
     case world
     case voice
@@ -17,6 +18,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
 
     var title: String {
         switch self {
+        case .oops:  return "Oops Flow"
         case .full:  return "Full Flow"
         case .world: return "World — Enter Directly"
         case .voice: return "Voice — Speech Test"
@@ -27,6 +29,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
 
     var subtitle: String {
         switch self {
+        case .oops:  return "visionOS glass · onboarding → quiz → world"
         case .full:  return "splash → quiz → world"
         case .world: return "Default world, skips the quiz"
         case .voice: return "Tap the orb to talk · ASR / LLM / TTS"
@@ -37,6 +40,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
 
     var systemImage: String {
         switch self {
+        case .oops:  return "rectangle.stack.badge.play"
         case .full:  return "sparkles"
         case .world: return "globe.asia.australia"
         case .voice: return "waveform"
@@ -131,6 +135,9 @@ private struct DevFeatureContainer: View {
     @ViewBuilder
     private var content: some View {
         switch feature {
+        case .oops:
+            // The visionOS glass prototype flow (own coordinator + screen state).
+            OopsFlowView()
         case .full:
             // Fresh start each time the full flow is opened.
             RootView().onAppear { appState.restart() }
