@@ -42,20 +42,35 @@ final class SplatVisionRenderer: @unchecked Sendable {
 
     private static let maxSimultaneousRenders = 3
 
+    /// Upper bound on rendered splat count. Worlds above this are uniformly downsampled
+    /// at load to cap decode time, memory, and per-frame GPU cost on device. A safety
+    /// valve independent of the download tier (handles any source, incl. future full_res
+    /// or large bundled assets). ~1.5M is comfortable on Vision Pro; tune on device.
+    private static let maxSplatPoints = 1_500_000
+
     private let layerRenderer: LayerRenderer
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
     private let splatURL: URL
 
-    private var splat: SplatRenderer?
     private let inFlight = DispatchSemaphore(value: maxSimultaneousRenders)
 
     private let arSession = ARKitSession()
     private let worldTracking = WorldTrackingProvider()
 
-    /// Recentres raw splat-world coordinates to the origin (same role as the iOS
-    /// renderer's `sceneCalibration`). World Labs `.spz` is Y-up, so this is a pure
-    /// translation — no flip.
+    /// Result of an off-thread load, handed to the render thread exactly once.
+    private struct LoadedScene {
+        let splat: SplatRenderer
+        let calibration: simd_float4x4
+        let initialLocomotion: SplatLocomotion
+    }
+    /// Published by `load()` under `loadLock`; the render thread adopts it once (then
+    /// owns the copies below outright), so `splat`/`locomotion` never race.
+    private let loadLock = NSLock()
+    private var pendingScene: LoadedScene?
+
+    // Render-thread-owned (mutated/read only inside the render loop after adoption).
+    private var splat: SplatRenderer?
     private var sceneCalibration: simd_float4x4 = matrix_identity_float4x4
     private var locomotion = SplatLocomotion()
     private var lastTickTime: CFTimeInterval?
@@ -67,16 +82,23 @@ final class SplatVisionRenderer: @unchecked Sendable {
         self.splatURL = splatURL
     }
 
-    /// Entry point used by the `CompositorLayer` closure: load the model, then drive
-    /// the render loop on a dedicated render-priority executor.
+    /// Entry point used by the `CompositorLayer` closure. The render loop starts
+    /// immediately (presenting cleared frames so the immersive space is never black /
+    /// frozen) while the splat loads off-thread; the loop adopts it when ready.
     static func startRendering(_ layerRenderer: LayerRenderer, splatURL: URL) {
         let renderer = SplatVisionRenderer(layerRenderer: layerRenderer, splatURL: splatURL)
-        Task(executorPreference: SplatRenderExecutor.shared) {
+
+        // Load off the render thread; publishes a LoadedScene when done.
+        Task.detached(priority: .userInitiated) {
             do {
                 try await renderer.load()
             } catch {
                 log.error("Failed to load splat: \(error.localizedDescription)")
             }
+        }
+
+        // ARKit + render loop on the dedicated render-priority executor.
+        Task(executorPreference: SplatRenderExecutor.shared) {
             do {
                 try await renderer.arSession.run([renderer.worldTracking])
             } catch {
@@ -98,21 +120,45 @@ final class SplatVisionRenderer: @unchecked Sendable {
                                          sampleCount: 1,
                                          maxViewCount: layerRenderer.properties.viewCount,
                                          maxSimultaneousRenders: Self.maxSimultaneousRenders)
-        let points = try await AutodetectSceneReader(localURL).readAll()
-        guard !points.isEmpty else {
+        let rawPoints = try await AutodetectSceneReader(localURL).readAll()
+        guard !rawPoints.isEmpty else {
             Self.log.error("Splat decoded to 0 points")
             return
         }
-        frameScene(points)
+
+        // Cap point count before framing + chunk build (bounds decode/memory/GPU cost).
+        let points = Self.downsample(rawPoints, to: Self.maxSplatPoints)
+        let (calibration, initialLocomotion) = Self.framing(points)
+
         let chunk = try SplatChunk(device: device, from: points)
         _ = await renderer.addChunk(chunk)
-        self.splat = renderer
-        Self.log.info("Loaded \(points.count) splats")
+
+        // Hand the finished scene to the render thread (adopted once, then owned there).
+        loadLock.lock()
+        pendingScene = LoadedScene(splat: renderer,
+                                   calibration: calibration,
+                                   initialLocomotion: initialLocomotion)
+        loadLock.unlock()
+        Self.log.info("Loaded splat: \(rawPoints.count) points → \(points.count) after cap")
+    }
+
+    /// Uniformly strides a point cloud down to at most `budget` points. Returns the
+    /// input unchanged when already within budget (e.g. the bundled 100k asset).
+    private static func downsample(_ points: [SplatPoint], to budget: Int) -> [SplatPoint] {
+        guard points.count > budget else { return points }
+        let stride = Int((Double(points.count) / Double(budget)).rounded(.up))
+        var out = [SplatPoint]()
+        out.reserveCapacity(points.count / stride + 1)
+        var i = 0
+        while i < points.count { out.append(points[i]); i += stride }
+        return out
     }
 
     /// Centroid recentre + mean radius → scene calibration and the start viewpoint.
     /// The user begins backed off along +Z (the proven iOS framing) and walks in.
-    private func frameScene(_ points: [SplatPoint]) {
+    /// Pure (no `self` mutation) so it can run on the load thread before handoff.
+    private static func framing(_ points: [SplatPoint]) -> (calibration: simd_float4x4,
+                                                            locomotion: SplatLocomotion) {
         var sum = SIMD3<Float>.zero
         for p in points { sum += p.position }
         let center = sum / Float(points.count)
@@ -121,9 +167,11 @@ final class SplatVisionRenderer: @unchecked Sendable {
         for p in points { distSum += simd_length(p.position - center) }
         let meanRadius = max(distSum / Float(points.count), 0.001)
 
-        sceneCalibration = Self.translation(-center.x, -center.y, -center.z)
+        let calibration = translation(-center.x, -center.y, -center.z)
         let frameDistance = meanRadius * 3
-        locomotion = SplatLocomotion(position: SIMD3(0, 0, frameDistance), span: max(meanRadius, 1))
+        let locomotion = SplatLocomotion(position: SIMD3(0, 0, frameDistance),
+                                         span: max(meanRadius, 1))
+        return (calibration, locomotion)
     }
 
     // MARK: - Per-frame viewports (locomotion + head tracking)
@@ -160,6 +208,18 @@ final class SplatVisionRenderer: @unchecked Sendable {
 
         let drawables = frame.queryDrawables()
         guard !drawables.isEmpty else { return }
+
+        // Adopt the loaded scene once it's published (render thread takes ownership).
+        if splat == nil {
+            loadLock.lock()
+            let scene = pendingScene
+            loadLock.unlock()
+            if let scene {
+                splat = scene.splat
+                sceneCalibration = scene.calibration
+                locomotion = scene.initialLocomotion
+            }
+        }
 
         // Not ready: still complete the frame lifecycle with empty command buffers,
         // or CompositorServices crashes with "too many frames in flight".
