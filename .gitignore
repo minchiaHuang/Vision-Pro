@@ -33,3 +33,6 @@ APIKeys.plist
 # Local tooling / scratch — never tracked
 .claude/
 doc/
+
+# Design assets — local-only, not tracked
+Design System/

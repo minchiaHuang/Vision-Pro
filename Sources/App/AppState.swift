@@ -37,8 +37,10 @@ final class AppState {
     func finishQuiz() {
         phase = .loading
         Task {
-            // Simulate the "generating world" transition (v2: this becomes a real API call).
-            try? await Task.sleep(for: .seconds(2))
+            // A brief "generating world" beat so the loading screen registers
+            // (v2: this becomes a real API call). Kept short — the scoring below
+            // is instant, so a long sleep only adds perceived slowness.
+            try? await Task.sleep(for: .milliseconds(600))
             await MainActor.run {
                 // Research direction 6->7: compute the hidden continuous scores first,
                 // then map them into world parameters.

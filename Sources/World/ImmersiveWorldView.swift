@@ -23,7 +23,10 @@ struct ImmersiveWorldView: View {
         let mesh = MeshResource.generateSphere(radius: 1000)
         var material = UnlitMaterial()
 
-        if let cgImage = (override ?? UIImage(named: imageName))?.cgImage,
+        // Asset lookup + image decode is the expensive part; do it off the main
+        // actor so it doesn't block the frame that presents the immersive world.
+        let cgImage = await Self.decodePanorama(override: override, imageName: imageName)
+        if let cgImage,
            let texture = try? await TextureResource(
             image: cgImage,
             withName: nil,
@@ -37,6 +40,13 @@ struct ImmersiveWorldView: View {
         let entity = ModelEntity(mesh: mesh, materials: [material])
         entity.scale = SIMD3(-1, 1, 1)   // Flip inside-out so the texture faces inward
         return entity
+    }
+
+    /// Decodes the panorama CGImage on a background task (off the main actor).
+    private static func decodePanorama(override: UIImage?, imageName: String) async -> CGImage? {
+        await Task.detached(priority: .userInitiated) {
+            (override ?? UIImage(named: imageName))?.cgImage
+        }.value
     }
 }
 #endif
