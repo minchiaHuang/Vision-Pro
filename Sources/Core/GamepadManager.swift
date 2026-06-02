@@ -1,12 +1,12 @@
-#if !os(visionOS)
 import Foundation
 import Observation
 import GameController
 
 /// Tracks DualSense / extended gamepad connection so the USDZ world view can be
 /// driven by a physical controller. Mirrors the lifecycle shape of `MotionManager`.
+/// Shared by iOS/iPadOS and visionOS (both expose `GCExtendedGamepad`).
 ///
-/// DualSense pairs over Bluetooth (iPadOS 16.4+) and exposes the standard
+/// DualSense pairs over Bluetooth (iPadOS 16.4+ / visionOS 1+) and exposes the standard
 /// `GCExtendedGamepad` profile — no entitlement required. Per-frame input is read
 /// by polling `gamepad` from the render loop; this object only tracks presence.
 ///
@@ -43,4 +43,3 @@ final class GamepadManager {
         isConnected = GCController.controllers().contains { $0.extendedGamepad != nil }
     }
 }
-#endif
