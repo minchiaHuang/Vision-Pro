@@ -48,6 +48,21 @@ enum DevFeature: String, Identifiable, CaseIterable {
         case .splat: return "point.3.connected.trianglepath.dotted"
         }
     }
+
+    /// Features that embed their own `NavigationStack` provide their own back
+    /// chrome, so the container hides its floating back button to avoid stacking
+    /// two back affordances. visionOS has no splat navigation, so it keeps the
+    /// floating button there.
+    var providesOwnNavigation: Bool {
+        #if os(visionOS)
+        return false
+        #else
+        switch self {
+        case .splat: return true
+        default:     return false
+        }
+        #endif
+    }
 }
 
 /// The launcher screen: a vertical list of feature buttons.
@@ -119,16 +134,20 @@ private struct DevFeatureContainer: View {
         ZStack(alignment: .topLeading) {
             content
 
-            Button(action: onClose) {
-                Image(systemName: "chevron.left")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                    .padding(12)
-                    .background(.ultraThinMaterial, in: Circle())
+            // Features with their own navigation (e.g. splat) surface their own
+            // back button, so skip the floating one to avoid two stacked backs.
+            if !feature.providesOwnNavigation {
+                Button(action: onClose) {
+                    Image(systemName: "chevron.left")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .padding(12)
+                        .background(.ultraThinMaterial, in: Circle())
+                }
+                .padding(.leading, 16)
+                .padding(.top, 16)
+                .accessibilityLabel("Back to menu")
             }
-            .padding(.leading, 16)
-            .padding(.top, 16)
-            .accessibilityLabel("Back to menu")
         }
     }
 
@@ -148,7 +167,7 @@ private struct DevFeatureContainer: View {
         case .usdz:
             USDZTestView()
         case .splat:
-            SplatLibraryView()
+            SplatLibraryView(onClose: onClose)
         }
     }
 }

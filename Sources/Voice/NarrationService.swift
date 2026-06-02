@@ -11,7 +11,10 @@ import AVFAudio
 @Observable
 final class NarrationService: NSObject, AVSpeechSynthesizerDelegate, SpeechVoice {
 
-    private let synth = AVSpeechSynthesizer()
+    // AVSpeechSynthesizer isn't Sendable, but this instance is only ever touched
+    // on the main thread (speak/stop); the delegate callbacks read the passed-in
+    // synthesizer, not self.synth. Opt out of the Sendable check manually.
+    nonisolated(unsafe) private let synth = AVSpeechSynthesizer()
 
     /// True while an utterance is being spoken. Drives the mascot's speaking
     /// animation. Mutated on the main queue so SwiftUI observation stays happy.

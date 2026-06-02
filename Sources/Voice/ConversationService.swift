@@ -209,7 +209,7 @@ final class ConversationService {
         #if !os(macOS)
         let s = AVAudioSession.sharedInstance()
         try s.setCategory(.playAndRecord, mode: .spokenAudio,
-                          options: [.duckOthers, .defaultToSpeaker, .allowBluetooth])
+                          options: [.duckOthers, .defaultToSpeaker, .allowBluetoothHFP])
         try s.setActive(true)
         #endif
     }
