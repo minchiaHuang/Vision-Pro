@@ -19,7 +19,7 @@ enum ParametricWorldBuilder {
     ///   - axis 1: ambient companion orbs (social density)
     /// Returns the assembled container plus framing info, or `nil` if the USDZ fails to load
     /// (each caller shows its own failure state). Saturation (axis 4) is applied by the caller
-    /// — iOS does it via a SwiftUI overlay; visionOS skips it for now.
+    /// — iOS via a SwiftUI overlay; visionOS via `applySaturation(_:saturation:)` (below).
     static func build(params: WorldParams) async -> ParametricWorldBuild? {
         guard let model = try? await Entity(named: params.archetype.usdzName) else {
             return nil
@@ -52,6 +52,61 @@ enum ParametricWorldBuilder {
         }
 
         return ParametricWorldBuild(container: container, bounds: bounds, span: span, eye: eye)
+    }
+
+    /// axis 4 saturation for the visionOS immersive path. There is no full-screen
+    /// post-process / `.blendMode(.saturation)` overlay inside an immersive `RealityView`
+    /// (iOS uses one), so we bake the effect into the loaded model's materials: each
+    /// material tint is lerped toward its luminance grey by `1 - saturation`, matching the
+    /// iOS overlay mapping (saturation 1.1 → full colour, 0.5 → ~50% desaturated).
+    ///
+    /// Limitation: a tint multiply cannot desaturate *textured* surfaces, so heavily
+    /// textured archetypes desaturate less than the iOS filter. A faithful match would need
+    /// a `ShaderGraphMaterial` swap feeding the original textures — deferred.
+    static func applySaturation(_ root: Entity, saturation: Double) {
+        let amount = Float(max(0, min(1, 1 - saturation)))   // 0 = full colour … 1 = grey
+        guard amount > 0.001 else { return }
+        forEachModelEntity(root) { entity in
+            guard var model = entity.model else { return }
+            model.materials = model.materials.map { desaturate($0, amount: amount) }
+            entity.model = model
+        }
+    }
+
+    /// Depth-first walk applying `body` to every `ModelEntity` under `entity` (inclusive).
+    private static func forEachModelEntity(_ entity: Entity, _ body: (ModelEntity) -> Void) {
+        if let model = entity as? ModelEntity { body(model) }
+        for child in entity.children { forEachModelEntity(child, body) }
+    }
+
+    /// Lerps a material's tint toward its perceptual grey by `amount` (0…1). Handles the
+    /// material types the parametric world produces — `PhysicallyBasedMaterial` (loaded USDZ)
+    /// and `UnlitMaterial` (companion orbs); others pass through unchanged.
+    private static func desaturate(_ material: RealityKit.Material, amount: Float) -> RealityKit.Material {
+        if var m = material as? PhysicallyBasedMaterial {
+            m.baseColor.tint = greyed(m.baseColor.tint, amount: amount)
+            return m
+        }
+        if var m = material as? UnlitMaterial {
+            m.color.tint = greyed(m.color.tint, amount: amount)
+            return m
+        }
+        return material
+    }
+
+    /// Blends `color` toward its Rec. 709 luminance grey by `amount`, preserving alpha.
+    private static func greyed(_ color: UIColor, amount: Float) -> UIColor {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 1
+        if !color.getRed(&r, green: &g, blue: &b, alpha: &a) {
+            var w: CGFloat = 0
+            color.getWhite(&w, alpha: &a); r = w; g = w; b = w
+        }
+        let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        let t = CGFloat(amount)
+        return UIColor(red: r + (lum - r) * t,
+                       green: g + (lum - g) * t,
+                       blue: b + (lum - b) * t,
+                       alpha: a)
     }
 
     /// 3-keyframe linear interpolation of Kelvin → UIColor.
