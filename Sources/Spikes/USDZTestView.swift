@@ -262,12 +262,17 @@ struct USDZTestView: View {
 
 #else
 
-/// visionOS USDZ inspector: model floats in the window volume, drag to rotate.
+/// visionOS USDZ inspector: a windowed preview (model floats in the volume, drag to
+/// rotate) plus a "Walk inside" button that opens the first-person immersive walk-in
+/// (`ImmersiveUSDZView`), matching the iPad first-person viewer.
 struct USDZTestView: View {
     @State private var modelIndex = 0
     @State private var yaw: Float = 0
     @State private var liveYaw: Float = 0
     @State private var status: String = "Loading…"
+    @State private var gamepad = GamepadManager()
+
+    @Environment(\.openImmersiveSpace) private var openImmersiveSpace
 
     private var modelName: String { USDZDebug.models[modelIndex] }
 
@@ -311,6 +316,20 @@ struct USDZTestView: View {
             if !status.isEmpty {
                 Text(status).foregroundStyle(.secondary)
             }
+
+            // First-person walk-in (full-immersion space). Drag the preview above to
+            // pre-orient; walk with a controller once inside (head tracking looks around).
+            Button("Walk inside") {
+                Task { await openImmersiveSpace(id: "usdz", value: modelName) }
+            }
+            .buttonStyle(.borderedProminent)
+
+            Label(gamepad.isConnected
+                  ? "Controller connected · left stick move · right stick turn · R2/L2 up/down · ○ reset"
+                  : "Connect a controller to walk inside · head tracking looks around",
+                  systemImage: gamepad.isConnected ? "gamecontroller.fill" : "gamecontroller")
+                .font(.footnote)
+                .foregroundStyle(gamepad.isConnected ? .green : .secondary)
         }
         .padding(28)
     }

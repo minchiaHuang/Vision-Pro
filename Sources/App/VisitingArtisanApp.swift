@@ -51,6 +51,13 @@ struct VisitingArtisanApp: App {
             }
         }
         .immersionStyle(selection: .constant(.full), in: .full)
+
+        // visionOS only: DEV first-person walk-in for a bundled USDZ model (matches the
+        // iPad USDZ viewer). The model name is passed as the space's value.
+        ImmersiveSpace(id: "usdz", for: String.self) { $name in
+            ImmersiveUSDZView(modelName: name ?? USDZDebug.models[0])
+        }
+        .immersionStyle(selection: .constant(.full), in: .full)
         #endif
     }
 }
