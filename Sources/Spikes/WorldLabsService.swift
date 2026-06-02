@@ -24,11 +24,13 @@ final class WorldLabsService {
     private(set) var worldId: String?
     private(set) var splatRemoteURL: URL?
 
-    // Splat point-cloud density: "100k" / "500k" / "full_res". Higher = sharper but
+    // Splat point-cloud density preference (keys in `spz_urls`): higher = sharper but
     // larger download, slower decode, and more memory. "full_res" can be millions of
-    // points: load it on a real device in the Release scheme, not Debug. Switching
-    // resolution does NOT cost extra credits (same world, different download).
-    private let splatResolution = "full_res"
+    // points. We pick the first AVAILABLE key in this order — "500k" is the default
+    // (quality/perf balance for a walkable 6DoF world); fall back to lighter/heavier
+    // tiers if a world doesn't expose it. Switching resolution does NOT cost extra
+    // credits (same world, different download). Applies to both iOS and visionOS.
+    private let splatResolutionPreference = ["500k", "100k", "full_res"]
     private let apiKey = Secrets.worldLabsAPIKey
     private let base = "https://api.worldlabs.ai/marble/v1"
     // World-generation model. "marble-1.1" = current standard (better lighting,
@@ -145,7 +147,7 @@ final class WorldLabsService {
             try ensureOK(response, data: data)
             let decoded = try JSONDecoder().decode(WorldGetResponse.self, from: data)
             let pano = decoded.assets?.imagery?.pano_url.flatMap { URL(string: $0) }
-            let spz = decoded.assets?.splats?.spz_urls?[splatResolution].flatMap { URL(string: $0) }
+            let spz = resolveSplatURL(from: decoded.assets?.splats?.spz_urls)
             if pano != nil { return (pano, spz) }
         }
         throw SpikeError.message("Panorama URL not available after retries.")
@@ -163,6 +165,18 @@ final class WorldLabsService {
     }
 
     // MARK: - Helpers
+
+    /// Picks the splat `.spz` URL using `splatResolutionPreference` order, returning the
+    /// first tier the world actually exposes. Falls back across tiers so a missing
+    /// preferred key (e.g. no "500k") still yields a usable splat instead of nil.
+    private func resolveSplatURL(from spzURLs: [String: String]?) -> URL? {
+        guard let spzURLs else { return nil }
+        for key in splatResolutionPreference {
+            if let raw = spzURLs[key], let url = URL(string: raw) { return url }
+        }
+        // Preference list didn't match any exposed key — take whatever is present.
+        return spzURLs.values.compactMap { URL(string: $0) }.first
+    }
 
     private func ensureOK(_ response: URLResponse, data: Data) throws {
         guard let http = response as? HTTPURLResponse else { return }
