@@ -84,6 +84,10 @@ private enum SplatRoute: Hashable {
 /// then walk into its splat. Reuses `WorldLabsService` for generation and
 /// `SplatWorldView` / `SplatSceneView` for rendering.
 struct SplatLibraryView: View {
+    /// Returns to the dev menu. Surfaced as the list root's leading toolbar item
+    /// so the container can omit its floating back button (no double back).
+    let onClose: () -> Void
+
     @State private var service = WorldLabsService()
     @State private var prompt = "A cozy artisan's workshop with wooden workbenches, hanging tools, and warm afternoon light through a window"
     @State private var route: SplatRoute?
@@ -99,6 +103,14 @@ struct SplatLibraryView: View {
             }
             .navigationTitle("Splat")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: onClose) {
+                        Image(systemName: "chevron.left")
+                    }
+                    .accessibilityLabel("Back to menu")
+                }
+            }
             .navigationDestination(item: $route) { route in
                 destination(for: route)
             }
@@ -250,8 +262,11 @@ struct SplatLibraryView: View {
 #else
 
 /// Splat rendering is iOS/iPadOS-only in this spike; placeholder so the dev menu
-/// compiles on visionOS.
+/// compiles on visionOS. `onClose` is accepted for API parity but unused — the
+/// container keeps its own floating back button on visionOS.
 struct SplatLibraryView: View {
+    let onClose: () -> Void
+
     var body: some View {
         Text("Splat runs on iOS/iPadOS only.")
             .padding()
