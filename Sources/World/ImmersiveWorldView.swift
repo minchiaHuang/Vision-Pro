@@ -24,11 +24,13 @@ struct ImmersiveWorldView: View {
                 build.container.position = SIMD3(-build.bounds.center.x,
                                                  -build.bounds.min.y,
                                                  -build.bounds.center.z)
+                // axis 4 saturation: immersive RealityView has no full-screen
+                // `.blendMode(.saturation)` overlay (iOS's approach), so bake it into the
+                // model's material tints instead.
+                ParametricWorldBuilder.applySaturation(build.container, saturation: params.saturation)
                 // Wrap the world in a root entity that locomotion moves each frame
                 // (player walks → world shifts opposite); head tracking adds local 6DoF
-                // on top. Saturation (axis 4) stays deferred on visionOS: immersive
-                // RealityView has no full-screen post-process or CustomMaterial to
-                // replicate the iOS `.blendMode(.saturation)` overlay.
+                // on top.
                 let root = Entity()
                 root.addChild(build.container)
                 content.add(root)
