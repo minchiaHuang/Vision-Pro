@@ -8,7 +8,7 @@ import RealityKit
 /// models larger than the room. Opened as the `usdz` immersive space; the model name is
 /// passed as the space's value. DEV / verification only.
 struct ImmersiveUSDZView: View {
-    let modelName: String
+    let modelURL: URL
 
     @State private var gamepad = GamepadManager()
     /// Retains the per-frame locomotion state + scene subscription across updates.
@@ -16,7 +16,7 @@ struct ImmersiveUSDZView: View {
 
     var body: some View {
         RealityView { content in
-            guard let model = try? await Entity(named: modelName) else { return }
+            guard let model = try? await Entity(contentsOf: modelURL) else { return }
 
             // Floor-align + centre so the user stands inside the model at the origin
             // (same framing as the parametric immersive world).

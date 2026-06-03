@@ -52,6 +52,8 @@ final class SplatVisionRenderer: @unchecked Sendable {
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
     private let splatURL: URL
+    /// Raw marble/World Labs exports load upside-down; flip them upright at framing.
+    private let flipUpsideDown: Bool
 
     private let inFlight = DispatchSemaphore(value: maxSimultaneousRenders)
 
@@ -74,19 +76,22 @@ final class SplatVisionRenderer: @unchecked Sendable {
     private var sceneCalibration: simd_float4x4 = matrix_identity_float4x4
     private var locomotion = SplatLocomotion()
     private var lastTickTime: CFTimeInterval?
+    /// Edge-trigger state for the gamepad exit button (☰); see `renderFrame`.
+    private var exitButtonWasPressed = false
 
-    init(layerRenderer: LayerRenderer, splatURL: URL) {
+    init(layerRenderer: LayerRenderer, splatURL: URL, flipUpsideDown: Bool) {
         self.layerRenderer = layerRenderer
         self.device = layerRenderer.device
         self.commandQueue = device.makeCommandQueue()!
         self.splatURL = splatURL
+        self.flipUpsideDown = flipUpsideDown
     }
 
     /// Entry point used by the `CompositorLayer` closure. The render loop starts
     /// immediately (presenting cleared frames so the immersive space is never black /
     /// frozen) while the splat loads off-thread; the loop adopts it when ready.
-    static func startRendering(_ layerRenderer: LayerRenderer, splatURL: URL) {
-        let renderer = SplatVisionRenderer(layerRenderer: layerRenderer, splatURL: splatURL)
+    static func startRendering(_ layerRenderer: LayerRenderer, splatURL: URL, flipUpsideDown: Bool) {
+        let renderer = SplatVisionRenderer(layerRenderer: layerRenderer, splatURL: splatURL, flipUpsideDown: flipUpsideDown)
 
         // Load off the render thread; publishes a LoadedScene when done.
         Task.detached(priority: .userInitiated) {
@@ -94,6 +99,7 @@ final class SplatVisionRenderer: @unchecked Sendable {
                 try await renderer.load()
             } catch {
                 log.error("Failed to load splat: \(error.localizedDescription)")
+                await SplatSession.shared.fail(error.localizedDescription)
             }
         }
 
@@ -111,6 +117,13 @@ final class SplatVisionRenderer: @unchecked Sendable {
     // MARK: - Loading
 
     private func load() async throws {
+        // Drive the floating window's load UI. Bundled/local decode exposes no
+        // fine-grained progress, so a single time-estimated `preparing` ramp covers both
+        // the (cached) download and the decode/chunk build; it caps below 100% until the
+        // scene is actually published (`setReady`).
+        await SplatSession.shared.beginLoading()
+        await SplatSession.shared.setPreparing()
+
         // Remote World Labs URLs are downloaded + cached; bundled/local files read directly.
         let localURL = splatURL.isFileURL ? splatURL : try await SplatDownloader.fetch(splatURL)
 
@@ -123,22 +136,25 @@ final class SplatVisionRenderer: @unchecked Sendable {
         let rawPoints = try await AutodetectSceneReader(localURL).readAll()
         guard !rawPoints.isEmpty else {
             Self.log.error("Splat decoded to 0 points")
+            await SplatSession.shared.fail("World decoded to 0 points.")
             return
         }
 
         // Cap point count before framing + chunk build (bounds decode/memory/GPU cost).
         let points = Self.downsample(rawPoints, to: Self.maxSplatPoints)
-        let (calibration, initialLocomotion) = Self.framing(points)
+        let (calibration, initialLocomotion) = Self.framing(points, flipUpsideDown: flipUpsideDown)
 
         let chunk = try SplatChunk(device: device, from: points)
         _ = await renderer.addChunk(chunk)
 
         // Hand the finished scene to the render thread (adopted once, then owned there).
-        loadLock.lock()
-        pendingScene = LoadedScene(splat: renderer,
-                                   calibration: calibration,
-                                   initialLocomotion: initialLocomotion)
-        loadLock.unlock()
+        // Scoped `withLock` is async-safe; bare lock()/unlock() is unavailable here.
+        loadLock.withLock {
+            pendingScene = LoadedScene(splat: renderer,
+                                       calibration: calibration,
+                                       initialLocomotion: initialLocomotion)
+        }
+        await SplatSession.shared.setReady()
         Self.log.info("Loaded splat: \(rawPoints.count) points → \(points.count) after cap")
     }
 
@@ -157,8 +173,9 @@ final class SplatVisionRenderer: @unchecked Sendable {
     /// Centroid recentre + mean radius → scene calibration and the start viewpoint.
     /// The user begins backed off along +Z (the proven iOS framing) and walks in.
     /// Pure (no `self` mutation) so it can run on the load thread before handoff.
-    private static func framing(_ points: [SplatPoint]) -> (calibration: simd_float4x4,
-                                                            locomotion: SplatLocomotion) {
+    private static func framing(_ points: [SplatPoint],
+                                flipUpsideDown: Bool) -> (calibration: simd_float4x4,
+                                                          locomotion: SplatLocomotion) {
         var sum = SIMD3<Float>.zero
         for p in points { sum += p.position }
         let center = sum / Float(points.count)
@@ -167,7 +184,10 @@ final class SplatVisionRenderer: @unchecked Sendable {
         for p in points { distSum += simd_length(p.position - center) }
         let meanRadius = max(distSum / Float(points.count), 0.001)
 
-        let calibration = translation(-center.x, -center.y, -center.z)
+        // Recentre on the centroid; for upside-down exports, also rotate the world
+        // 180° about X (recentre first, then flip about the origin).
+        var calibration = translation(-center.x, -center.y, -center.z)
+        if flipUpsideDown { calibration = rotationX180() * calibration }
         let frameDistance = meanRadius * 3
         let locomotion = SplatLocomotion(position: SIMD3(0, 0, frameDistance),
                                          span: max(meanRadius, 1))
@@ -244,6 +264,15 @@ final class SplatVisionRenderer: @unchecked Sendable {
         let gamepad = SplatSpikeDebug.ignoreGamepad ? nil : Self.currentGamepad()
         locomotion.tick(deltaTime: dt, gamepad: gamepad)
 
+        // ☰ (Menu/Options) → leave the world, edge-triggered. Routed to the controls
+        // window (which owns `dismissImmersiveSpace`) via the shared session so the exit
+        // "follows" the user no matter how far they've walked. Distinct from ○ (reset).
+        let exitPressed = gamepad?.buttonMenu.isPressed ?? false
+        if exitPressed && !exitButtonWasPressed {
+            Task { @MainActor in SplatSession.shared.requestExit() }
+        }
+        exitButtonWasPressed = exitPressed
+
         let primaryDrawable = drawables[0]
         let time = LayerRenderer.Clock.Instant.epoch
             .duration(to: primaryDrawable.frameTiming.presentationTime).timeInterval
@@ -312,6 +341,16 @@ final class SplatVisionRenderer: @unchecked Sendable {
             SIMD4(0, 1, 0, 0),
             SIMD4(0, 0, 1, 0),
             SIMD4(x, y, z, 1)))
+    }
+
+    /// 180° rotation about X (Y→-Y, Z→-Z): rights raw World Labs/marble exports that
+    /// load upside-down. A proper rotation (det +1), so it doesn't mirror the splats.
+    private static func rotationX180() -> simd_float4x4 {
+        simd_float4x4(columns: (
+            SIMD4(1, 0, 0, 0),
+            SIMD4(0, -1, 0, 0),
+            SIMD4(0, 0, -1, 0),
+            SIMD4(0, 0, 0, 1)))
     }
 }
 

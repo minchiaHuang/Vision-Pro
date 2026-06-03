@@ -20,6 +20,7 @@ enum ParametricWorldBuilder {
     /// Returns the assembled container plus framing info, or `nil` if the USDZ fails to load
     /// (each caller shows its own failure state). Saturation (axis 4) is applied by the caller
     /// — iOS via a SwiftUI overlay; visionOS via `applySaturation(_:saturation:)` (below).
+    @MainActor
     static func build(params: WorldParams) async -> ParametricWorldBuild? {
         guard let model = try? await Entity(named: params.archetype.usdzName) else {
             return nil
@@ -63,6 +64,7 @@ enum ParametricWorldBuilder {
     /// Limitation: a tint multiply cannot desaturate *textured* surfaces, so heavily
     /// textured archetypes desaturate less than the iOS filter. A faithful match would need
     /// a `ShaderGraphMaterial` swap feeding the original textures — deferred.
+    @MainActor
     static func applySaturation(_ root: Entity, saturation: Double) {
         let amount = Float(max(0, min(1, 1 - saturation)))   // 0 = full colour … 1 = grey
         guard amount > 0.001 else { return }
@@ -74,6 +76,7 @@ enum ParametricWorldBuilder {
     }
 
     /// Depth-first walk applying `body` to every `ModelEntity` under `entity` (inclusive).
+    @MainActor
     private static func forEachModelEntity(_ entity: Entity, _ body: (ModelEntity) -> Void) {
         if let model = entity as? ModelEntity { body(model) }
         for child in entity.children { forEachModelEntity(child, body) }
@@ -123,6 +126,7 @@ enum ParametricWorldBuilder {
 
     /// Returns evenly-spaced glow-orb ModelEntities on the scene's floor perimeter.
     /// `count == 0` returns empty (no companions). Used for axis 1 social density.
+    @MainActor
     static func companionOrbs(count: Int, bounds: BoundingBox, span: Float) -> [ModelEntity] {
         guard count > 0 else { return [] }
         let perimeter = max(bounds.extents.x, bounds.extents.z) * 0.45

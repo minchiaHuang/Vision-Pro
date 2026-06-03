@@ -37,11 +37,10 @@
 		AA000001000000000000001B /* SplatLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000124 /* SplatLibraryView.swift */; };
 		AA0000010000000000000038 /* SplatLocomotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000138 /* SplatLocomotion.swift */; };
 		AA0000010000000000000039 /* SplatVisionRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000139 /* SplatVisionRenderer.swift */; };
+		AA00000100000000000000B0 /* SplatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B0 /* SplatSession.swift */; };
 		AA0000010000000000000040 /* ImmersiveUSDZView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000140 /* ImmersiveUSDZView.swift */; };
-		AA0000010000000000000020 /* Cozy_living_room_baked.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000120 /* Cozy_living_room_baked.usdz */; };
-		AA0000010000000000000021 /* Free_Low_Poly_Forest.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000121 /* Free_Low_Poly_Forest.usdz */; };
-		AA0000010000000000000022 /* FREE_Dirt_Road_Through_Forest.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000122 /* FREE_Dirt_Road_Through_Forest.usdz */; };
 		AA0000010000000000000023 /* world_a236ea24_100k.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000123 /* world_a236ea24_100k.spz */; };
+		AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */; };
 		AA00000100000000000000F2 /* VoiceTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F2 /* VoiceTestView.swift */; };
 		AA00000100000000000000F3 /* DevMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F3 /* DevMenuView.swift */; };
 		AA00000100000000000000F4 /* SpeechVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F4 /* SpeechVoice.swift */; };
@@ -84,13 +83,12 @@
 		AA0000010000000000000118 /* NarrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationService.swift; sourceTree = "<group>"; };
 		AA0000010000000000000119 /* SpeechRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizer.swift; sourceTree = "<group>"; };
 		AA000001000000000000011A /* ConversationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationService.swift; sourceTree = "<group>"; };
-		AA0000010000000000000120 /* Cozy_living_room_baked.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Cozy_living_room_baked.usdz; sourceTree = "<group>"; };
-		AA0000010000000000000121 /* Free_Low_Poly_Forest.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Free_Low_Poly_Forest.usdz; sourceTree = "<group>"; };
-		AA0000010000000000000122 /* FREE_Dirt_Road_Through_Forest.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = FREE_Dirt_Road_Through_Forest.usdz; sourceTree = "<group>"; };
 		AA0000010000000000000123 /* world_a236ea24_100k.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = world_a236ea24_100k.spz; sourceTree = "<group>"; };
+		AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = vibrant_loft_art_studio.spz; sourceTree = "<group>"; };
 		AA0000010000000000000124 /* SplatLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatLibraryView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000138 /* SplatLocomotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatLocomotion.swift; sourceTree = "<group>"; };
 		AA0000010000000000000139 /* SplatVisionRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatVisionRenderer.swift; sourceTree = "<group>"; };
+		AA00000100000000000001B0 /* SplatSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSession.swift; sourceTree = "<group>"; };
 		AA0000010000000000000140 /* ImmersiveUSDZView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveUSDZView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F2 /* VoiceTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceTestView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F3 /* DevMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevMenuView.swift; sourceTree = "<group>"; };
@@ -164,9 +162,6 @@
 		AA0000010000000000000305 /* USDZ */ = {
 			isa = PBXGroup;
 			children = (
-				AA0000010000000000000120 /* Cozy_living_room_baked.usdz */,
-				AA0000010000000000000121 /* Free_Low_Poly_Forest.usdz */,
-				AA0000010000000000000122 /* FREE_Dirt_Road_Through_Forest.usdz */,
 			);
 			path = USDZ;
 			sourceTree = "<group>";
@@ -175,6 +170,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0000010000000000000123 /* world_a236ea24_100k.spz */,
+				AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */,
 			);
 			path = SpikeAssets;
 			sourceTree = "<group>";
@@ -234,6 +230,7 @@
 				AA0000010000000000000124 /* SplatLibraryView.swift */,
 				AA0000010000000000000138 /* SplatLocomotion.swift */,
 				AA0000010000000000000139 /* SplatVisionRenderer.swift */,
+				AA00000100000000000001B0 /* SplatSession.swift */,
 				AA0000010000000000000140 /* ImmersiveUSDZView.swift */,
 				AA0000010000000000000110 /* WorldLabsService.swift */,
 				AA0000010000000000000111 /* WorldLabsTestView.swift */,
@@ -342,10 +339,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA000001000000000000000C /* Assets.xcassets in Resources */,
-				AA0000010000000000000020 /* Cozy_living_room_baked.usdz in Resources */,
-				AA0000010000000000000021 /* Free_Low_Poly_Forest.usdz in Resources */,
-				AA0000010000000000000022 /* FREE_Dirt_Road_Through_Forest.usdz in Resources */,
 				AA0000010000000000000023 /* world_a236ea24_100k.spz in Resources */,
+				AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -381,6 +376,7 @@
 				AA000001000000000000001B /* SplatLibraryView.swift in Sources */,
 				AA0000010000000000000038 /* SplatLocomotion.swift in Sources */,
 				AA0000010000000000000039 /* SplatVisionRenderer.swift in Sources */,
+				AA00000100000000000000B0 /* SplatSession.swift in Sources */,
 				AA0000010000000000000040 /* ImmersiveUSDZView.swift in Sources */,
 				AA0000010000000000000017 /* NarrationComposer.swift in Sources */,
 				AA0000010000000000000018 /* NarrationService.swift in Sources */,

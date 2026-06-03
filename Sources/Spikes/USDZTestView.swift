@@ -1,5 +1,6 @@
 import SwiftUI
 import RealityKit
+import UniformTypeIdentifiers
 #if !os(visionOS)
 import GameController
 #endif
@@ -10,13 +11,76 @@ import GameController
 // real demo or submit so the normal experience returns.
 enum USDZDebug {
     static let launchIntoTest = false
+}
 
-    /// USDZ resources bundled with the app (file name without extension).
-    static let models = [
-        "Cozy_living_room_baked",
-        "Free_Low_Poly_Forest",
-        "FREE_Dirt_Road_Through_Forest",
-    ]
+// MARK: - Import from Files + recents (USDZ is no longer bundled; load from the Files app)
+
+/// Copies a user-picked `.usdz` (from the Files app, via `fileImporter`) into a durable
+/// app folder so it survives restarts and outlives the picker's security scope.
+/// Mirrors `SplatImporter`. Platform-agnostic (Foundation only).
+enum USDZImporter {
+    /// Durable home for imported models, under Documents (caches can be evicted).
+    static func importedDir() -> URL {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let dir = docs.appendingPathComponent("ImportedUSDZ", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    /// Copies a security-scoped picked file into `importedDir`, overwriting any file of
+    /// the same name, and returns the stored filename. Scope is held only for the copy.
+    static func storeImported(_ picked: URL) throws -> String {
+        let scoped = picked.startAccessingSecurityScopedResource()
+        defer { if scoped { picked.stopAccessingSecurityScopedResource() } }
+
+        let filename = picked.lastPathComponent
+        let dest = importedDir().appendingPathComponent(filename)
+        if FileManager.default.fileExists(atPath: dest.path) {
+            try FileManager.default.removeItem(at: dest)
+        }
+        try FileManager.default.copyItem(at: picked, to: dest)
+        return filename
+    }
+}
+
+/// A `.usdz` imported from the Files app, remembered so the viewer can reopen it.
+struct SavedUSDZModel: Codable, Identifiable {
+    let id: String          // the stored filename (re-importing the same name updates it)
+    let name: String        // display name (filename without extension)
+    let createdAt: Date
+    let filename: String     // under `USDZImporter.importedDir()`
+
+    /// Rebuilds the local URL from Documents each time (sandbox path can change between launches).
+    func resolvedURL() -> URL { USDZImporter.importedDir().appendingPathComponent(filename) }
+}
+
+/// UserDefaults-backed list of imported models (dev-only convenience). Mirrors `SplatLibrary`.
+enum USDZLibrary {
+    private static let key = "usdz.library.v1"
+
+    static func load() -> [SavedUSDZModel] {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let models = try? JSONDecoder().decode([SavedUSDZModel].self, from: data)
+        else { return [] }
+        return models
+    }
+
+    /// Insert at the front, de-duplicating by id (newest wins).
+    static func add(_ model: SavedUSDZModel) {
+        var models = load().filter { $0.id != model.id }
+        models.insert(model, at: 0)
+        save(models)
+    }
+
+    static func remove(id: String) {
+        save(load().filter { $0.id != id })
+    }
+
+    private static func save(_ models: [SavedUSDZModel]) {
+        if let data = try? JSONEncoder().encode(models) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+    }
 }
 
 #if !os(visionOS)
@@ -138,7 +202,9 @@ final class WorldCameraRig {
 /// scene. Touch: drag to look, pinch to move. PS5 / extended gamepad: left stick
 /// move, right stick look, R2/L2 up/down, ○ reset.
 struct USDZTestView: View {
-    @State private var modelIndex = 0
+    @State private var saved: [SavedUSDZModel] = USDZLibrary.load()
+    @State private var selectedID: String?
+    @State private var showImporter = false
     @State private var rig = WorldCameraRig()
     @State private var gamepad = GamepadManager()
     @State private var status: Status = .loading
@@ -148,17 +214,19 @@ struct USDZTestView: View {
 
     private enum Status: Equatable { case loading, ready, failed }
 
-    private var modelName: String { USDZDebug.models[modelIndex] }
+    private var selected: SavedUSDZModel? { saved.first { $0.id == selectedID } }
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
             RealityView { content in
-                guard let model = try? await Entity(named: modelName) else {
+                guard let url = selected?.resolvedURL(),
+                      let model = try? await Entity(contentsOf: url) else {
                     status = .failed
                     return
                 }
+                status = .loading
                 content.add(model)
 
                 let bounds = model.visualBounds(relativeTo: nil)
@@ -190,13 +258,40 @@ struct USDZTestView: View {
 
                 status = .ready
             }
-            .id(modelName)
+            .id(selected?.id ?? "none")
             .gesture(lookGesture)
             .simultaneousGesture(dollyGesture)
             .ignoresSafeArea()
 
+            if saved.isEmpty {
+                Text("Import a .usdz from Files to begin")
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+
             overlay
         }
+        .onAppear { if selectedID == nil { selectedID = saved.first?.id } }
+        .fileImporter(isPresented: $showImporter,
+                      allowedContentTypes: [.usdz],
+                      allowsMultipleSelection: false) { result in
+            handleImport(result)
+        }
+    }
+
+    private func handleImport(_ result: Result<[URL], Error>) {
+        guard case .success(let urls) = result, let picked = urls.first else { return }
+        guard let filename = try? USDZImporter.storeImported(picked) else {
+            status = .failed
+            return
+        }
+        let model = SavedUSDZModel(id: filename,
+                                   name: picked.deletingPathExtension().lastPathComponent,
+                                   createdAt: Date(),
+                                   filename: filename)
+        USDZLibrary.add(model)
+        saved = USDZLibrary.load()
+        selectedID = model.id
     }
 
     private var lookGesture: some Gesture {
@@ -222,12 +317,20 @@ struct USDZTestView: View {
     private var overlay: some View {
         VStack {
             HStack(spacing: 12) {
-                Picker("Model", selection: $modelIndex) {
-                    ForEach(USDZDebug.models.indices, id: \.self) { i in
-                        Text(USDZDebug.models[i]).tag(i)
+                Picker("Model", selection: $selectedID) {
+                    ForEach(saved) { model in
+                        Text(model.name).tag(Optional(model.id))
                     }
                 }
                 .pickerStyle(.menu)
+                .tint(.white)
+                .disabled(saved.isEmpty)
+
+                Button {
+                    showImporter = true
+                } label: {
+                    Image(systemName: "square.and.arrow.down")
+                }
                 .tint(.white)
 
                 if gamepad.isConnected {
@@ -266,28 +369,36 @@ struct USDZTestView: View {
 /// rotate) plus a "Walk inside" button that opens the first-person immersive walk-in
 /// (`ImmersiveUSDZView`), matching the iPad first-person viewer.
 struct USDZTestView: View {
-    @State private var modelIndex = 0
+    @State private var saved: [SavedUSDZModel] = USDZLibrary.load()
+    @State private var selectedID: String?
+    @State private var showImporter = false
     @State private var yaw: Float = 0
     @State private var liveYaw: Float = 0
-    @State private var status: String = "Loading…"
+    @State private var status: String = ""
     @State private var gamepad = GamepadManager()
 
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
 
-    private var modelName: String { USDZDebug.models[modelIndex] }
+    private var selected: SavedUSDZModel? { saved.first { $0.id == selectedID } }
 
     var body: some View {
         VStack(spacing: 18) {
-            Picker("Model", selection: $modelIndex) {
-                ForEach(USDZDebug.models.indices, id: \.self) { i in
-                    Text(USDZDebug.models[i]).tag(i)
+            HStack {
+                Picker("Model", selection: $selectedID) {
+                    ForEach(saved) { model in
+                        Text(model.name).tag(Optional(model.id))
+                    }
                 }
+                .pickerStyle(.menu)
+                .disabled(saved.isEmpty)
+
+                Button("Load from Files…") { showImporter = true }
             }
-            .pickerStyle(.segmented)
 
             RealityView { content in
-                guard let model = try? await Entity(named: modelName) else {
-                    status = "Load failed"
+                guard let url = selected?.resolvedURL(),
+                      let model = try? await Entity(contentsOf: url) else {
+                    status = saved.isEmpty ? "Import a .usdz from Files" : "Load failed"
                     return
                 }
                 let bounds = model.visualBounds(relativeTo: nil)
@@ -305,7 +416,7 @@ struct USDZTestView: View {
                 content.entities.first { $0.name == "pivot" }?
                     .orientation = simd_quatf(angle: yaw + liveYaw, axis: [0, 1, 0])
             }
-            .id(modelName)
+            .id(selected?.id ?? "none")
             .frame(minWidth: 400, minHeight: 400)
             .gesture(
                 DragGesture()
@@ -320,9 +431,11 @@ struct USDZTestView: View {
             // First-person walk-in (full-immersion space). Drag the preview above to
             // pre-orient; walk with a controller once inside (head tracking looks around).
             Button("Walk inside") {
-                Task { await openImmersiveSpace(id: "usdz", value: modelName) }
+                guard let url = selected?.resolvedURL() else { return }
+                Task { await openImmersiveSpace(id: "usdz", value: url) }
             }
             .buttonStyle(.borderedProminent)
+            .disabled(selected == nil)
 
             Label(gamepad.isConnected
                   ? "Controller connected · left stick move · right stick turn · R2/L2 up/down · ○ reset"
@@ -332,6 +445,27 @@ struct USDZTestView: View {
                 .foregroundStyle(gamepad.isConnected ? .green : .secondary)
         }
         .padding(28)
+        .onAppear { if selectedID == nil { selectedID = saved.first?.id } }
+        .fileImporter(isPresented: $showImporter,
+                      allowedContentTypes: [.usdz],
+                      allowsMultipleSelection: false) { result in
+            handleImport(result)
+        }
+    }
+
+    private func handleImport(_ result: Result<[URL], Error>) {
+        guard case .success(let urls) = result, let picked = urls.first else { return }
+        guard let filename = try? USDZImporter.storeImported(picked) else {
+            status = "Import failed"
+            return
+        }
+        let model = SavedUSDZModel(id: filename,
+                                   name: picked.deletingPathExtension().lastPathComponent,
+                                   createdAt: Date(),
+                                   filename: filename)
+        USDZLibrary.add(model)
+        saved = USDZLibrary.load()
+        selectedID = model.id
     }
 }
 

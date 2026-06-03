@@ -91,7 +91,7 @@ struct VisionWorldPanel: View {
                             await dismissImmersiveSpace()
                             isOpen = false
                         }
-                        await openImmersiveSpace(id: "splat", value: splatURL)
+                        await openImmersiveSpace(id: "splat", value: SplatEntry(url: splatURL))
                     }
                 }
                 .buttonStyle(SecondaryPillButtonStyle())
