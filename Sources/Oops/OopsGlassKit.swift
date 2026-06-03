@@ -25,6 +25,14 @@ enum OopsGlass {
 struct OopsPassthrough: View {
     var dim: Bool = false
     var body: some View {
+        #if os(visionOS)
+        // Vision Pro: the window glass already frosts the real room behind it, so this
+        // layer stays transparent — no fake passthrough photo. The glass panels float
+        // over the actual environment. `dim` keeps a faint scrim for text legibility.
+        Color.clear
+            .overlay { if dim { Color.black.opacity(0.18) } }
+            .ignoresSafeArea()
+        #else
         ZStack {
             Color(red: 0.04, green: 0.04, blue: 0.05)
             Image("oops_passthrough")
@@ -33,6 +41,7 @@ struct OopsPassthrough: View {
             if dim { Color.black.opacity(0.28) }
         }
         .ignoresSafeArea()
+        #endif
     }
 }
 
@@ -269,17 +278,6 @@ struct PageDots: View {
             Circle().fill(.white.opacity(0.4)).frame(width: 16, height: 16)
             Capsule().fill(.white.opacity(0.4)).frame(width: 150, height: 12)
         }
-    }
-}
-
-/// `.home-pill` — the visionOS home indicator at the very bottom.
-struct HomePill: View {
-    var body: some View {
-        HStack(spacing: 22) {
-            Circle().fill(.white.opacity(0.3)).frame(width: 13, height: 13)
-            Capsule().fill(.white.opacity(0.3)).frame(width: 130, height: 11)
-        }
-        .opacity(0.6)
     }
 }
 

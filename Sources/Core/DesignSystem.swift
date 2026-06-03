@@ -100,6 +100,36 @@ struct WarmBackground: View {
     }
 }
 
+// MARK: - Pinch-to-zoom wrapper
+
+#if os(visionOS)
+/// Pinch-to-zoom wrapper for window content on Vision Pro. Native window resize only
+/// reflows layout; this scales fonts + icons together. Clamped 0.7–1.4. Only a magnify
+/// gesture is attached (no tap), so it never steals taps from buttons or "tap to begin".
+struct ZoomableContent<Content: View>: View {
+    @ViewBuilder var content: Content
+    @State private var committed: CGFloat = 1
+    @State private var gesture: CGFloat = 1
+    private var scale: CGFloat { min(max(committed * gesture, 0.7), 1.4) }
+
+    var body: some View {
+        content
+            .scaleEffect(scale)
+            .gesture(
+                MagnifyGesture()
+                    .onChanged { gesture = $0.magnification }
+                    .onEnded { _ in committed = scale; gesture = 1 }
+            )
+    }
+}
+#else
+/// iPad / iOS: passthrough so call sites compile unchanged (no custom zoom there).
+struct ZoomableContent<Content: View>: View {
+    @ViewBuilder var content: Content
+    var body: some View { content }
+}
+#endif
+
 // MARK: - Orb
 
 /// Glowing amber orb used on splash and loading ("Weaving") screens, and as the

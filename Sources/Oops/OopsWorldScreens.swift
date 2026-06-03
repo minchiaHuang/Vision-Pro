@@ -100,7 +100,7 @@ struct PreviewScreen: View {
             .padding(.horizontal, 40)
 
             HStack { Spacer(); SideBar().padding(.trailing, 28) }
-            VStack { Spacer(); PageDots().padding(.bottom, 18); HomePill().padding(.bottom, 14) }
+            VStack { Spacer(); PageDots().padding(.bottom, 18) }
         }
     }
 }

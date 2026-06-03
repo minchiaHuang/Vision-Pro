@@ -40,35 +40,17 @@ struct OopsFlowView: View {
 
     var body: some View {
         ZStack {
-            switch screen {
-            case .opening:
-                OpeningScreen { go(.home) }
-            case .home:
-                HomeScreen(onGenerate: { go(.safety) }, onVisitOld: { enterWorld() })
-            case .safety:
-                DeclarationScreen(
-                    label: "03 Safety Declaration", title: "Safety Declaration",
-                    items: OopsContent.safety, cta: "I agree & continue",
-                    checks: $safety, onCta: { go(.privacy) })
-            case .privacy:
-                DeclarationScreen(
-                    label: "04 Privacy Preferences", title: "Privacy Preferences",
-                    items: OopsContent.privacy, cta: "Start",
-                    checks: $privacy, onCta: { go(.quiz) })
-            case .quiz:
-                QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
-            case .generating:
-                GeneratingScreen { go(.preview) }
-            case .preview:
-                PreviewScreen(onEnter: { enterWorld() }, onRetry: { go(.quiz) })
-            case .world:
+            if screen == .world {
+                // Entering the 3D world: never zoomed — it's immersive content.
                 OopsWorldContainer(onExit: { go(.exit) })
-            case .exit:
-                ExitScreen(onReenter: { enterWorld() }, onHome: { go(.home) })
-            }
+            } else {
+                // All onboarding/quiz/preview screens are pinch-zoomable on Vision Pro.
+                ZoomableContent {
+                    screenView(screen)
+                }
 
-            // Restart pill — bottom-left of the viewport (matches the prototype chrome).
-            if screen != .world {
+                // Restart pill — bottom-left chrome, kept outside the zoom so it stays
+                // a fixed size (matches the prototype chrome).
                 VStack {
                     Spacer()
                     HStack {
@@ -88,6 +70,43 @@ struct OopsFlowView: View {
         }
         .preferredColorScheme(.dark)
         .statusBarHidden()
+        #if os(visionOS)
+        // Let the cover background go clear so the transparent `OopsPassthrough`
+        // reveals the window glass / real room rather than an opaque default backing.
+        .presentationBackground(.clear)
+        #endif
+    }
+
+    /// The current non-world screen. `.world` is handled separately (outside the zoom
+    /// wrapper), so it returns an empty view here.
+    @ViewBuilder
+    private func screenView(_ screen: OopsScreen) -> some View {
+        switch screen {
+        case .opening:
+            OpeningScreen { go(.home) }
+        case .home:
+            HomeScreen(onGenerate: { go(.safety) }, onVisitOld: { enterWorld() })
+        case .safety:
+            DeclarationScreen(
+                label: "03 Safety Declaration", title: "Safety Declaration",
+                items: OopsContent.safety, cta: "I agree & continue",
+                checks: $safety, onCta: { go(.privacy) })
+        case .privacy:
+            DeclarationScreen(
+                label: "04 Privacy Preferences", title: "Privacy Preferences",
+                items: OopsContent.privacy, cta: "Start",
+                checks: $privacy, onCta: { go(.quiz) })
+        case .quiz:
+            QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
+        case .generating:
+            GeneratingScreen { go(.preview) }
+        case .preview:
+            PreviewScreen(onEnter: { enterWorld() }, onRetry: { go(.quiz) })
+        case .world:
+            EmptyView()
+        case .exit:
+            ExitScreen(onReenter: { enterWorld() }, onHome: { go(.home) })
+        }
     }
 
     /// Prepares a neutral default world (no scoring this pass) and shows the existing 3D world.

@@ -32,7 +32,6 @@ struct OpeningScreen: View {
                     .opacity(breathe ? 0.95 : 0.45)
                     .padding(.bottom, 120)
                 PageDots().padding(.bottom, 18)
-                HomePill().padding(.bottom, 14)
             }
         }
         .contentShape(Rectangle())
@@ -76,7 +75,6 @@ struct HomeScreen: View {
             VStack {
                 Spacer()
                 PageDots().padding(.bottom, 18)
-                HomePill().padding(.bottom, 14)
             }
         }
     }
@@ -154,7 +152,7 @@ struct DeclarationScreen: View {
 
             HStack { Spacer(); SideBar().padding(.trailing, 28) }
 
-            VStack { Spacer(); PageDots().padding(.bottom, 18); HomePill().padding(.bottom, 14) }
+            VStack { Spacer(); PageDots().padding(.bottom, 18) }
         }
     }
 }

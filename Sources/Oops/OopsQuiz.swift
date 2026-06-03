@@ -40,7 +40,6 @@ struct QuizScreen: View {
             .padding(.vertical, 50)
 
             HStack { Spacer(); SideBar().padding(.trailing, 28) }
-            VStack { Spacer(); HomePill().padding(.bottom, 14) }
 
             if confirm {
                 OopsDialog(

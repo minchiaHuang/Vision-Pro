@@ -62,53 +62,66 @@ struct DevMenuView: View {
         ZStack {
             WarmBackground()
 
-            VStack(spacing: 24) {
-                Eyebrow("Dev Menu")
+            ZoomableContent {
+                VStack(spacing: 24) {
+                    Eyebrow("Dev Menu")
 
-                Text("Pick a feature to test")
-                    .font(.title.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    Text("Pick a feature to test")
+                        .font(.system(size: 34, weight: .semibold))
+                        .foregroundStyle(.black)
 
-                VStack(spacing: 14) {
-                    ForEach(DevFeature.allCases) { feature in
-                        Button { active = feature } label: {
-                            HStack(spacing: 16) {
-                                Image(systemName: feature.systemImage)
-                                    .font(.title3)
-                                    .frame(width: 32)
-                                    .foregroundStyle(VATheme.amber)
+                    VStack(spacing: 14) {
+                        ForEach(DevFeature.allCases) { feature in
+                            Button { active = feature } label: {
+                                HStack(spacing: 16) {
+                                    Image(systemName: feature.systemImage)
+                                        .font(.title3)
+                                        .frame(width: 32)
+                                        .foregroundStyle(VATheme.amber)
 
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(feature.title)
-                                        .font(.headline)
-                                        .foregroundStyle(.primary)
-                                    Text(feature.subtitle)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(feature.title)
+                                            .font(.system(size: 20, weight: .semibold))
+                                            .foregroundStyle(.black)
+                                        Text(feature.subtitle)
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(.black.opacity(0.5))
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.footnote)
+                                        .foregroundStyle(.black.opacity(0.4))
                                 }
-
-                                Spacer()
-
-                                Image(systemName: "chevron.right")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
+                                .padding(.vertical, 14)
+                                .padding(.horizontal, 18)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                // Explicit light fill on visionOS so the cards read lighter
+                                // than the cream (matching iPad), instead of being darkened
+                                // by glass vibrancy over the passthrough room.
+                                #if os(visionOS)
+                                .background(Color.white.opacity(0.5), in: RoundedRectangle(cornerRadius: 16))
+                                #else
+                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                                #endif
                             }
-                            .padding(.vertical, 14)
-                            .padding(.horizontal, 18)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
+                    .frame(maxWidth: 480)
                 }
-                .frame(maxWidth: 480)
+                .padding(40)
             }
-            .padding(40)
         }
         .fullScreenCover(item: $active) { feature in
             DevFeatureContainer(feature: feature) { active = nil }
                 .environment(appState)
         }
+        // Warm golden look (matches the "Weaving" loading screen): force light so
+        // `WarmBackground` uses its cream gradient + amber glow and text/material
+        // contrast flip to suit it. The Oops flow re-asserts `.dark` for its glass.
+        .preferredColorScheme(.light)
     }
 }
 
@@ -132,6 +145,7 @@ private struct DevFeatureContainer: View {
                         .padding(12)
                         .background(.ultraThinMaterial, in: Circle())
                 }
+                .buttonStyle(.plain)
                 .padding(.leading, 16)
                 .padding(.top, 16)
                 .accessibilityLabel("Back to menu")
