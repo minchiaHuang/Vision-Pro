@@ -22,11 +22,10 @@
 		AA000001000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000010C /* Assets.xcassets */; };
 		AA000001000000000000000D /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000010F /* Secrets.swift */; };
 		AA000001000000000000000E /* WorldLabsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000110 /* WorldLabsService.swift */; };
-		AA000001000000000000000F /* WorldLabsTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000111 /* WorldLabsTestView.swift */; };
 		AA0000010000000000000010 /* MotionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000112 /* MotionManager.swift */; };
 		AA0000010000000000000011 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000113 /* DesignSystem.swift */; };
-		AA0000010000000000000012 /* USDZTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000114 /* USDZTestView.swift */; };
 		AA0000010000000000000013 /* GamepadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000115 /* GamepadManager.swift */; };
+		AA0000010000000000000050 /* WorldCameraRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000150 /* WorldCameraRig.swift */; };
 		AA0000010000000000000014 /* SplatSpikeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000116 /* SplatSpikeView.swift */; };
 		AA0000010000000000000015 /* MetalSplatter in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000010000000000000902 /* MetalSplatter */; };
 		AA0000010000000000000016 /* SplatIO in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000010000000000000903 /* SplatIO */; };
@@ -38,7 +37,6 @@
 		AA0000010000000000000038 /* SplatLocomotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000138 /* SplatLocomotion.swift */; };
 		AA0000010000000000000039 /* SplatVisionRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000139 /* SplatVisionRenderer.swift */; };
 		AA00000100000000000000B0 /* SplatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B0 /* SplatSession.swift */; };
-		AA0000010000000000000040 /* ImmersiveUSDZView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000140 /* ImmersiveUSDZView.swift */; };
 		AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */; };
 		AA00000100000000000000F2 /* VoiceTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F2 /* VoiceTestView.swift */; };
 		AA00000100000000000000F3 /* DevMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F3 /* DevMenuView.swift */; };
@@ -72,11 +70,10 @@
 		AA000001000000000000010E /* Info-visionOS.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-visionOS.plist"; sourceTree = "<group>"; };
 		AA000001000000000000010F /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		AA0000010000000000000110 /* WorldLabsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldLabsService.swift; sourceTree = "<group>"; };
-		AA0000010000000000000111 /* WorldLabsTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldLabsTestView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000112 /* MotionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionManager.swift; sourceTree = "<group>"; };
 		AA0000010000000000000113 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
-		AA0000010000000000000114 /* USDZTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USDZTestView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000115 /* GamepadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamepadManager.swift; sourceTree = "<group>"; };
+		AA0000010000000000000150 /* WorldCameraRig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCameraRig.swift; sourceTree = "<group>"; };
 		AA0000010000000000000116 /* SplatSpikeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSpikeView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000117 /* NarrationComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationComposer.swift; sourceTree = "<group>"; };
 		AA0000010000000000000118 /* NarrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationService.swift; sourceTree = "<group>"; };
@@ -87,7 +84,6 @@
 		AA0000010000000000000138 /* SplatLocomotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatLocomotion.swift; sourceTree = "<group>"; };
 		AA0000010000000000000139 /* SplatVisionRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatVisionRenderer.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B0 /* SplatSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSession.swift; sourceTree = "<group>"; };
-		AA0000010000000000000140 /* ImmersiveUSDZView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveUSDZView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F2 /* VoiceTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceTestView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F3 /* DevMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevMenuView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F4 /* SpeechVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechVoice.swift; sourceTree = "<group>"; };
@@ -228,10 +224,7 @@
 				AA0000010000000000000138 /* SplatLocomotion.swift */,
 				AA0000010000000000000139 /* SplatVisionRenderer.swift */,
 				AA00000100000000000001B0 /* SplatSession.swift */,
-				AA0000010000000000000140 /* ImmersiveUSDZView.swift */,
 				AA0000010000000000000110 /* WorldLabsService.swift */,
-				AA0000010000000000000111 /* WorldLabsTestView.swift */,
-				AA0000010000000000000114 /* USDZTestView.swift */,
 				AA0000010000000000000306 /* SpikeAssets */,
 			);
 			path = Spikes;
@@ -252,6 +245,7 @@
 				AA0000010000000000000113 /* DesignSystem.swift */,
 				AA0000010000000000000112 /* MotionManager.swift */,
 				AA0000010000000000000115 /* GamepadManager.swift */,
+				AA0000010000000000000150 /* WorldCameraRig.swift */,
 				AA000001000000000000010F /* Secrets.swift */,
 			);
 			path = Core;
@@ -361,19 +355,17 @@
 				AA0000010000000000000037 /* ParametricWorldBuilder.swift in Sources */,
 				AA000001000000000000000D /* Secrets.swift in Sources */,
 				AA000001000000000000000E /* WorldLabsService.swift in Sources */,
-				AA000001000000000000000F /* WorldLabsTestView.swift in Sources */,
 				AA0000010000000000000010 /* MotionManager.swift in Sources */,
 				AA0000010000000000000011 /* DesignSystem.swift in Sources */,
-				AA0000010000000000000012 /* USDZTestView.swift in Sources */,
 				AA00000100000000000000F2 /* VoiceTestView.swift in Sources */,
 				AA00000100000000000000F3 /* DevMenuView.swift in Sources */,
 				AA0000010000000000000013 /* GamepadManager.swift in Sources */,
+				AA0000010000000000000050 /* WorldCameraRig.swift in Sources */,
 				AA0000010000000000000014 /* SplatSpikeView.swift in Sources */,
 				AA000001000000000000001B /* SplatLibraryView.swift in Sources */,
 				AA0000010000000000000038 /* SplatLocomotion.swift in Sources */,
 				AA0000010000000000000039 /* SplatVisionRenderer.swift in Sources */,
 				AA00000100000000000000B0 /* SplatSession.swift in Sources */,
-				AA0000010000000000000040 /* ImmersiveUSDZView.swift in Sources */,
 				AA0000010000000000000017 /* NarrationComposer.swift in Sources */,
 				AA0000010000000000000018 /* NarrationService.swift in Sources */,
 				AA0000010000000000000019 /* SpeechRecognizer.swift in Sources */,

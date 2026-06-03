@@ -66,15 +66,6 @@ struct VisitingArtisanApp: App {
         }
         .defaultSize(width: 360, height: 170)
         .windowResizability(.contentSize)
-
-        // visionOS only: DEV first-person walk-in for a USDZ model imported from the
-        // Files app (matches the iPad USDZ viewer). The model's file URL is the value.
-        ImmersiveSpace(id: "usdz", for: URL.self) { $url in
-            if let url {
-                ImmersiveUSDZView(modelURL: url)
-            }
-        }
-        .immersionStyle(selection: .constant(.full), in: .full)
         #endif
     }
 }

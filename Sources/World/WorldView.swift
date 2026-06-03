@@ -287,7 +287,7 @@ struct ParametricWorldView: View {
                 let span = build.span
                 let eye = build.eye
 
-                // Camera + WorldCameraRig (same pattern as USDZTestView).
+                // Camera + WorldCameraRig (the shared first-person rig).
                 let camera = PerspectiveCamera()
                 var comp = camera.camera
                 comp.near = max(0.01, span * 0.001)

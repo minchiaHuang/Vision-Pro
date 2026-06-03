@@ -8,10 +8,7 @@ import SwiftUI
 /// One testable feature reachable from the dev menu.
 enum DevFeature: String, Identifiable, CaseIterable {
     case oops
-    case full
-    case world
     case voice
-    case usdz
     case splat
 
     var id: String { rawValue }
@@ -19,10 +16,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
     var title: String {
         switch self {
         case .oops:  return "Oops Flow"
-        case .full:  return "Full Flow"
-        case .world: return "World — Enter Directly"
         case .voice: return "Voice — Speech Test"
-        case .usdz:  return "USDZ — Model Viewer"
         case .splat: return "Splat — 6DoF Walkthrough"
         }
     }
@@ -30,10 +24,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
     var subtitle: String {
         switch self {
         case .oops:  return "visionOS glass · onboarding → quiz → world"
-        case .full:  return "splash → quiz → world"
-        case .world: return "Default world, skips the quiz"
         case .voice: return "Tap the orb to talk · ASR / LLM / TTS"
-        case .usdz:  return "RealityKit USDZ, first person"
         case .splat: return "Generate or open a World Labs splat"
         }
     }
@@ -41,10 +32,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
     var systemImage: String {
         switch self {
         case .oops:  return "rectangle.stack.badge.play"
-        case .full:  return "sparkles"
-        case .world: return "globe.asia.australia"
         case .voice: return "waveform"
-        case .usdz:  return "cube"
         case .splat: return "point.3.connected.trianglepath.dotted"
         }
     }
@@ -157,15 +145,8 @@ private struct DevFeatureContainer: View {
         case .oops:
             // The visionOS glass prototype flow (own coordinator + screen state).
             OopsFlowView()
-        case .full:
-            // Fresh start each time the full flow is opened.
-            RootView().onAppear { appState.restart() }
-        case .world:
-            WorldView().onAppear { appState.loadDefaultWorldForTesting() }
         case .voice:
             VoiceTestView()
-        case .usdz:
-            USDZTestView()
         case .splat:
             SplatLibraryView(onClose: onClose)
         }

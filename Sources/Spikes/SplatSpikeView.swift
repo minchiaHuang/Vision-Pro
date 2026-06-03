@@ -78,7 +78,7 @@ import os
 
 /// Walkable splat viewer for a local `.spz` file. Owns the `WorldCameraRig` and
 /// `GamepadManager` so touch gestures and the renderer's per-frame gamepad poll
-/// mutate the same first-person rig (same pattern as `USDZTestView`).
+/// mutate the same first-person rig (the shared `WorldCameraRig`).
 struct SplatSceneView: View {
     let splatFileURL: URL
 
