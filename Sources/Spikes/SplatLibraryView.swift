@@ -89,14 +89,10 @@ struct SplatEntry: Codable, Hashable {
 }
 
 enum SplatSeeds {
-    // Only worlds whose `.spz` is tracked in git ship as bundled seeds: the upright
-    // sample + the "Vibrant Loft Art Studio" marble export. (The other marble exports
-    // were kept local-only, never committed, to avoid bloating the repo.)
+    // V3 demo: only the bundled "Vibrant Loft Art Studio" marble world ships. The
+    // sample and other marble exports were removed from the bundle to slim the app.
+    // Raw marble export — loads upside-down, needs a 180° flip.
     static let all: [SeedSplatWorld] = [
-        SeedSplatWorld(id: "world_a236ea24",
-                       name: "Sample world (a236ea24)",
-                       source: .bundled(resource: SplatSpikeDebug.bundledSplat)),
-        // Raw marble export — loads upside-down, needs a 180° flip.
         SeedSplatWorld(id: "vibrant_loft_art_studio",
                        name: "Vibrant Loft Art Studio",
                        source: .bundled(resource: "vibrant_loft_art_studio"),
