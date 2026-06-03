@@ -96,7 +96,7 @@ struct QuizScreen: View {
             case .text:
                 VStack(alignment: .leading, spacing: 8) {
                     ZStack(alignment: .trailing) {
-                        QuizField(text: bindingFor(q.id), placeholder: q.placeholder, multiline: false)
+                        OopsField(text: bindingFor(q.id), placeholder: q.placeholder, multiline: false)
                         if q.hasMic {
                             Button { Task { await dictation.toggle() } } label: {
                                 Image(systemName: dictation.isListening ? "mic.fill" : "mic")
@@ -125,7 +125,7 @@ struct QuizScreen: View {
                     }
                 }
             case .area:
-                QuizField(text: bindingFor(q.id), placeholder: q.placeholder, multiline: true)
+                OopsField(text: bindingFor(q.id), placeholder: q.placeholder, multiline: true)
             case .slider:
                 VStack(spacing: 6) {
                     Slider(value: Binding(
@@ -153,35 +153,6 @@ struct QuizScreen: View {
         case "q6": return $answers.q6
         default:   return .constant("")
         }
-    }
-}
-
-/// `.quiz-input` — frosted text field / textarea.
-private struct QuizField: View {
-    @Binding var text: String
-    let placeholder: String
-    let multiline: Bool
-
-    var body: some View {
-        Group {
-            if multiline {
-                TextField(placeholder, text: $text, axis: .vertical)
-                    .lineLimit(3...5)
-                    .padding(.vertical, 22)
-            } else {
-                TextField(placeholder, text: $text)
-                    .frame(height: 80)
-            }
-        }
-        .font(.system(size: 23))
-        .foregroundStyle(.white)
-        .padding(.horizontal, 28)
-        .background(.white.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(.white.opacity(0.18), lineWidth: 1))
-        .tint(.white)
     }
 }
 

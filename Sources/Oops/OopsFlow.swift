@@ -1,12 +1,14 @@
 import SwiftUI
 
-/// The nine screens of the Oops prototype flow (mirrors the React `screen` state).
+/// The screens of the Oops prototype flow (mirrors the React `screen` state). After the
+/// user steps out of the 3D world they land on the `reflection` screen (5 questions).
 enum OopsScreen {
-    case opening, home, safety, privacy, quiz, generating, preview, world, exit
+    case opening, home, safety, privacy, quiz, generating, preview, world, reflection
 }
 
-/// Held-in-memory answers for the 6 reflective questions (front-end only — never scored
-/// in this pass). String for text/area questions, Int 0...10 for the single slider.
+/// Held-in-memory answers for the quiz + post-world reflection (front-end only — never
+/// scored or stored in this pass). String for text/area questions, Int 0...10 for the
+/// single slider; `r1`–`r5` hold the reflection free-text answers.
 struct OopsAnswers {
     var q1 = "To find my passion"
     var q3 = ""
@@ -14,6 +16,11 @@ struct OopsAnswers {
     var q5 = ""
     var q6 = ""
     var q2 = 6   // slider
+    var r1 = ""
+    var r2 = ""
+    var r3 = ""
+    var r4 = ""
+    var r5 = ""
 }
 
 /// Self-contained coordinator for the Oops glass flow. Owns its own screen + answer
@@ -42,7 +49,7 @@ struct OopsFlowView: View {
         ZStack {
             if screen == .world {
                 // Entering the 3D world: never zoomed — it's immersive content.
-                OopsWorldContainer(onExit: { go(.exit) })
+                OopsWorldContainer(onExit: { go(.reflection) })
             } else {
                 // All onboarding/quiz/preview screens are pinch-zoomable on Vision Pro.
                 ZoomableContent {
@@ -104,8 +111,8 @@ struct OopsFlowView: View {
             PreviewScreen(onEnter: { enterWorld() }, onRetry: { go(.quiz) })
         case .world:
             EmptyView()
-        case .exit:
-            ExitScreen(onReenter: { enterWorld() }, onHome: { go(.home) })
+        case .reflection:
+            ReflectionFlowView(answers: $answers, onFinish: { go(.home) })
         }
     }
 

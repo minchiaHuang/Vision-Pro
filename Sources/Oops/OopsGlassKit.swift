@@ -118,6 +118,38 @@ struct OopsButton: ButtonStyle {
     }
 }
 
+// MARK: - Frosted text field / textarea
+
+/// `.quiz-input` — frosted single-line field or multi-line textarea. Shared by the quiz
+/// and the reflection screens.
+struct OopsField: View {
+    @Binding var text: String
+    let placeholder: String
+    let multiline: Bool
+
+    var body: some View {
+        Group {
+            if multiline {
+                TextField(placeholder, text: $text, axis: .vertical)
+                    .lineLimit(3...5)
+                    .padding(.vertical, 22)
+            } else {
+                TextField(placeholder, text: $text)
+                    .frame(height: 80)
+            }
+        }
+        .font(.system(size: 23))
+        .foregroundStyle(.white)
+        .padding(.horizontal, 28)
+        .background(.white.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(.white.opacity(0.18), lineWidth: 1))
+        .tint(.white)
+    }
+}
+
 // MARK: - Vertical glass bars
 
 /// Generic vertical glass bar (`.glass-bar`) hosting circular controls.
