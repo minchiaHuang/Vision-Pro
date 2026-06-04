@@ -66,6 +66,23 @@ struct VisitingArtisanApp: App {
         }
         .defaultSize(width: 360, height: 170)
         .windowResizability(.contentSize)
+        // This window is opened only while a splat space is live; never restore it on
+        // launch, or visionOS resurrects a stale panel stuck on an idle session.
+        .restorationBehavior(.disabled)
+
+        // visionOS only: the Oops flow's counterpart to `splat-controls`. Shown while the
+        // Oops 6DoF splat world is open; hosts load progress, hold-to-move controls, and
+        // an exit that returns to the Oops reflection flow. A single `Window` so
+        // re-entering the world can't stack duplicate panels.
+        Window("World", id: "oops-world-controls") {
+            OopsWorldControls()
+                .environment(appState)
+        }
+        .defaultSize(width: 380, height: 340)
+        .windowResizability(.contentSize)
+        // This window is opened only while the Oops splat world is live; never restore it
+        // on launch, or visionOS resurrects a stale panel stuck on an idle session.
+        .restorationBehavior(.disabled)
         #endif
     }
 }
@@ -104,14 +121,24 @@ private struct SplatExitControls: View {
                     .foregroundStyle(.red)
                     .multilineTextAlignment(.center)
                 exitButton
-            default:
+            case .downloading, .preparing:
                 loadingBody
+            case .idle:
+                // No world is loading — this panel shouldn't exist. Dismissed by `.task`.
+                Color.clear
             }
         }
         .padding(24)
         .frame(maxWidth: .infinity)
         .onChange(of: session.exitRequested) { _, requested in
             if requested { performExit() }
+        }
+        // A panel that finds the session idle has no world to show (e.g. a scene visionOS
+        // tried to restore). Confirm it stays idle through the open race, then dismiss.
+        .task(id: session.phase) {
+            guard session.phase == .idle else { return }
+            try? await Task.sleep(for: .milliseconds(400))
+            if session.phase == .idle { dismissWindow(id: "splat-controls") }
         }
     }
 

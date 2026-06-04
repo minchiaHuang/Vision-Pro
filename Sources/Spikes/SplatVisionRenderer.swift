@@ -262,11 +262,18 @@ final class SplatVisionRenderer: @unchecked Sendable {
         let dt = Float(now - (lastTickTime ?? now))
         lastTickTime = now
         let gamepad = SplatSpikeDebug.ignoreGamepad ? nil : Self.currentGamepad()
-        locomotion.tick(deltaTime: dt, gamepad: gamepad)
 
-        // ☰ (Menu/Options) → leave the world, edge-triggered. Routed to the controls
-        // window (which owns `dismissImmersiveSpace`) via the shared session so the exit
-        // "follows" the user no matter how far they've walked. Distinct from ○ (reset).
+        // No-controller fallback (Simulator + device): on-screen hold-to-move pad. Inert
+        // when untouched, so it's safe to always feed alongside the gamepad. (Keyboard
+        // input is intentionally not read: the visionOS Simulator captures WASD/QE/arrows
+        // to move the simulated device, so the app never receives them.)
+        let manual = SplatManualInput.shared.snapshot()
+        locomotion.tick(deltaTime: dt, gamepad: gamepad, manual: manual)
+
+        // Leave the world, edge-triggered: gamepad ☰ (Menu/Options). The mouse / gaze-tap
+        // "Leave world" button in the controls window is the primary exit; the gamepad ☰ is
+        // routed here (via the shared session, which owns `dismissImmersiveSpace`) so a
+        // controller user can exit no matter how far they've walked.
         let exitPressed = gamepad?.buttonMenu.isPressed ?? false
         if exitPressed && !exitButtonWasPressed {
             Task { @MainActor in SplatSession.shared.requestExit() }

@@ -56,7 +56,13 @@ enum DevFeature: String, Identifiable, CaseIterable {
 /// The launcher screen: a vertical list of feature buttons.
 struct DevMenuView: View {
     @Environment(AppState.self) private var appState
-    @State private var active: DevFeature?
+
+    /// Presented feature lives in `AppState` (not local `@State`) so the Oops splat
+    /// world can dismiss + reopen this window without losing the user's place.
+    private var activeBinding: Binding<DevFeature?> {
+        Binding(get: { appState.devActiveFeature },
+                set: { appState.devActiveFeature = $0 })
+    }
 
     var body: some View {
         ZStack {
@@ -72,7 +78,7 @@ struct DevMenuView: View {
 
                     VStack(spacing: 14) {
                         ForEach(DevFeature.allCases) { feature in
-                            Button { active = feature } label: {
+                            Button { appState.devActiveFeature = feature } label: {
                                 HStack(spacing: 16) {
                                     Image(systemName: feature.systemImage)
                                         .font(.title3)
@@ -114,8 +120,8 @@ struct DevMenuView: View {
                 .padding(40)
             }
         }
-        .fullScreenCover(item: $active) { feature in
-            DevFeatureContainer(feature: feature) { active = nil }
+        .fullScreenCover(item: activeBinding) { feature in
+            DevFeatureContainer(feature: feature) { appState.devActiveFeature = nil }
                 .environment(appState)
         }
         // Warm golden look (matches the "Weaving" loading screen): force light so

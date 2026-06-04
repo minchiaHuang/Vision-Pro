@@ -28,6 +28,11 @@ struct OopsAnswers {
 /// to prepare a neutral default world right before entering the existing 3D `WorldView`.
 struct OopsFlowView: View {
     @Environment(AppState.self) private var appState
+    #if os(visionOS)
+    @Environment(\.openImmersiveSpace) private var openImmersiveSpace
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
+    #endif
 
     @State private var screen: OopsScreen = .opening
     @State private var answers = OopsAnswers()
@@ -77,6 +82,14 @@ struct OopsFlowView: View {
         }
         .preferredColorScheme(.dark)
         .statusBarHidden()
+        .onAppear {
+            // Returning from the immersive splat world recreates this window; resume at
+            // the requested screen (reflection) rather than restarting at .opening.
+            if let resume = appState.oopsResumeScreen {
+                screen = resume
+                appState.oopsResumeScreen = nil
+            }
+        }
         #if os(visionOS)
         // Let the cover background go clear so the transparent `OopsPassthrough`
         // reveals the window glass / real room rather than an opaque default backing.
@@ -116,9 +129,27 @@ struct OopsFlowView: View {
         }
     }
 
-    /// Prepares a neutral default world (no scoring this pass) and shows the existing 3D world.
+    /// Enters the walkable 3D world.
+    /// - visionOS: opens the 6DoF Gaussian-splat immersive space directly (bundled
+    ///   "Vibrant Loft Art Studio"), then swaps the dev-menu window for the small
+    ///   `oops-world-controls` window so full immersion isn't cluttered by a floating
+    ///   panel. Leaving that window reopens the dev-menu at the reflection screen.
+    /// - iPad: prepares a neutral default world and shows the in-cover `WorldView`.
     private func enterWorld() {
+        #if os(visionOS)
+        Task {
+            guard let url = Bundle.main.url(forResource: "vibrant_loft_art_studio",
+                                            withExtension: "spz") else { return }
+            SplatManualInput.shared.reset()
+            if case .opened = await openImmersiveSpace(id: "splat",
+                                                       value: SplatEntry(url: url, flipUpsideDown: true)) {
+                openWindow(id: "oops-world-controls")
+                dismissWindow(id: "dev-menu")
+            }
+        }
+        #else
         appState.loadDefaultWorld()
         go(.world)
+        #endif
     }
 }

@@ -33,6 +33,17 @@ final class AppState {
     var axisScores: AxisScores?
     var worldParams: WorldParams?
 
+    /// DEV (visionOS): which dev-menu feature is presented. Hoisted out of the dev-menu
+    /// window's local `@State` so the Oops splat world can dismiss + reopen that window
+    /// (clearing the floating panel during full immersion) without losing the user's
+    /// place. `DevMenuView` binds its `fullScreenCover` to this.
+    var devActiveFeature: DevFeature?
+
+    /// One-shot: when set, `OopsFlowView` jumps to this screen on appear. Used to land on
+    /// `.reflection` after the user leaves the immersive splat world (the dev-menu window
+    /// is recreated on the way back, so the screen can't live in the view's `@State`).
+    var oopsResumeScreen: OopsScreen?
+
     /// Quiz done -> loading -> resolve the world -> enter the world.
     func finishQuiz() {
         phase = .loading

@@ -303,14 +303,11 @@ struct GlassOrb: View {
 
 // MARK: - Progress indicators
 
-/// `.page-dots` — dot + long bar centered near the bottom.
+/// `.page-dots` — intentionally empty. The prototype drew a dot + long home-pill capsule
+/// near the bottom, but on visionOS/iPad both visually duplicate the system window
+/// grabber bar, so nothing is rendered here.
 struct PageDots: View {
-    var body: some View {
-        HStack(spacing: 24) {
-            Circle().fill(.white.opacity(0.4)).frame(width: 16, height: 16)
-            Capsule().fill(.white.opacity(0.4)).frame(width: 150, height: 12)
-        }
-    }
+    var body: some View { EmptyView() }
 }
 
 // MARK: - Checkbox statement

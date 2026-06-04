@@ -1,5 +1,28 @@
 import simd
+import Foundation
 import GameController
+
+/// Thread-safe locomotion fallback for when no game controller is connected (notably
+/// the visionOS Simulator). On-screen hold-to-move controls write here on the main
+/// actor; `SplatVisionRenderer` reads a `snapshot()` each frame on its render thread.
+/// Zero values = no influence, so this is inert whenever the user isn't touching it.
+final class SplatManualInput: @unchecked Sendable {
+    static let shared = SplatManualInput()
+
+    struct Snapshot { var forward: Float = 0; var turn: Float = 0 }
+
+    private let lock = NSLock()
+    private var state = Snapshot()
+
+    /// `forward` +1 walks forward / −1 back; `turn` +1 turns right / −1 left.
+    func set(forward: Float, turn: Float) {
+        lock.lock(); state = Snapshot(forward: forward, turn: turn); lock.unlock()
+    }
+    func snapshot() -> Snapshot { lock.lock(); defer { lock.unlock() }; return state }
+    func reset() { lock.lock(); state = Snapshot(); lock.unlock() }
+
+    private init() {}
+}
 
 /// Artificial locomotion for the walkable splat world, shared by the platforms that
 /// drive a view matrix directly. A plain value type (no actor isolation) so the
@@ -34,23 +57,39 @@ struct SplatLocomotion {
     private var forward: SIMD3<Float> { simd_quatf(angle: yaw, axis: [0, 1, 0]).act([0, 0, -1]) }
     private var right: SIMD3<Float> { simd_quatf(angle: yaw, axis: [0, 1, 0]).act([1, 0, 0]) }
 
-    /// Integrates one frame of gamepad input. No-op when no controller is connected.
-    mutating func tick(deltaTime dt: Float, gamepad gp: GCExtendedGamepad?) {
-        guard let gp else { return }
+    /// Integrates one frame of input. Combines the game controller (if any) with the
+    /// on-screen `manual` fallback so the world stays walkable without a controller
+    /// (e.g. in the Simulator). No controller + no manual input = no movement.
+    mutating func tick(deltaTime dt: Float, gamepad gp: GCExtendedGamepad?,
+                       manual: SplatManualInput.Snapshot = .init()) {
+        var turnX: Float = 0   // +right
+        var moveX: Float = 0   // strafe (+right)
+        var moveY: Float = 0   // +forward
+        var lift: Float = 0    // +up
 
-        // Right stick X → turn (yaw). Pitch deliberately left to head tracking.
-        yaw -= dead(gp.rightThumbstick.xAxis.value) * lookSpeed * dt
+        if let gp {
+            turnX += dead(gp.rightThumbstick.xAxis.value)
+            moveX += dead(gp.leftThumbstick.xAxis.value)
+            moveY += dead(gp.leftThumbstick.yAxis.value)
+            // Triggers → vertical (R2 up, L2 down, analog).
+            lift  += gp.rightTrigger.value - gp.leftTrigger.value
+        }
+        // `manual` is the no-controller fallback (on-screen pad), supplied by the caller;
+        // zero when untouched.
+        turnX += manual.turn
+        moveY += manual.forward
 
-        // Left stick → move on the horizontal plane.
+        // Right stick X / turn buttons → yaw. Pitch deliberately left to head tracking.
+        yaw -= turnX * lookSpeed * dt
+
+        // Move on the horizontal plane; triggers add vertical.
         let speed = span * moveFraction * dt
-        position += forward * (dead(gp.leftThumbstick.yAxis.value) * speed)
-        position += right * (dead(gp.leftThumbstick.xAxis.value) * speed)
+        position += forward * (moveY * speed)
+        position += right * (moveX * speed)
+        position.y += lift * speed
 
-        // Triggers → vertical (R2 up, L2 down, analog).
-        position.y += (gp.rightTrigger.value - gp.leftTrigger.value) * speed
-
-        // ○ (buttonB) → reset to the start viewpoint, edge-triggered.
-        let pressed = gp.buttonB.isPressed
+        // ○ (buttonB) → reset to the start viewpoint, edge-triggered (controller only).
+        let pressed = gp?.buttonB.isPressed ?? false
         if pressed && !resetWasPressed {
             position = initialPosition
             yaw = initialYaw
