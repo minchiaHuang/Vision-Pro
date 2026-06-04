@@ -53,8 +53,6 @@ struct ReflectionFlowView: View {
             .padding(.horizontal, 40)
             .padding(.vertical, 60)
 
-            HStack { Spacer(); SideBar().padding(.trailing, 28) }
-
             VStack {
                 Spacer()
                 ReflectionDots(total: questions.count, current: step)

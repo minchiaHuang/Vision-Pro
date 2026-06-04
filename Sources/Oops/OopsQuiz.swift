@@ -39,8 +39,6 @@ struct QuizScreen: View {
             .padding(.horizontal, 40)
             .padding(.vertical, 50)
 
-            HStack { Spacer(); SideBar().padding(.trailing, 28) }
-
             if confirm {
                 OopsDialog(
                     title: "Are you sure?",

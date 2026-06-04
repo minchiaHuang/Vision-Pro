@@ -22,9 +22,6 @@ struct OpeningScreen: View {
             }
             .padding(.horizontal, 60)
 
-            // right sidebar
-            HStack { Spacer(); SideBar().padding(.trailing, 36) }
-
             VStack {
                 Spacer()
                 Text("Tap anywhere to begin")
@@ -69,8 +66,6 @@ struct HomeScreen: View {
                 Spacer()
             }
             .padding(.horizontal, 60)
-
-            HStack { Spacer(); SideBar().padding(.trailing, 36) }
 
             VStack {
                 Spacer()
@@ -149,8 +144,6 @@ struct DeclarationScreen: View {
             }
             .padding(.horizontal, 40)
             .padding(.vertical, 60)
-
-            HStack { Spacer(); SideBar().padding(.trailing, 28) }
 
             VStack { Spacer(); PageDots().padding(.bottom, 18) }
         }

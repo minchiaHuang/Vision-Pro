@@ -185,18 +185,6 @@ struct BarButton: View {
     }
 }
 
-/// Right-edge sidebar shown on most onboarding screens: assistant orb + chat + photos.
-/// chat/photos are decorative in this front-end pass (as in the prototype).
-struct SideBar: View {
-    var body: some View {
-        GlassBar {
-            GlassOrb(size: 56)
-            BarButton(systemImage: "bubble.left")
-            BarButton(systemImage: "photo")
-        }
-    }
-}
-
 /// In-world control bar: avatar + leave + reset.
 struct WorldBar: View {
     var onClose: () -> Void = {}

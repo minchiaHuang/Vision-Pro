@@ -10,30 +10,34 @@ enum DevFeature: String, Identifiable, CaseIterable {
     case oops
     case voice
     case splat
+    case splatRK
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .oops:  return "Oops Flow"
-        case .voice: return "Voice — Speech Test"
-        case .splat: return "Splat — 6DoF Walkthrough"
+        case .oops:    return "Oops Flow"
+        case .voice:   return "Voice — Speech Test"
+        case .splat:   return "Splat — 6DoF Walkthrough"
+        case .splatRK: return "Splat RK — HUD spike"
         }
     }
 
     var subtitle: String {
         switch self {
-        case .oops:  return "visionOS glass · onboarding → quiz → world"
-        case .voice: return "Tap the orb to talk · ASR / LLM / TTS"
-        case .splat: return "Generate or open a World Labs splat"
+        case .oops:    return "visionOS glass · onboarding → quiz → world"
+        case .voice:   return "Tap the orb to talk · ASR / LLM / TTS"
+        case .splat:   return "Generate or open a World Labs splat"
+        case .splatRK: return "RealityView · head-anchored control HUD"
         }
     }
 
     var systemImage: String {
         switch self {
-        case .oops:  return "rectangle.stack.badge.play"
-        case .voice: return "waveform"
-        case .splat: return "point.3.connected.trianglepath.dotted"
+        case .oops:    return "rectangle.stack.badge.play"
+        case .voice:   return "waveform"
+        case .splat:   return "point.3.connected.trianglepath.dotted"
+        case .splatRK: return "arkit"
         }
     }
 
@@ -169,6 +173,12 @@ private struct DevFeatureContainer: View {
             VoiceTestView()
         case .splat:
             SplatLibraryView(onClose: onClose)
+        case .splatRK:
+            #if os(visionOS)
+            SplatRKLauncherView()
+            #else
+            Text("visionOS only")
+            #endif
         }
     }
 }

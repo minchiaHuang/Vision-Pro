@@ -57,6 +57,15 @@ struct VisitingArtisanApp: App {
         }
         .immersionStyle(selection: .constant(.full), in: .full)
 
+        // SPIKE: RealityView counterpart of the splat world, used to validate a
+        // head-anchored control HUD (see SplatRealityKitWorld.swift). Placeholder world
+        // for now; the splat-cloud geometry lands in a later step.
+        ImmersiveSpace(id: "splat-rk") {
+            SplatRKImmersiveView()
+                .environment(appState)
+        }
+        .immersionStyle(selection: .constant(.full), in: .full)
+
         // visionOS only: tiny floating window shown while a splat world is open. The
         // full-immersion CompositorLayer can't host SwiftUI controls, so load progress
         // and the only way back out live here. A single `Window` (not `WindowGroup`) so

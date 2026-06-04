@@ -99,7 +99,6 @@ struct PreviewScreen: View {
             .oopsCard(cornerRadius: 44)
             .padding(.horizontal, 40)
 
-            HStack { Spacer(); SideBar().padding(.trailing, 28) }
             VStack { Spacer(); PageDots().padding(.bottom, 18) }
         }
     }
@@ -159,10 +158,15 @@ struct OopsWorldControls: View {
             switch session.phase {
             case .ready:
                 SplatMovePad()
-                exitButton
-                Text("用下方方向鍵移動，點「Leave world」離開（或手把 ☰）")
+                worldVoiceMascot
+                HStack(spacing: 12) {
+                    backButton
+                    exitButton
+                }
+                Text("用下方方向鍵移動・點 orb 與 AI 對話・上一頁回預覽・結束離開（或手把 ☰）")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             case .failed(let message):
                 Text(message)
                     .font(.footnote)
@@ -209,9 +213,39 @@ struct OopsWorldControls: View {
         }
     }
 
+    /// AI 對話 — the real push-to-talk voice guide. The Oops flow enters a bundled splat
+    /// without generated world params, so we ground the guide with a neutral preset the
+    /// same way the dev `VoiceTestView` does.
+    private var worldVoiceMascot: some View {
+        VoiceMascot(
+            size: 96,
+            configure: { convo in
+                let scores = AxisScores.neutral
+                convo.configure(world: WorldCatalog.world(for: .cozyCommunal),
+                                scores: scores,
+                                params: WorldMapper.map(scores),
+                                hopeFreeText: "")
+            },
+            welcome: { "Hi — I'm your guide here. Tap me and tell me anything." }
+        )
+    }
+
+    /// 上一頁 — leave the world back to the Preview screen.
+    private var backButton: some View {
+        Button { performExit(to: .preview) } label: {
+            Label("上一頁", systemImage: "chevron.left")
+                .font(.title3.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+        }
+        .buttonStyle(.bordered)
+        .disabled(isExiting)
+    }
+
+    /// 結束 — leave the world into the Oops reflection flow.
     private var exitButton: some View {
-        Button { performExit() } label: {
-            Label("Leave world", systemImage: "chevron.left")
+        Button { performExit(to: .reflection) } label: {
+            Label("結束", systemImage: "xmark")
                 .font(.title3.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 6)
@@ -221,16 +255,17 @@ struct OopsWorldControls: View {
     }
 
     /// Close the splat space, reset shared state, then reopen the dev-menu window at the
-    /// Oops reflection screen. Shared by the button tap and the gamepad ☰ request.
-    private func performExit() {
+    /// requested Oops screen (`.reflection` for 結束 / gamepad ☰, `.preview` for 上一頁).
+    /// Shared by the button taps and the gamepad ☰ request.
+    private func performExit(to screen: OopsScreen = .reflection) {
         guard !isExiting else { return }
         isExiting = true
         Task {
             await dismissImmersiveSpace()
             SplatManualInput.shared.reset()
             session.reset()
-            // Drive the reopened dev-menu window straight to the Oops reflection screen.
-            appState.oopsResumeScreen = .reflection
+            // Drive the reopened dev-menu window straight to the requested Oops screen.
+            appState.oopsResumeScreen = screen
             appState.devActiveFeature = .oops
             openWindow(id: "dev-menu")
             dismissWindow(id: "oops-world-controls")
