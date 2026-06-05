@@ -26,10 +26,13 @@ final class SplatMeshRenderer: @unchecked Sendable {
     /// Largest model dimension is scaled to this many metres (a hand-held hero object).
     private static let targetSize: Float = 0.6
 
-    /// Keep in sync with `MeshVertexUniforms` in SplatMeshShaders.metal.
+    /// Keep in sync with `MeshVertexUniforms` in SplatMeshShaders.metal. Per-eye
+    /// (per-draw): stereo is done by looping eyes, not vertex amplification, because the
+    /// visionOS Simulator doesn't support amplification (setting it aborts the pipeline).
     private struct VertexUniforms {
-        var modelViewProjection: (simd_float4x4, simd_float4x4) // [2], one per eye
-        var model: simd_float4x4
+        var modelViewProjection: simd_float4x4 // this eye's MVP
+        var model: simd_float4x4               // world transform for normals
+        var layer: UInt32                      // render-target array slice (0 or 1)
     }
 
     private struct LoadedModel {
@@ -47,9 +50,13 @@ final class SplatMeshRenderer: @unchecked Sendable {
     private var pendingModel: LoadedModel?
     private var model: LoadedModel?            // render-thread owned after adoption
 
-    /// World placement (in calibrated/splat space) set by the owner before adoption.
-    /// Final model matrix = `worldPlacement * normalize`.
+    /// World placement (in world/calibrated space) set by the owner before adoption.
     var worldPlacement: simd_float4x4 = matrix_identity_float4x4
+
+    /// Inverse of the splat `sceneCalibration`. The per-eye `viewMatrix` bakes in
+    /// `sceneCalibration` (to map raw splat space → world); the model is already in world
+    /// space, so we pre-multiply by the inverse to cancel that and avoid double-calibration.
+    var sceneCalibrationInverse: simd_float4x4 = matrix_identity_float4x4
 
     init(device: MTLDevice, colorFormat: MTLPixelFormat, depthFormat: MTLPixelFormat) throws {
         self.device = device
@@ -69,14 +76,25 @@ final class SplatMeshRenderer: @unchecked Sendable {
         guard let library = device.makeDefaultLibrary() else {
             throw MeshError.noLibrary
         }
+        // Nil functions would make `makeRenderPipelineState` abort (SIGABRT) instead of
+        // throwing. Convert that into a recoverable error so the caller's `try?` can
+        // fall back to a splat-only world if the shader didn't land in the metallib.
+        guard let vertexFn = library.makeFunction(name: "splatMeshVertex"),
+              let fragmentFn = library.makeFunction(name: "splatMeshFragment") else {
+            throw MeshError.noShaderFunction
+        }
         let pdesc = MTLRenderPipelineDescriptor()
-        pdesc.vertexFunction = library.makeFunction(name: "splatMeshVertex")
-        pdesc.fragmentFunction = library.makeFunction(name: "splatMeshFragment")
+        pdesc.vertexFunction = vertexFn
+        pdesc.fragmentFunction = fragmentFn
         pdesc.vertexDescriptor = MTKMetalVertexDescriptorFromModelIO(mdlVD)
         pdesc.colorAttachments[0].pixelFormat = colorFormat
         pdesc.depthAttachmentPixelFormat = depthFormat
         pdesc.rasterSampleCount = 1
-        pdesc.maxVertexAmplificationCount = 2
+        // NB: no vertex amplification — see VertexUniforms. Stereo is a per-eye loop
+        // routed by [[render_target_array_index]], which works on Simulator and device.
+        // Writing render_target_array_index from the vertex stage REQUIRES the pipeline to
+        // declare its input topology, or pipeline creation fails.
+        pdesc.inputPrimitiveTopology = .triangle
         self.pipelineState = try device.makeRenderPipelineState(descriptor: pdesc)
 
         let ddesc = MTLDepthStencilDescriptor()
@@ -92,7 +110,7 @@ final class SplatMeshRenderer: @unchecked Sendable {
     /// Set once at construction so `load()` (off-thread) reuses the same descriptor.
     nonisolated(unsafe) private static var sharedVertexDescriptor = MDLVertexDescriptor()
 
-    private enum MeshError: Error { case noLibrary, noDepthState }
+    private enum MeshError: Error { case noLibrary, noShaderFunction, noDepthState }
 
     // MARK: - Loading
 
@@ -104,9 +122,10 @@ final class SplatMeshRenderer: @unchecked Sendable {
             do {
                 let loaded = try self.load(url: url)
                 self.lock.withLock { self.pendingModel = loaded }
-                Self.log.info("Loaded mesh model from \(url.lastPathComponent)")
+                let submeshes = loaded.meshes.reduce(0) { $0 + $1.submeshes.count }
+                Self.log.notice("MESH: loaded \(url.lastPathComponent) — \(loaded.meshes.count) meshes, \(submeshes) submeshes")
             } catch {
-                Self.log.error("Failed to load mesh: \(error.localizedDescription)")
+                Self.log.error("MESH: load FAILED: \(error.localizedDescription)")
             }
         }
     }
@@ -220,35 +239,36 @@ final class SplatMeshRenderer: @unchecked Sendable {
         enc.setCullMode(.back)
         enc.setFrontFacing(.counterClockwise)
 
-        enc.setViewports(viewports.map(\.viewport))
-        if viewports.count > 1 {
-            let mappings = (0..<viewports.count).map { i in
-                MTLVertexAmplificationViewMapping(viewportArrayIndexOffset: UInt32(i),
-                                                  renderTargetArrayIndexOffset: UInt32(i))
-            }
-            enc.setVertexAmplificationCount(viewports.count, viewMappings: mappings)
-        }
+        // World transform of the model (for normals / lighting in world space).
+        let worldModel = worldPlacement * model.normalize
+        // Position transform: cancel the calibration baked into viewMatrix so the model
+        // sits at its world placement (not double-calibrated).
+        let positionModel = sceneCalibrationInverse * worldModel
+        let layered = renderTargetArrayLength > 1
 
-        let modelMatrix = worldPlacement * model.normalize
-        let eye0 = viewports[0]
-        let eye1 = viewports.count > 1 ? viewports[1] : viewports[0]
-        var uniforms = VertexUniforms(
-            modelViewProjection: (eye0.projectionMatrix * eye0.viewMatrix * modelMatrix,
-                                  eye1.projectionMatrix * eye1.viewMatrix * modelMatrix),
-            model: modelMatrix)
-        enc.setVertexBytes(&uniforms, length: MemoryLayout<VertexUniforms>.stride, index: 1)
+        // One draw per eye: set this eye's viewport + MVP + target layer, then draw the
+        // model. Mirrors how the splat pass handles both layered (device) and dedicated
+        // (Simulator) layouts without vertex amplification.
+        for (eyeIndex, vp) in viewports.enumerated() {
+            enc.setViewport(vp.viewport)
+            var uniforms = VertexUniforms(
+                modelViewProjection: vp.projectionMatrix * vp.viewMatrix * positionModel,
+                model: worldModel,
+                layer: layered ? UInt32(eyeIndex) : 0)
+            enc.setVertexBytes(&uniforms, length: MemoryLayout<VertexUniforms>.stride, index: 1)
 
-        for (meshIndex, mesh) in model.meshes.enumerated() {
-            for (bufferIndex, vb) in mesh.vertexBuffers.enumerated() {
-                enc.setVertexBuffer(vb.buffer, offset: vb.offset, index: bufferIndex)
-            }
-            for (submeshIndex, submesh) in mesh.submeshes.enumerated() {
-                enc.setFragmentTexture(model.textures[meshIndex][submeshIndex], index: 0)
-                enc.drawIndexedPrimitives(type: submesh.primitiveType,
-                                          indexCount: submesh.indexCount,
-                                          indexType: submesh.indexType,
-                                          indexBuffer: submesh.indexBuffer.buffer,
-                                          indexBufferOffset: submesh.indexBuffer.offset)
+            for (meshIndex, mesh) in model.meshes.enumerated() {
+                for (bufferIndex, vb) in mesh.vertexBuffers.enumerated() {
+                    enc.setVertexBuffer(vb.buffer, offset: vb.offset, index: bufferIndex)
+                }
+                for (submeshIndex, submesh) in mesh.submeshes.enumerated() {
+                    enc.setFragmentTexture(model.textures[meshIndex][submeshIndex], index: 0)
+                    enc.drawIndexedPrimitives(type: submesh.primitiveType,
+                                              indexCount: submesh.indexCount,
+                                              indexType: submesh.indexType,
+                                              indexBuffer: submesh.indexBuffer.buffer,
+                                              indexBufferOffset: submesh.indexBuffer.offset)
+                }
             }
         }
         enc.endEncoding()

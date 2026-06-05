@@ -2,16 +2,21 @@
 //  Vertex + fragment shaders for the USDZ mesh that is composited INTO the splat
 //  world (see SplatMeshRenderer.swift). MetalSplatter's own shaders live inside the
 //  package and can't be reused for triangle meshes, so this is a minimal opaque,
-//  texture-lit pass. Stereo is handled with vertex amplification: the renderer binds
-//  one MVP per eye and the GPU picks the right one via [[amplification_id]].
+//  texture-lit pass.
+//
+//  Stereo is done WITHOUT vertex amplification (the visionOS Simulator does not
+//  support it — setting maxVertexAmplificationCount > 1 aborts pipeline creation).
+//  Instead the renderer draws once per eye and the vertex shader routes each draw to
+//  the right texture-array layer via [[render_target_array_index]].
 
 #include <metal_stdlib>
 using namespace metal;
 
-// Must match SplatMeshRenderer.VertexUniforms (Swift). float4x4[2] then float4x4.
+// Must match SplatMeshRenderer.VertexUniforms (Swift). Per-eye (per-draw) data.
 struct MeshVertexUniforms {
-    float4x4 modelViewProjection[2]; // per amplified view (left/right eye)
-    float4x4 model;                  // world transform for normals (same both eyes)
+    float4x4 modelViewProjection; // this eye's MVP
+    float4x4 model;               // world transform for normals
+    uint     layer;               // render-target array slice for this eye (0 or 1)
 };
 
 struct MeshVertexIn {
@@ -22,16 +27,17 @@ struct MeshVertexIn {
 
 struct MeshVertexOut {
     float4 position [[position]];
+    uint   layer [[render_target_array_index]];
     float3 worldNormal;
     float2 uv;
 };
 
 vertex MeshVertexOut splatMeshVertex(MeshVertexIn in [[stage_in]],
-                                     constant MeshVertexUniforms& u [[buffer(1)]],
-                                     ushort ampID [[amplification_id]])
+                                     constant MeshVertexUniforms& u [[buffer(1)]])
 {
     MeshVertexOut out;
-    out.position = u.modelViewProjection[ampID] * float4(in.position, 1.0);
+    out.position = u.modelViewProjection * float4(in.position, 1.0);
+    out.layer = u.layer;
     out.worldNormal = (u.model * float4(in.normal, 0.0)).xyz;
     out.uv = in.uv;
     return out;

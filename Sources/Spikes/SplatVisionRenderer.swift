@@ -96,13 +96,21 @@ final class SplatVisionRenderer: @unchecked Sendable {
         self.flipUpsideDown = flipUpsideDown
 
         // Build the mesh overlay pipeline up front; load the bundled model off-thread.
-        self.meshRenderer = try? SplatMeshRenderer(device: device,
-                                                   colorFormat: layerRenderer.configuration.colorFormat,
-                                                   depthFormat: layerRenderer.configuration.depthFormat)
-        if let url = Bundle.main.url(forResource: Self.demoModelName, withExtension: "usdz") {
-            meshRenderer?.loadModel(url: url)
-        } else {
-            Self.log.warning("Demo model \(Self.demoModelName).usdz not found in bundle")
+        // Use error-level logs (persisted) so failures are visible in `log show`.
+        do {
+            let mr = try SplatMeshRenderer(device: device,
+                                           colorFormat: layerRenderer.configuration.colorFormat,
+                                           depthFormat: layerRenderer.configuration.depthFormat)
+            self.meshRenderer = mr
+            if let url = Bundle.main.url(forResource: Self.demoModelName, withExtension: "usdz") {
+                Self.log.notice("MESH: loading \(Self.demoModelName).usdz")
+                mr.loadModel(url: url)
+            } else {
+                Self.log.error("MESH: \(Self.demoModelName).usdz NOT in bundle")
+            }
+        } catch {
+            self.meshRenderer = nil
+            Self.log.error("MESH: pipeline build FAILED: \(error.localizedDescription)")
         }
     }
 
@@ -314,7 +322,11 @@ final class SplatVisionRenderer: @unchecked Sendable {
                 splat = scene.splat
                 sceneCalibration = scene.calibration
                 locomotion = scene.initialLocomotion
+                // The model lives in world space; the per-eye viewMatrix already folds in
+                // sceneCalibration, so the mesh renderer cancels it back out (otherwise the
+                // model gets calibrated twice — flipped + offset by the centroid).
                 meshRenderer?.worldPlacement = scene.modelPlacement
+                meshRenderer?.sceneCalibrationInverse = scene.calibration.inverse
             }
         }
 

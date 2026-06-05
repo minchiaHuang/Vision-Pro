@@ -225,7 +225,9 @@ enum SplatCache {
         mutating func read<T>(_ type: T.Type) throws -> T {
             let size = MemoryLayout<T>.size
             guard offset + size <= data.count else { throw CacheError.corrupted }
-            let v = data.withUnsafeBytes { $0.load(fromByteOffset: offset, as: type) }
+            // The cache is packed (no padding), so fields are not naturally aligned.
+            // `load(fromByteOffset:)` traps on misaligned access — use `loadUnaligned`.
+            let v = data.withUnsafeBytes { $0.loadUnaligned(fromByteOffset: offset, as: type) }
             offset += size
             return v
         }
