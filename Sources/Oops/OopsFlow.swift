@@ -89,6 +89,15 @@ struct OopsFlowView: View {
                 screen = resume
                 appState.oopsResumeScreen = nil
             }
+            #if os(visionOS)
+            // Pre-decode vibrant_loft in the background so the cache is ready by the
+            // time the user finishes the quiz and taps Enter World.
+            Task.detached(priority: .background) {
+                await SplatCache.warmIfNeeded(bundleResource: "vibrant_loft_art_studio",
+                                              withExtension: "spz",
+                                              flipUpsideDown: true)
+            }
+            #endif
         }
         #if os(visionOS)
         // Let the cover background go clear so the transparent `OopsPassthrough`

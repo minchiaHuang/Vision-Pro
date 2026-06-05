@@ -136,14 +136,9 @@ final class SplatVisionRenderer: @unchecked Sendable {
     // MARK: - Loading
 
     private func load() async throws {
-        // Drive the floating window's load UI. Bundled/local decode exposes no
-        // fine-grained progress, so a single time-estimated `preparing` ramp covers both
-        // the (cached) download and the decode/chunk build; it caps below 100% until the
-        // scene is actually published (`setReady`).
         await SplatSession.shared.beginLoading()
         await SplatSession.shared.setPreparing()
 
-        // Remote World Labs URLs are downloaded + cached; bundled/local files read directly.
         let localURL = splatURL.isFileURL ? splatURL : try await SplatDownloader.fetch(splatURL)
 
         let renderer = try SplatRenderer(device: device,
@@ -152,6 +147,50 @@ final class SplatVisionRenderer: @unchecked Sendable {
                                          sampleCount: 1,
                                          maxViewCount: layerRenderer.properties.viewCount,
                                          maxSimultaneousRenders: Self.maxSimultaneousRenders)
+
+        // Fast path: load pre-decoded GPU data from disk cache (skips 30 s readAll).
+        if let cached = try? SplatCache.loadScene(for: localURL, flipUpsideDown: flipUpsideDown) {
+            do {
+                let splatBuf = try MetalBuffer<EncodedSplatPoint>(device: device,
+                                                                  capacity: cached.pointCount)
+                cached.splatData.withUnsafeBytes { ptr in
+                    guard let src = ptr.baseAddress else { return }
+                    memcpy(splatBuf.values, src, cached.splatData.count)
+                }
+                splatBuf.count = cached.pointCount
+
+                var shBuf: MetalBuffer<Float16>?
+                if !cached.shData.isEmpty {
+                    let shCount = cached.shData.count / MemoryLayout<Float16>.stride
+                    let buf = try MetalBuffer<Float16>(device: device, capacity: shCount)
+                    cached.shData.withUnsafeBytes { ptr in
+                        guard let src = ptr.baseAddress else { return }
+                        memcpy(buf.values, src, cached.shData.count)
+                    }
+                    buf.count = shCount
+                    shBuf = buf
+                }
+
+                let chunk = SplatChunk(splats: splatBuf, shCoefficients: shBuf,
+                                       shDegree: cached.shDegree)
+                _ = await renderer.addChunk(chunk)
+                let locomotion = SplatLocomotion(position: cached.locomotionPosition,
+                                                 span: cached.locomotionSpan)
+                loadLock.withLock {
+                    pendingScene = LoadedScene(splat: renderer,
+                                              calibration: cached.calibration,
+                                              initialLocomotion: locomotion,
+                                              modelPlacement: cached.modelPlacement)
+                }
+                await SplatSession.shared.setReady()
+                Self.log.info("SplatCache hit: \(cached.pointCount) pts")
+                return
+            } catch {
+                Self.log.warning("SplatCache load failed, falling back to decode: \(error)")
+            }
+        }
+
+        // Slow path: full zstd decode (first entry or cache miss).
         let rawPoints = try await AutodetectSceneReader(localURL).readAll()
         guard !rawPoints.isEmpty else {
             Self.log.error("Splat decoded to 0 points")
@@ -159,15 +198,25 @@ final class SplatVisionRenderer: @unchecked Sendable {
             return
         }
 
-        // Cap point count before framing + chunk build (bounds decode/memory/GPU cost).
         let points = Self.downsample(rawPoints, to: Self.maxSplatPoints)
-        let (calibration, initialLocomotion, modelPlacement) = Self.framing(points, flipUpsideDown: flipUpsideDown)
-
+        let (calibration, initialLocomotion, modelPlacement) = Self.framing(points,
+                                                                             flipUpsideDown: flipUpsideDown)
         let chunk = try SplatChunk(device: device, from: points)
         _ = await renderer.addChunk(chunk)
 
-        // Hand the finished scene to the render thread (adopted once, then owned there).
-        // Scoped `withLock` is async-safe; bare lock()/unlock() is unavailable here.
+        // Persist to cache in background so the next entry is fast.
+        let urlForSave = localURL
+        let flip = flipUpsideDown
+        Task.detached(priority: .background) {
+            try? SplatCache.saveScene(chunk: chunk,
+                                      calibration: calibration,
+                                      locomotionPosition: initialLocomotion.position,
+                                      locomotionSpan: initialLocomotion.span,
+                                      modelPlacement: modelPlacement,
+                                      for: urlForSave,
+                                      flipUpsideDown: flip)
+        }
+
         loadLock.withLock {
             pendingScene = LoadedScene(splat: renderer,
                                        calibration: calibration,
@@ -175,7 +224,7 @@ final class SplatVisionRenderer: @unchecked Sendable {
                                        modelPlacement: modelPlacement)
         }
         await SplatSession.shared.setReady()
-        Self.log.info("Loaded splat: \(rawPoints.count) points → \(points.count) after cap")
+        Self.log.info("Loaded splat: \(rawPoints.count) pts → \(points.count) after cap")
     }
 
     /// Uniformly strides a point cloud down to at most `budget` points. Returns the
@@ -193,10 +242,10 @@ final class SplatVisionRenderer: @unchecked Sendable {
     /// Centroid recentre + mean radius → scene calibration and the start viewpoint.
     /// The user begins backed off along +Z (the proven iOS framing) and walks in.
     /// Pure (no `self` mutation) so it can run on the load thread before handoff.
-    private static func framing(_ points: [SplatPoint],
-                                flipUpsideDown: Bool) -> (calibration: simd_float4x4,
-                                                          locomotion: SplatLocomotion,
-                                                          modelPlacement: simd_float4x4) {
+    static func framing(_ points: [SplatPoint],
+                        flipUpsideDown: Bool) -> (calibration: simd_float4x4,
+                                                  locomotion: SplatLocomotion,
+                                                  modelPlacement: simd_float4x4) {
         var sum = SIMD3<Float>.zero
         for p in points { sum += p.position }
         let center = sum / Float(points.count)
