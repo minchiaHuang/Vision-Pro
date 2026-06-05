@@ -99,10 +99,21 @@ struct PreviewScreen: View {
             .oopsCard(cornerRadius: 44)
             .padding(.horizontal, 40)
 
-            HStack { Spacer(); SideBar().padding(.trailing, 28) }
             VStack { Spacer(); PageDots().padding(.bottom, 18) }
         }
     }
+}
+
+// MARK: - Previews (Generating + PreviewScreen — no AppState dependency)
+
+#Preview("Generating") {
+    GeneratingScreen(onDone: {})
+        .preferredColorScheme(.dark)
+}
+
+#Preview("PreviewScreen") {
+    PreviewScreen(onEnter: {}, onRetry: {})
+        .preferredColorScheme(.dark)
 }
 
 // MARK: - 09 · World (hosts the existing 3D world)
@@ -160,7 +171,7 @@ struct OopsWorldControls: View {
             case .ready:
                 SplatMovePad()
                 exitButton
-                Text("用下方方向鍵移動，點「Leave world」離開（或手把 ☰）")
+                Text("Use the arrows below to move · tap Leave world to exit (or gamepad ☰)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             case .failed(let message):
@@ -243,7 +254,7 @@ struct OopsWorldControls: View {
 private struct SplatMovePad: View {
     var body: some View {
         VStack(spacing: 10) {
-            Text("按住移動").font(.caption).foregroundStyle(.secondary)
+            Text("Hold to move").font(.caption).foregroundStyle(.secondary)
             moveButton("arrow.up", forward: 1)
             HStack(spacing: 10) {
                 moveButton("arrow.turn.up.left", turn: -1)

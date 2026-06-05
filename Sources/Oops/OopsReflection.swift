@@ -53,8 +53,6 @@ struct ReflectionFlowView: View {
             .padding(.horizontal, 40)
             .padding(.vertical, 60)
 
-            HStack { Spacer(); SideBar().padding(.trailing, 28) }
-
             VStack {
                 Spacer()
                 ReflectionDots(total: questions.count, current: step)
@@ -101,4 +99,17 @@ private struct ReflectionDots: View {
             }
         }
     }
+}
+
+// MARK: - Previews
+
+#Preview("ReflectionFlowView") {
+    ReflectionFlowView(answers: .constant(OopsAnswers()), onFinish: {})
+        .preferredColorScheme(.dark)
+}
+
+#Preview("ReflectionDots") {
+    ReflectionDots(total: 5, current: 2)
+        .padding()
+        .preferredColorScheme(.dark)
 }

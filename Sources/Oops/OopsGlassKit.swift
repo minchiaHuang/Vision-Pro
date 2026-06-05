@@ -185,18 +185,6 @@ struct BarButton: View {
     }
 }
 
-/// Right-edge sidebar shown on most onboarding screens: assistant orb + chat + photos.
-/// chat/photos are decorative in this front-end pass (as in the prototype).
-struct SideBar: View {
-    var body: some View {
-        GlassBar {
-            GlassOrb(size: 56)
-            BarButton(systemImage: "bubble.left")
-            BarButton(systemImage: "photo")
-        }
-    }
-}
-
 /// In-world control bar: avatar + leave + reset.
 struct WorldBar: View {
     var onClose: () -> Void = {}
@@ -409,4 +397,86 @@ struct OopsDialog: View {
             .oopsCard(cornerRadius: 42)
         }
     }
+}
+
+// MARK: - Previews
+
+#Preview("Passthrough") { OopsPassthrough() }
+#Preview("Passthrough – dim") { OopsPassthrough(dim: true) }
+
+#Preview("OopsButton – solid") {
+    Button("Generate New") {}
+        .buttonStyle(OopsButton())
+        .padding()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("OopsButton – ghost") {
+    Button("Visit Old World") {}
+        .buttonStyle(OopsButton(ghost: true))
+        .padding()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("OopsField – single") {
+    OopsField(text: .constant(""), placeholder: "Your answer…", multiline: false)
+        .padding()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("OopsField – multi") {
+    OopsField(text: .constant("This is a longer answer spanning multiple lines."),
+              placeholder: "Reflect…", multiline: true)
+        .padding()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("GlassBar + BarButton") {
+    GlassBar {
+        BarButton(systemImage: "xmark")
+        BarButton(systemImage: "arrow.clockwise")
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("WorldBar") {
+    WorldBar()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("GlassOrb") {
+    GlassOrb(size: 72)
+        .padding(40)
+        .background(Color.black)
+}
+
+#Preview("CheckStatement – unchecked") {
+    CheckStatement(head: "I understand",
+                   text: "This experience may be emotionally intense.",
+                   checked: false, onToggle: {})
+        .padding()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("CheckStatement – checked") {
+    CheckStatement(head: "I understand",
+                   text: "This experience may be emotionally intense.",
+                   checked: true, onToggle: {})
+        .padding()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("OopsSpinner") {
+    OopsSpinner()
+        .padding(40)
+        .background(Color.black)
+}
+
+#Preview("OopsDialog") {
+    OopsDialog(title: "Are you sure?",
+               message: "Your progress will be lost forever.",
+               confirmTitle: "Yes, start over",
+               onConfirm: {}, onCancel: {})
+        .background(Color.gray.opacity(0.3))
+        .preferredColorScheme(.dark)
 }

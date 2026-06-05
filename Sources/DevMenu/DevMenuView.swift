@@ -66,6 +66,10 @@ struct DevMenuView: View {
 
     var body: some View {
         ZStack {
+            // Hide the menu (and its warm background) while a feature is presented full
+            // screen, so transparent features — the Oops passthrough screens — reveal the
+            // real room behind, not this cream background.
+            if appState.devActiveFeature == nil {
             WarmBackground()
 
             ZoomableContent {
@@ -118,6 +122,7 @@ struct DevMenuView: View {
                     .frame(maxWidth: 480)
                 }
                 .padding(40)
+            }
             }
         }
         .fullScreenCover(item: activeBinding) { feature in

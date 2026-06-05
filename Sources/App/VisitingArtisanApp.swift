@@ -35,6 +35,13 @@ struct VisitingArtisanApp: App {
             }
             .environment(appState)
         }
+        // Drop the default visionOS window glass so screens with a clear passthrough
+        // (e.g. the Oops opening) float their content directly over the room instead of on
+        // a white glass panel. Screens that want a surface bring their own (WarmBackground,
+        // oopsWindow/oopsCard).
+        #if os(visionOS)
+        .windowStyle(.plain)
+        #endif
 
         #if os(visionOS)
         // visionOS only: the truly immersive ImmersiveSpace

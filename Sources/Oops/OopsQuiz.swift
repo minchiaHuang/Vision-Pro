@@ -39,8 +39,6 @@ struct QuizScreen: View {
             .padding(.horizontal, 40)
             .padding(.vertical, 50)
 
-            HStack { Spacer(); SideBar().padding(.trailing, 28) }
-
             if confirm {
                 OopsDialog(
                     title: "Are you sure?",
@@ -206,4 +204,11 @@ final class QuizDictation {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         #endif
     }
+}
+
+// MARK: - Previews
+
+#Preview("QuizScreen") {
+    QuizScreen(answers: .constant(OopsAnswers()), onFinish: {}, onBack: {})
+        .preferredColorScheme(.dark)
 }
