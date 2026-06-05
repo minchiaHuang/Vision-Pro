@@ -59,6 +59,10 @@ final class SplatVisionRenderer: @unchecked Sendable {
 
     private let arSession = ARKitSession()
     private let worldTracking = WorldTrackingProvider()
+    /// Nil on the visionOS Simulator (`HandTrackingProvider.isSupported == false` there);
+    /// gesture manipulation then comes only from the on-screen debug pad.
+    private let handTracking: HandTrackingProvider? =
+        HandTrackingProvider.isSupported ? HandTrackingProvider() : nil
 
     /// Result of an off-thread load, handed to the render thread exactly once.
     private struct LoadedScene {
@@ -80,6 +84,13 @@ final class SplatVisionRenderer: @unchecked Sendable {
     private var lastTickTime: CFTimeInterval?
     /// Edge-trigger state for the gamepad exit button (☰); see `renderFrame`.
     private var exitButtonWasPressed = false
+
+    // Render-thread-owned manipulation pose for the in-world model. The model is anchored
+    // at `modelAnchor` (the framing placement) and the user's hand gestures accumulate a
+    // yaw + uniform scale about its centre. Rebuilt into `worldPlacement` each frame.
+    private var modelAnchor: simd_float4x4 = matrix_identity_float4x4
+    private var modelYaw: Float = 0
+    private var modelScale: Float = 1
 
     /// Optional USDZ model composited into the splat world (Phase 1: a bundled demo
     /// model, static, walk-aroundable). Nil if the pipeline failed to build.
@@ -132,12 +143,35 @@ final class SplatVisionRenderer: @unchecked Sendable {
 
         // ARKit + render loop on the dedicated render-priority executor.
         Task(executorPreference: SplatRenderExecutor.shared) {
+            // Hand tracking (device only) drives the in-world model's rotate/scale gesture.
+            var providers: [any DataProvider] = [renderer.worldTracking]
+            if let handTracking = renderer.handTracking {
+                _ = await renderer.arSession.requestAuthorization(for: [.handTracking])
+                providers.append(handTracking)
+            }
             do {
-                try await renderer.arSession.run([renderer.worldTracking])
+                try await renderer.arSession.run(providers)
             } catch {
                 log.error("Failed to start ARKit session: \(error.localizedDescription)")
             }
+            if let handTracking = renderer.handTracking {
+                renderer.startHandGestureTask(handTracking)
+            }
             renderer.renderLoop()
+        }
+    }
+
+    /// Consumes hand-anchor updates and feeds the two-hand pinch gesture into the shared
+    /// manipulation sink (the render loop applies it). Device only — `handTracking` is nil
+    /// in the Simulator, so this is never started there.
+    private func startHandGestureTask(_ handTracking: HandTrackingProvider) {
+        let processor = SplatHandGestureProcessor()
+        Task.detached(priority: .userInitiated) {
+            for await update in handTracking.anchorUpdates {
+                if let delta = processor.process(anchor: update.anchor) {
+                    SplatModelManipulation.shared.add(yaw: delta.yaw, scaleMul: delta.scaleMul)
+                }
+            }
         }
     }
 
@@ -325,7 +359,8 @@ final class SplatVisionRenderer: @unchecked Sendable {
                 // The model lives in world space; the per-eye viewMatrix already folds in
                 // sceneCalibration, so the mesh renderer cancels it back out (otherwise the
                 // model gets calibrated twice — flipped + offset by the centroid).
-                meshRenderer?.worldPlacement = scene.modelPlacement
+                modelAnchor = scene.modelPlacement
+                meshRenderer?.worldPlacement = modelAnchor
                 meshRenderer?.sceneCalibrationInverse = scene.calibration.inverse
             }
         }
@@ -358,6 +393,17 @@ final class SplatVisionRenderer: @unchecked Sendable {
         // to move the simulated device, so the app never receives them.)
         let manual = SplatManualInput.shared.snapshot()
         locomotion.tick(deltaTime: dt, gamepad: gamepad, manual: manual)
+
+        // Apply accumulated model manipulation (two-hand pinch on device; on-screen debug
+        // pad in the Simulator). Yaw + uniform scale about the model's centre; scale clamped
+        // so it can't shrink to nothing or fill the world. Rebuilt from the fixed anchor each
+        // frame so repeated deltas don't drift the matrix.
+        if let g = SplatModelManipulation.shared.consume() {
+            modelYaw += g.yaw
+            modelScale = min(max(modelScale * g.scaleMul, 0.3), 4.0)
+            meshRenderer?.worldPlacement =
+                modelAnchor * Self.rotationY(modelYaw) * Self.uniformScale(modelScale)
+        }
 
         // Leave the world, edge-triggered: gamepad ☰ (Menu/Options). The mouse / gaze-tap
         // "Leave world" button in the controls window is the primary exit; the gamepad ☰ is
@@ -457,6 +503,25 @@ final class SplatVisionRenderer: @unchecked Sendable {
             SIMD4(1, 0, 0, 0),
             SIMD4(0, -1, 0, 0),
             SIMD4(0, 0, -1, 0),
+            SIMD4(0, 0, 0, 1)))
+    }
+
+    /// Rotation about +Y by `radians`; used to spin the in-world model via hand gestures.
+    private static func rotationY(_ radians: Float) -> simd_float4x4 {
+        let c = cos(radians), s = sin(radians)
+        return simd_float4x4(columns: (
+            SIMD4( c, 0, -s, 0),
+            SIMD4( 0, 1,  0, 0),
+            SIMD4( s, 0,  c, 0),
+            SIMD4( 0, 0,  0, 1)))
+    }
+
+    /// Uniform scale; used to grow/shrink the in-world model via hand gestures.
+    private static func uniformScale(_ s: Float) -> simd_float4x4 {
+        simd_float4x4(columns: (
+            SIMD4(s, 0, 0, 0),
+            SIMD4(0, s, 0, 0),
+            SIMD4(0, 0, s, 0),
             SIMD4(0, 0, 0, 1)))
     }
 }

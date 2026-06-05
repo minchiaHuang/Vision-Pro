@@ -170,6 +170,7 @@ struct OopsWorldControls: View {
             switch session.phase {
             case .ready:
                 SplatMovePad()
+                SplatManipulatePad() // TEMP: simulator gesture backdoor — remove after device test
                 exitButton
                 Text("Use the arrows below to move · tap Leave world to exit (or gamepad ☰)")
                     .font(.caption)
@@ -239,6 +240,7 @@ struct OopsWorldControls: View {
         Task {
             await dismissImmersiveSpace()
             SplatManualInput.shared.reset()
+            SplatModelManipulation.shared.reset()
             session.reset()
             // Drive the reopened dev-menu window straight to the Oops reflection screen.
             appState.oopsResumeScreen = .reflection
@@ -277,6 +279,60 @@ private struct SplatMovePad: View {
                 .onChanged { _ in SplatManualInput.shared.set(forward: forward, turn: turn) }
                 .onEnded { _ in SplatManualInput.shared.set(forward: 0, turn: 0) })
     }
+}
+
+// TEMP: simulator gesture backdoor. The visionOS Simulator has no hands, so these
+// on-screen hold buttons feed the SAME `SplatModelManipulation` sink as the device's
+// two-hand pinch gesture — letting us verify the model rotate/scale maths in the sim.
+// Remove this pad (and its two call sites) once validated on a real device.
+struct SplatManipulatePad: View {
+    var body: some View {
+        VStack(spacing: 10) {
+            Text("Rotate / scale model (sim)").font(.caption).foregroundStyle(.secondary)
+            HStack(spacing: 10) {
+                HoldRepeatButton(system: "arrow.counterclockwise") {
+                    SplatModelManipulation.shared.add(yaw: -0.02, scaleMul: 1)
+                }
+                HoldRepeatButton(system: "arrow.clockwise") {
+                    SplatModelManipulation.shared.add(yaw: 0.02, scaleMul: 1)
+                }
+                HoldRepeatButton(system: "plus.magnifyingglass") {
+                    SplatModelManipulation.shared.add(yaw: 0, scaleMul: 1.01)
+                }
+                HoldRepeatButton(system: "minus.magnifyingglass") {
+                    SplatModelManipulation.shared.add(yaw: 0, scaleMul: 0.99)
+                }
+            }
+        }
+    }
+}
+
+/// A button that repeatedly fires `action` (~60 Hz) while held — so the gesture maths gets
+/// a continuous stream of deltas, not a single touch-down event. (Part of the TEMP backdoor.)
+private struct HoldRepeatButton: View {
+    let system: String
+    let action: () -> Void
+    @State private var timer: Timer?
+
+    var body: some View {
+        Image(systemName: system)
+            .font(.title2.weight(.semibold))
+            .frame(width: 64, height: 54)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(.white.opacity(0.18), lineWidth: 1))
+            .contentShape(RoundedRectangle(cornerRadius: 14))
+            .gesture(DragGesture(minimumDistance: 0)
+                .onChanged { _ in start() }
+                .onEnded { _ in stop() })
+    }
+
+    private func start() {
+        guard timer == nil else { return }
+        action()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in action() }
+    }
+    private func stop() { timer?.invalidate(); timer = nil }
 }
 
 #endif

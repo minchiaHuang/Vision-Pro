@@ -118,6 +118,7 @@ private struct SplatExitControls: View {
         VStack(spacing: 16) {
             switch session.phase {
             case .ready:
+                SplatManipulatePad() // TEMP: simulator gesture backdoor — remove after device test
                 exitButton
                 Text("或按手把 ☰ 離開")
                     .font(.caption)
@@ -185,6 +186,7 @@ private struct SplatExitControls: View {
         isExiting = true
         Task {
             await dismissImmersiveSpace()
+            SplatModelManipulation.shared.reset()
             openWindow(id: "dev-menu")
             dismissWindow(id: "splat-controls")
             session.reset()

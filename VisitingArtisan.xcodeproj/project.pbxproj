@@ -48,6 +48,7 @@
 		AA00000100000000000000B0 /* SplatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B0 /* SplatSession.swift */; };
 		AA0000010000000000000A01 /* SplatCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000A02 /* SplatCache.swift */; };
 		AA00000100000000000000B1 /* SplatMeshRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B1 /* SplatMeshRenderer.swift */; };
+		AA00000100000000000000B4 /* SplatHandGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B4 /* SplatHandGesture.swift */; };
 		AA00000100000000000000B2 /* SplatMeshShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B2 /* SplatMeshShaders.metal */; };
 		AA00000100000000000000B3 /* hummingbird_anim.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B3 /* hummingbird_anim.usdz */; };
 		AA00000100000000000000F2 /* VoiceTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F2 /* VoiceTestView.swift */; };
@@ -99,6 +100,7 @@
 		AA00000100000000000001B0 /* SplatSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSession.swift; sourceTree = "<group>"; };
 		AA0000010000000000000A02 /* SplatCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatCache.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B1 /* SplatMeshRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatMeshRenderer.swift; sourceTree = "<group>"; };
+		AA00000100000000000001B4 /* SplatHandGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatHandGesture.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B2 /* SplatMeshShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SplatMeshShaders.metal; sourceTree = "<group>"; };
 		AA00000100000000000001B3 /* hummingbird_anim.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = hummingbird_anim.usdz; sourceTree = "<group>"; };
 		AA00000100000000000001F2 /* VoiceTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceTestView.swift; sourceTree = "<group>"; };
@@ -237,6 +239,7 @@
 				AA00000100000000000001B0 /* SplatSession.swift */,
 				AA0000010000000000000A02 /* SplatCache.swift */,
 				AA00000100000000000001B1 /* SplatMeshRenderer.swift */,
+				AA00000100000000000001B4 /* SplatHandGesture.swift */,
 				AA00000100000000000001B2 /* SplatMeshShaders.metal */,
 				AA0000010000000000000110 /* WorldLabsService.swift */,
 				AA0000010000000000000306 /* SpikeAssets */,
@@ -384,6 +387,7 @@
 				AA00000100000000000000B0 /* SplatSession.swift in Sources */,
 				AA0000010000000000000A01 /* SplatCache.swift in Sources */,
 				AA00000100000000000000B1 /* SplatMeshRenderer.swift in Sources */,
+				AA00000100000000000000B4 /* SplatHandGesture.swift in Sources */,
 				AA00000100000000000000B2 /* SplatMeshShaders.metal in Sources */,
 				AA0000010000000000000017 /* NarrationComposer.swift in Sources */,
 				AA0000010000000000000018 /* NarrationService.swift in Sources */,
