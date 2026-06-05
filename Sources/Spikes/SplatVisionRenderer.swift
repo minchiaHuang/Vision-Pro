@@ -65,6 +65,8 @@ final class SplatVisionRenderer: @unchecked Sendable {
         let splat: SplatRenderer
         let calibration: simd_float4x4
         let initialLocomotion: SplatLocomotion
+        /// World placement (calibrated space) for the in-world USDZ model, if any.
+        let modelPlacement: simd_float4x4
     }
     /// Published by `load()` under `loadLock`; the render thread adopts it once (then
     /// owns the copies below outright), so `splat`/`locomotion` never race.
@@ -79,12 +81,29 @@ final class SplatVisionRenderer: @unchecked Sendable {
     /// Edge-trigger state for the gamepad exit button (☰); see `renderFrame`.
     private var exitButtonWasPressed = false
 
+    /// Optional USDZ model composited into the splat world (Phase 1: a bundled demo
+    /// model, static, walk-aroundable). Nil if the pipeline failed to build.
+    private let meshRenderer: SplatMeshRenderer?
+
+    /// Bundled demo model rendered inside the world. Loaded off-thread at construction.
+    private static let demoModelName = "hummingbird_anim"
+
     init(layerRenderer: LayerRenderer, splatURL: URL, flipUpsideDown: Bool) {
         self.layerRenderer = layerRenderer
         self.device = layerRenderer.device
         self.commandQueue = device.makeCommandQueue()!
         self.splatURL = splatURL
         self.flipUpsideDown = flipUpsideDown
+
+        // Build the mesh overlay pipeline up front; load the bundled model off-thread.
+        self.meshRenderer = try? SplatMeshRenderer(device: device,
+                                                   colorFormat: layerRenderer.configuration.colorFormat,
+                                                   depthFormat: layerRenderer.configuration.depthFormat)
+        if let url = Bundle.main.url(forResource: Self.demoModelName, withExtension: "usdz") {
+            meshRenderer?.loadModel(url: url)
+        } else {
+            Self.log.warning("Demo model \(Self.demoModelName).usdz not found in bundle")
+        }
     }
 
     /// Entry point used by the `CompositorLayer` closure. The render loop starts
@@ -142,7 +161,7 @@ final class SplatVisionRenderer: @unchecked Sendable {
 
         // Cap point count before framing + chunk build (bounds decode/memory/GPU cost).
         let points = Self.downsample(rawPoints, to: Self.maxSplatPoints)
-        let (calibration, initialLocomotion) = Self.framing(points, flipUpsideDown: flipUpsideDown)
+        let (calibration, initialLocomotion, modelPlacement) = Self.framing(points, flipUpsideDown: flipUpsideDown)
 
         let chunk = try SplatChunk(device: device, from: points)
         _ = await renderer.addChunk(chunk)
@@ -152,7 +171,8 @@ final class SplatVisionRenderer: @unchecked Sendable {
         loadLock.withLock {
             pendingScene = LoadedScene(splat: renderer,
                                        calibration: calibration,
-                                       initialLocomotion: initialLocomotion)
+                                       initialLocomotion: initialLocomotion,
+                                       modelPlacement: modelPlacement)
         }
         await SplatSession.shared.setReady()
         Self.log.info("Loaded splat: \(rawPoints.count) points → \(points.count) after cap")
@@ -175,7 +195,8 @@ final class SplatVisionRenderer: @unchecked Sendable {
     /// Pure (no `self` mutation) so it can run on the load thread before handoff.
     private static func framing(_ points: [SplatPoint],
                                 flipUpsideDown: Bool) -> (calibration: simd_float4x4,
-                                                          locomotion: SplatLocomotion) {
+                                                          locomotion: SplatLocomotion,
+                                                          modelPlacement: simd_float4x4) {
         var sum = SIMD3<Float>.zero
         for p in points { sum += p.position }
         let center = sum / Float(points.count)
@@ -191,7 +212,13 @@ final class SplatVisionRenderer: @unchecked Sendable {
         let frameDistance = meanRadius * 3
         let locomotion = SplatLocomotion(position: SIMD3(0, 0, frameDistance),
                                          span: max(meanRadius, 1))
-        return (calibration, locomotion)
+
+        // Place the in-world USDZ model ~2 m in front of the start viewpoint (the user
+        // begins at +Z looking toward -Z / the centroid), so it's immediately visible
+        // and walk-aroundable. Calibrated space is centred on the splat centroid.
+        let standoff: Float = 2.0
+        let modelPlacement = translation(0, 0, max(frameDistance - standoff, 0))
+        return (calibration, locomotion, modelPlacement)
     }
 
     // MARK: - Per-frame viewports (locomotion + head tracking)
@@ -238,6 +265,7 @@ final class SplatVisionRenderer: @unchecked Sendable {
                 splat = scene.splat
                 sceneCalibration = scene.calibration
                 locomotion = scene.initialLocomotion
+                meshRenderer?.worldPlacement = scene.modelPlacement
             }
         }
 
@@ -296,17 +324,28 @@ final class SplatVisionRenderer: @unchecked Sendable {
                 commandBuffer.addCompletedHandler { _ in semaphore.signal() }
             }
 
+            let vps = viewports(drawable: drawable, deviceAnchor: deviceAnchor)
+            let arrayLength = layered ? drawable.views.count : 1
             do {
-                _ = try splat.render(viewports: viewports(drawable: drawable, deviceAnchor: deviceAnchor),
+                _ = try splat.render(viewports: vps,
                                      colorTexture: drawable.colorTextures[0],
                                      colorStoreAction: .store,
                                      depthTexture: drawable.depthTextures[0],
                                      rasterizationRateMap: drawable.rasterizationRateMaps.first,
-                                     renderTargetArrayLength: layered ? drawable.views.count : 1,
+                                     renderTargetArrayLength: arrayLength,
                                      to: commandBuffer)
             } catch {
                 Self.log.error("Render failed: \(error.localizedDescription)")
             }
+
+            // Composite the in-world USDZ model on top of the splat frame (own render
+            // pass that LOADs the splat color + depth, so the two occlude correctly).
+            meshRenderer?.encode(into: commandBuffer,
+                                 colorTexture: drawable.colorTextures[0],
+                                 depthTexture: drawable.depthTextures[0],
+                                 rasterizationRateMap: drawable.rasterizationRateMaps.first,
+                                 renderTargetArrayLength: arrayLength,
+                                 viewports: vps)
 
             drawable.encodePresent(commandBuffer: commandBuffer)
             commandBuffer.commit()
