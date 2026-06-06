@@ -22,6 +22,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSHandsTrackingUsageDescription</key>
 	<string>用手勢旋轉與縮放展示中的 3D 物件。</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Visiting Artisan uses the microphone so you can talk with the guide in your world.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Your speech is turned into text so your world's guide can understand and respond.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
