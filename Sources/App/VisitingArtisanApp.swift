@@ -90,6 +90,26 @@ struct VisitingArtisanApp: App {
         // This window is opened only while the Oops splat world is live; never restore it
         // on launch, or visionOS resurrects a stale panel stuck on an idle session.
         .restorationBehavior(.disabled)
+
+        // visionOS only: floating AI voice companion — a vertical glass pill (X · orb · replay).
+        // .plain style lets the Capsule background show through instead of the default glass rect.
+        // Invisible while the splat loads (Color.clear body); pill appears once SplatSession is .ready.
+        Window("AI Guide", id: "oops-voice-orb") {
+            OopsVoiceOrbView()
+                .environment(appState)
+        }
+        .defaultSize(width: 200, height: 460)
+        .windowResizability(.contentSize)
+        .restorationBehavior(.disabled)
+        // .plain removed — it breaks visionOS input routing (eye-gaze hit testing fails on
+        // plain-style windows in full immersion). Capsule is a visual element inside the glass rect.
+        .defaultWindowPlacement { _, context in
+            // Place trailing the world-controls panel (which opens just before this window).
+            if let controls = context.windows.first(where: { $0.id == "oops-world-controls" }) {
+                return WindowPlacement(.trailing(controls))
+            }
+            return WindowPlacement()
+        }
         #endif
     }
 }

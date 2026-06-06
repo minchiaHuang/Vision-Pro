@@ -153,6 +153,7 @@ struct OopsFlowView: View {
             if case .opened = await openImmersiveSpace(id: "splat",
                                                        value: SplatEntry(url: url, flipUpsideDown: true)) {
                 openWindow(id: "oops-world-controls")
+                openWindow(id: "oops-voice-orb")
                 dismissWindow(id: "dev-menu")
             }
         }

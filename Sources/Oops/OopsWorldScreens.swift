@@ -247,6 +247,7 @@ struct OopsWorldControls: View {
             appState.devActiveFeature = .oops
             openWindow(id: "dev-menu")
             dismissWindow(id: "oops-world-controls")
+            dismissWindow(id: "oops-voice-orb")
         }
     }
 }

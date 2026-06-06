@@ -43,6 +43,7 @@
 		AA0000010000000000000038 /* SplatLocomotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000138 /* SplatLocomotion.swift */; };
 		AA0000010000000000000039 /* SplatVisionRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000139 /* SplatVisionRenderer.swift */; };
 		AA000001000000000000003A /* OopsReflection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000013A /* OopsReflection.swift */; };
+		AA000001000000000000003B /* OopsVoiceOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000013B /* OopsVoiceOrb.swift */; };
 		AA0000010000000000000050 /* WorldCameraRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000150 /* WorldCameraRig.swift */; };
 		AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */; };
 		AA00000100000000000000B0 /* SplatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B0 /* SplatSession.swift */; };
@@ -95,6 +96,7 @@
 		AA0000010000000000000138 /* SplatLocomotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatLocomotion.swift; sourceTree = "<group>"; };
 		AA0000010000000000000139 /* SplatVisionRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatVisionRenderer.swift; sourceTree = "<group>"; };
 		AA000001000000000000013A /* OopsReflection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsReflection.swift; sourceTree = "<group>"; };
+		AA000001000000000000013B /* OopsVoiceOrb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsVoiceOrb.swift; sourceTree = "<group>"; };
 		AA0000010000000000000150 /* WorldCameraRig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCameraRig.swift; sourceTree = "<group>"; };
 		AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = vibrant_loft_art_studio.spz; sourceTree = "<group>"; };
 		AA00000100000000000001B0 /* SplatSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSession.swift; sourceTree = "<group>"; };
@@ -278,6 +280,7 @@
 				AA0000010000000000000134 /* OopsQuiz.swift */,
 				AA0000010000000000000135 /* OopsWorldScreens.swift */,
 				AA000001000000000000013A /* OopsReflection.swift */,
+				AA000001000000000000013B /* OopsVoiceOrb.swift */,
 			);
 			path = Oops;
 			sourceTree = "<group>";
@@ -404,6 +407,7 @@
 				AA0000010000000000000034 /* OopsQuiz.swift in Sources */,
 				AA0000010000000000000035 /* OopsWorldScreens.swift in Sources */,
 				AA000001000000000000003A /* OopsReflection.swift in Sources */,
+				AA000001000000000000003B /* OopsVoiceOrb.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
