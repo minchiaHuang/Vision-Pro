@@ -34,6 +34,11 @@ struct VisitingArtisanApp: App {
                 DevMenuView()
             }
             .environment(appState)
+            // DEBUG: run the hand-gesture algorithm self-test once (Simulator-runnable; no
+            // device needed). Results → os_log category "HandGesture". Runs once per launch.
+            #if os(visionOS) && DEBUG
+            .task { SplatHandGestureSelfTest.run() }
+            #endif
         }
         // Drop the default visionOS window glass so screens with a clear passthrough
         // (e.g. the Oops opening) float their content directly over the room instead of on
