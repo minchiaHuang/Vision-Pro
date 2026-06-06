@@ -222,7 +222,7 @@ final class ConversationService {
 
     // MARK: - Grounded system prompt (research direction 4 tone)
 
-    private static func makeSystemPrompt(world: World, scores: AxisScores,
+    static func makeSystemPrompt(world: World, scores: AxisScores,
                                          params: WorldParams, hopeFreeText: String) -> String {
         func lean(_ v: Double, _ low: String, _ high: String) -> String { v < 0.5 ? low : high }
         let leanings = [

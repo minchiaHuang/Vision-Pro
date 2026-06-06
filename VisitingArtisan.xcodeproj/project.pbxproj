@@ -54,6 +54,16 @@
 		AA0000010000000000000033 /* OopsOnboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000133 /* OopsOnboarding.swift */; };
 		AA0000010000000000000034 /* OopsQuiz.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000134 /* OopsQuiz.swift */; };
 		AA0000010000000000000035 /* OopsWorldScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000135 /* OopsWorldScreens.swift */; };
+		BB0000010000000000000001 /* ScorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000101 /* ScorerTests.swift */; };
+		BB0000010000000000000002 /* WorldMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000102 /* WorldMapperTests.swift */; };
+		BB0000010000000000000003 /* PromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000103 /* PromptBuilderTests.swift */; };
+		BB0000010000000000000004 /* NarrationComposerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000104 /* NarrationComposerTests.swift */; };
+		BB0000010000000000000005 /* WorldCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000105 /* WorldCatalogTests.swift */; };
+		BB0000010000000000000006 /* ColorFromKelvinTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000106 /* ColorFromKelvinTests.swift */; };
+		BB0000010000000000000007 /* SplatResolutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000107 /* SplatResolutionTests.swift */; };
+		BB0000010000000000000008 /* WorldLabsWireFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000108 /* WorldLabsWireFormatTests.swift */; };
+		BB0000010000000000000009 /* AppStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000109 /* AppStateTests.swift */; };
+		BB000001000000000000000A /* ConversationPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000010A /* ConversationPromptTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -104,6 +114,17 @@
 		AA0000010000000000000133 /* OopsOnboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsOnboarding.swift; sourceTree = "<group>"; };
 		AA0000010000000000000134 /* OopsQuiz.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsQuiz.swift; sourceTree = "<group>"; };
 		AA0000010000000000000135 /* OopsWorldScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsWorldScreens.swift; sourceTree = "<group>"; };
+		BB000001000000000000010D /* VisitingArtisanTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VisitingArtisanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB0000010000000000000101 /* ScorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScorerTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000102 /* WorldMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldMapperTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000103 /* PromptBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBuilderTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000104 /* NarrationComposerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationComposerTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000105 /* WorldCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCatalogTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000106 /* ColorFromKelvinTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorFromKelvinTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000107 /* SplatResolutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatResolutionTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000108 /* WorldLabsWireFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldLabsWireFormatTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000109 /* AppStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateTests.swift; sourceTree = "<group>"; };
+		BB000001000000000000010A /* ConversationPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationPromptTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -126,6 +147,7 @@
 				AA0000010000000000000304 /* Config */,
 				AA0000010000000000000305 /* USDZ */,
 				AA000001000000000000010C /* Assets.xcassets */,
+				BB0000010000000000000310 /* Tests */,
 				AA0000010000000000000303 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -149,8 +171,26 @@
 			isa = PBXGroup;
 			children = (
 				AA000001000000000000010D /* VisitingArtisan.app */,
+				BB000001000000000000010D /* VisitingArtisanTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		BB0000010000000000000310 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				BB0000010000000000000101 /* ScorerTests.swift */,
+				BB0000010000000000000102 /* WorldMapperTests.swift */,
+				BB0000010000000000000103 /* PromptBuilderTests.swift */,
+				BB0000010000000000000104 /* NarrationComposerTests.swift */,
+				BB0000010000000000000105 /* WorldCatalogTests.swift */,
+				BB0000010000000000000106 /* ColorFromKelvinTests.swift */,
+				BB0000010000000000000107 /* SplatResolutionTests.swift */,
+				BB0000010000000000000108 /* WorldLabsWireFormatTests.swift */,
+				BB0000010000000000000109 /* AppStateTests.swift */,
+				BB000001000000000000010A /* ConversationPromptTests.swift */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 		AA0000010000000000000304 /* Config */ = {
@@ -300,7 +340,41 @@
 			productReference = AA000001000000000000010D /* VisitingArtisan.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BB0000010000000000000401 /* VisitingArtisanTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BB0000010000000000000703 /* Build configuration list for PBXNativeTarget "VisitingArtisanTests" */;
+			buildPhases = (
+				BB0000010000000000000501 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BB0000010000000000000A01 /* PBXTargetDependency */,
+			);
+			name = VisitingArtisanTests;
+			productName = VisitingArtisanTests;
+			productReference = BB000001000000000000010D /* VisitingArtisanTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		BB0000010000000000000B01 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA0000010000000000000601 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA0000010000000000000401;
+			remoteInfo = VisitingArtisan;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		BB0000010000000000000A01 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA0000010000000000000401 /* VisitingArtisan */;
+			targetProxy = BB0000010000000000000B01 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		AA0000010000000000000601 /* Project object */ = {
@@ -312,6 +386,10 @@
 				TargetAttributes = {
 					AA0000010000000000000401 = {
 						CreatedOnToolsVersion = 26.5;
+					};
+					BB0000010000000000000401 = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = AA0000010000000000000401;
 					};
 				};
 			};
@@ -332,6 +410,7 @@
 			projectRoot = "";
 			targets = (
 				AA0000010000000000000401 /* VisitingArtisan */,
+				BB0000010000000000000401 /* VisitingArtisanTests */,
 			);
 		};
 /* End PBXProject section */
@@ -396,6 +475,23 @@
 				AA0000010000000000000033 /* OopsOnboarding.swift in Sources */,
 				AA0000010000000000000034 /* OopsQuiz.swift in Sources */,
 				AA0000010000000000000035 /* OopsWorldScreens.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BB0000010000000000000501 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB0000010000000000000001 /* ScorerTests.swift in Sources */,
+				BB0000010000000000000002 /* WorldMapperTests.swift in Sources */,
+				BB0000010000000000000003 /* PromptBuilderTests.swift in Sources */,
+				BB0000010000000000000004 /* NarrationComposerTests.swift in Sources */,
+				BB0000010000000000000005 /* WorldCatalogTests.swift in Sources */,
+				BB0000010000000000000006 /* ColorFromKelvinTests.swift in Sources */,
+				BB0000010000000000000007 /* SplatResolutionTests.swift in Sources */,
+				BB0000010000000000000008 /* WorldLabsWireFormatTests.swift in Sources */,
+				BB0000010000000000000009 /* AppStateTests.swift in Sources */,
+				BB000001000000000000000A /* ConversationPromptTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -613,6 +709,60 @@
 			};
 			name = Release;
 		};
+		BB0000010000000000000803 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = MCD2V89BPF;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tommy.VisitingArtisanTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VisitingArtisan.app/VisitingArtisan";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		BB0000010000000000000804 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = MCD2V89BPF;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tommy.VisitingArtisanTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VisitingArtisan.app/VisitingArtisan";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -630,6 +780,15 @@
 			buildConfigurations = (
 				AA0000010000000000000803 /* Debug */,
 				AA0000010000000000000804 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BB0000010000000000000703 /* Build configuration list for PBXNativeTarget "VisitingArtisanTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB0000010000000000000803 /* Debug */,
+				BB0000010000000000000804 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

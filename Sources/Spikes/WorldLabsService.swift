@@ -169,7 +169,7 @@ final class WorldLabsService {
     /// Picks the splat `.spz` URL using `splatResolutionPreference` order, returning the
     /// first tier the world actually exposes. Falls back across tiers so a missing
     /// preferred key (e.g. no "500k") still yields a usable splat instead of nil.
-    private func resolveSplatURL(from spzURLs: [String: String]?) -> URL? {
+    func resolveSplatURL(from spzURLs: [String: String]?) -> URL? {
         guard let spzURLs else { return nil }
         for key in splatResolutionPreference {
             if let raw = spzURLs[key], let url = URL(string: raw) { return url }
@@ -208,7 +208,7 @@ private struct GenerateRequest: Encodable {
     let permission: Permission
 }
 
-private struct OperationResponse: Decodable {
+struct OperationResponse: Decodable {
     let operation_id: String?
     let done: Bool?
     let error: ErrorInfo?
@@ -223,13 +223,13 @@ private struct OperationResponse: Decodable {
     }
 }
 
-private struct WorldGetResponse: Decodable {
+struct WorldGetResponse: Decodable {
     // Top-level "assets" from GET /worlds/{id} reflects current state.
     // NOT response.assets — that is a stale operation snapshot.
     let assets: WorldObject.Assets?
 }
 
-private struct WorldObject: Decodable {
+struct WorldObject: Decodable {
     let assets: Assets?
     struct Assets: Decodable { let imagery: Imagery?; let splats: Splats? }
     struct Imagery: Decodable { let pano_url: String? }
