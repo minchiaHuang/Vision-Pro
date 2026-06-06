@@ -95,7 +95,7 @@ enum ParametricWorldBuilder {
     }
 
     /// Blends `color` toward its Rec. 709 luminance grey by `amount`, preserving alpha.
-    private static func greyed(_ color: UIColor, amount: Float) -> UIColor {
+    static func greyed(_ color: UIColor, amount: Float) -> UIColor {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 1
         if !color.getRed(&r, green: &g, blue: &b, alpha: &a) {
             var w: CGFloat = 0

@@ -64,6 +64,9 @@
 		BB0000010000000000000008 /* WorldLabsWireFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000108 /* WorldLabsWireFormatTests.swift */; };
 		BB0000010000000000000009 /* AppStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000109 /* AppStateTests.swift */; };
 		BB000001000000000000000A /* ConversationPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000010A /* ConversationPromptTests.swift */; };
+		BB000001000000000000000B /* QuizDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000010B /* QuizDataTests.swift */; };
+		BB000001000000000000000C /* ErrorMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000010C /* ErrorMappingTests.swift */; };
+		BB000001000000000000000D /* DesaturationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000010E /* DesaturationTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -125,6 +128,9 @@
 		BB0000010000000000000108 /* WorldLabsWireFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldLabsWireFormatTests.swift; sourceTree = "<group>"; };
 		BB0000010000000000000109 /* AppStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateTests.swift; sourceTree = "<group>"; };
 		BB000001000000000000010A /* ConversationPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationPromptTests.swift; sourceTree = "<group>"; };
+		BB000001000000000000010B /* QuizDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizDataTests.swift; sourceTree = "<group>"; };
+		BB000001000000000000010C /* ErrorMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorMappingTests.swift; sourceTree = "<group>"; };
+		BB000001000000000000010E /* DesaturationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesaturationTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -189,6 +195,9 @@
 				BB0000010000000000000108 /* WorldLabsWireFormatTests.swift */,
 				BB0000010000000000000109 /* AppStateTests.swift */,
 				BB000001000000000000010A /* ConversationPromptTests.swift */,
+				BB000001000000000000010B /* QuizDataTests.swift */,
+				BB000001000000000000010C /* ErrorMappingTests.swift */,
+				BB000001000000000000010E /* DesaturationTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -492,6 +501,9 @@
 				BB0000010000000000000008 /* WorldLabsWireFormatTests.swift in Sources */,
 				BB0000010000000000000009 /* AppStateTests.swift in Sources */,
 				BB000001000000000000000A /* ConversationPromptTests.swift in Sources */,
+				BB000001000000000000000B /* QuizDataTests.swift in Sources */,
+				BB000001000000000000000C /* ErrorMappingTests.swift in Sources */,
+				BB000001000000000000000D /* DesaturationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

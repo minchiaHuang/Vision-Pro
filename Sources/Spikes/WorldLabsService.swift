@@ -178,7 +178,7 @@ final class WorldLabsService {
         return spzURLs.values.compactMap { URL(string: $0) }.first
     }
 
-    private func ensureOK(_ response: URLResponse, data: Data) throws {
+    func ensureOK(_ response: URLResponse, data: Data) throws {
         guard let http = response as? HTTPURLResponse else { return }
         guard (200...299).contains(http.statusCode) else {
             let bodyText = String(data: data, encoding: .utf8) ?? ""

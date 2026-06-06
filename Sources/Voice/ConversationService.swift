@@ -188,7 +188,7 @@ final class ConversationService {
         return text
     }
 
-    private static func describe(_ error: Error) -> String {
+    static func describe(_ error: Error) -> String {
         switch error {
         case ConvError.missingKey: return "Add an Anthropic API key in Secrets.swift to talk with your guide."
         default: return "The guide couldn't answer just now."
