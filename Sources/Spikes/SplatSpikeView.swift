@@ -181,7 +181,7 @@ private struct SplatMetalView: UIViewRepresentable {
 /// through the scene (6DoF) instead of an automatic orbit.
 @MainActor
 final class SplatSpikeRenderer: NSObject, MTKViewDelegate {
-    private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "VisitingArtisan",
+    private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "VisualEyes",
                                     category: "SplatSpike")
 
     private let maxSimultaneousRenders = 3

@@ -1,4 +1,4 @@
-# Visiting Artisan
+# Visual Eyes
 
 > An Apple Vision Pro app that helps university students understand who they are — by guiding them through a personalised quiz and immersing them in a world that reflects their authentic self.
 
@@ -8,7 +8,7 @@
 
 ## What it is
 
-Most balance/wellness apps ask *"how do you feel today?"* — Visiting Artisan asks **"who are you?"**
+Most balance/wellness apps ask *"how do you feel today?"* — Visual Eyes asks **"who are you?"**
 
 You answer a short quiz across three dimensions (Emotional · Cultural · Physical), and the app generates a personalised immersive 360° world you can step into — so you can *feel*, not just understand, what your balance looks like.
 
@@ -32,7 +32,7 @@ Splash  →  "Who are you?" Quiz  →  Building your world…  →  Your immersi
 ```
 Vision-Pro/
 ├── README.md          ← you are here
-├── VisitingArtisan.xcodeproj
+├── VisualEyes.xcodeproj
 ├── Assets.xcassets    ← app assets, including sample v1 world images
 ├── PRD.md             ← product spec + technical architecture
 ├── ARCHITECTURE.md    ← system architecture (deep dive)
@@ -108,7 +108,7 @@ Pipeline in one line: **`QuizData` questions → `QuizAnswers` → `Scorer` → 
 
 ## Getting started
 
-See [SETUP.md](SETUP.md) — open `VisitingArtisan.xcodeproj` and run.
+See [SETUP.md](SETUP.md) — open `VisualEyes.xcodeproj` and run.
 No external API needed for v1: it runs end-to-end with bundled sample images.
 
 ## Tech stack

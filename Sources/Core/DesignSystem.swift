@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Visual design system for the warm, glassy "Visiting Artisan" look.
+/// Visual design system for the warm, glassy "Visual Eyes" look.
 /// Skin-only: colors, type styles, pill buttons, warm background, and the orb.
 enum VATheme {
     static let amber     = Color(red: 0.910, green: 0.663, blue: 0.361) // #E8A95C
@@ -17,7 +17,7 @@ enum VATheme {
 
 // MARK: - Type styles
 
-/// Small, uppercase, tracked-out eyebrow label (e.g. "VISITING ARTISAN").
+/// Small, uppercase, tracked-out eyebrow label (e.g. "VISUAL EYES").
 struct Eyebrow: View {
     let text: String
     init(_ text: String) { self.text = text }

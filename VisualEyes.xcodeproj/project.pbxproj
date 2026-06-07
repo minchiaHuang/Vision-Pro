@@ -15,7 +15,7 @@
 		AA0000010000000000000006 /* QuizData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000106 /* QuizData.swift */; };
 		AA0000010000000000000007 /* QuizView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000107 /* QuizView.swift */; };
 		AA0000010000000000000008 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000108 /* RootView.swift */; };
-		AA0000010000000000000009 /* VisitingArtisanApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000109 /* VisitingArtisanApp.swift */; };
+		AA0000010000000000000009 /* VisualEyesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000109 /* VisualEyesApp.swift */; };
 		AA000001000000000000000A /* WorldCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000010A /* WorldCatalog.swift */; };
 		AA000001000000000000000B /* WorldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000010B /* WorldView.swift */; };
 		AA0000010000000000000037 /* ParametricWorldBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000137 /* ParametricWorldBuilder.swift */; };
@@ -65,12 +65,12 @@
 		AA0000010000000000000106 /* QuizData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizData.swift; sourceTree = "<group>"; };
 		AA0000010000000000000107 /* QuizView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000108 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		AA0000010000000000000109 /* VisitingArtisanApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitingArtisanApp.swift; sourceTree = "<group>"; };
+		AA0000010000000000000109 /* VisualEyesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualEyesApp.swift; sourceTree = "<group>"; };
 		AA000001000000000000010A /* WorldCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCatalog.swift; sourceTree = "<group>"; };
 		AA000001000000000000010B /* WorldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000137 /* ParametricWorldBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParametricWorldBuilder.swift; sourceTree = "<group>"; };
 		AA000001000000000000010C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		AA000001000000000000010D /* VisitingArtisan.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VisitingArtisan.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA000001000000000000010D /* VisualEyes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VisualEyes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA000001000000000000010E /* Info-visionOS.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-visionOS.plist"; sourceTree = "<group>"; };
 		AA000001000000000000010F /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		AA0000010000000000000110 /* WorldLabsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldLabsService.swift; sourceTree = "<group>"; };
@@ -148,7 +148,7 @@
 		AA0000010000000000000303 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				AA000001000000000000010D /* VisitingArtisan.app */,
+				AA000001000000000000010D /* VisualEyes.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -182,7 +182,7 @@
 		AA0000010000000000000307 /* App */ = {
 			isa = PBXGroup;
 			children = (
-				AA0000010000000000000109 /* VisitingArtisanApp.swift */,
+				AA0000010000000000000109 /* VisualEyesApp.swift */,
 				AA0000010000000000000108 /* RootView.swift */,
 				AA0000010000000000000101 /* AppState.swift */,
 			);
@@ -279,9 +279,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		AA0000010000000000000401 /* VisitingArtisan */ = {
+		AA0000010000000000000401 /* VisualEyes */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = AA0000010000000000000703 /* Build configuration list for PBXNativeTarget "VisitingArtisan" */;
+			buildConfigurationList = AA0000010000000000000703 /* Build configuration list for PBXNativeTarget "VisualEyes" */;
 			buildPhases = (
 				AA0000010000000000000501 /* Sources */,
 				AA0000010000000000000201 /* Frameworks */,
@@ -291,13 +291,13 @@
 			);
 			dependencies = (
 			);
-			name = VisitingArtisan;
+			name = VisualEyes;
 			packageProductDependencies = (
 				AA0000010000000000000902 /* MetalSplatter */,
 				AA0000010000000000000903 /* SplatIO */,
 			);
-			productName = VisitingArtisan;
-			productReference = AA000001000000000000010D /* VisitingArtisan.app */;
+			productName = VisualEyes;
+			productReference = AA000001000000000000010D /* VisualEyes.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -315,7 +315,7 @@
 					};
 				};
 			};
-			buildConfigurationList = AA0000010000000000000701 /* Build configuration list for PBXProject "VisitingArtisan" */;
+			buildConfigurationList = AA0000010000000000000701 /* Build configuration list for PBXProject "VisualEyes" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -331,7 +331,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				AA0000010000000000000401 /* VisitingArtisan */,
+				AA0000010000000000000401 /* VisualEyes */,
 			);
 		};
 /* End PBXProject section */
@@ -364,7 +364,7 @@
 				AA0000010000000000000006 /* QuizData.swift in Sources */,
 				AA0000010000000000000007 /* QuizView.swift in Sources */,
 				AA0000010000000000000008 /* RootView.swift in Sources */,
-				AA0000010000000000000009 /* VisitingArtisanApp.swift in Sources */,
+				AA0000010000000000000009 /* VisualEyesApp.swift in Sources */,
 				AA000001000000000000000A /* WorldCatalog.swift in Sources */,
 				AA000001000000000000000B /* WorldView.swift in Sources */,
 				AA0000010000000000000037 /* ParametricWorldBuilder.swift in Sources */,
@@ -537,9 +537,9 @@
 				"GENERATE_INFOPLIST_FILE[sdk=xrsimulator*]" = NO;
 				"INFOPLIST_FILE[sdk=xros*]" = "Config/Info-visionOS.plist";
 				"INFOPLIST_FILE[sdk=xrsimulator*]" = "Config/Info-visionOS.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Visiting Artisan";
+				INFOPLIST_KEY_CFBundleDisplayName = "Visual Eyes";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Visiting Artisan uses the microphone so you can talk with the guide in your world.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Visual Eyes uses the microphone so you can talk with the guide in your world.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Your speech is turned into text so your world's guide can understand and respond.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -582,9 +582,9 @@
 				"GENERATE_INFOPLIST_FILE[sdk=xrsimulator*]" = NO;
 				"INFOPLIST_FILE[sdk=xros*]" = "Config/Info-visionOS.plist";
 				"INFOPLIST_FILE[sdk=xrsimulator*]" = "Config/Info-visionOS.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Visiting Artisan";
+				INFOPLIST_KEY_CFBundleDisplayName = "Visual Eyes";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Visiting Artisan uses the microphone so you can talk with the guide in your world.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Visual Eyes uses the microphone so you can talk with the guide in your world.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Your speech is turned into text so your world's guide can understand and respond.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -616,7 +616,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA0000010000000000000701 /* Build configuration list for PBXProject "VisitingArtisan" */ = {
+		AA0000010000000000000701 /* Build configuration list for PBXProject "VisualEyes" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA0000010000000000000801 /* Debug */,
@@ -625,7 +625,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		AA0000010000000000000703 /* Build configuration list for PBXNativeTarget "VisitingArtisan" */ = {
+		AA0000010000000000000703 /* Build configuration list for PBXNativeTarget "VisualEyes" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				AA0000010000000000000803 /* Debug */,

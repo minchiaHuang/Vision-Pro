@@ -93,7 +93,7 @@ final class AzureVoice: NSObject, AVAudioPlayerDelegate, CloudVoice {
         req.setValue(key, forHTTPHeaderField: "Ocp-Apim-Subscription-Key")
         req.setValue("application/ssml+xml", forHTTPHeaderField: "Content-Type")
         req.setValue(outputFormat, forHTTPHeaderField: "X-Microsoft-OutputFormat")
-        req.setValue("VisitingArtisan", forHTTPHeaderField: "User-Agent")
+        req.setValue("VisualEyes", forHTTPHeaderField: "User-Agent")
         req.httpBody = Data(ssml.utf8)
         return req
     }

@@ -1,4 +1,4 @@
-# Architecture — Visiting Artisan
+# Architecture — Visual Eyes
 
 > System architecture & data flow. For product reasoning see [PRD.md](PRD.md).
 
@@ -31,7 +31,7 @@ platform-specific. So the entire flow can be validated on iPad before any Vision
 | **Data** | `QuizData.swift`, `WorldCatalog.swift` | Quiz questions; pre-baked worlds + lookup |
 | **Logic** | `PromptBuilder.swift` | `QuizResult` → text prompt (display now, Skybox API later) |
 | **State** | `AppState.swift` | `@Observable` flow state machine (phase, result, world) |
-| **Entry/Nav** | `VisitingArtisanApp.swift`, `RootView.swift` | App entry, phase-based view switching |
+| **Entry/Nav** | `VisualEyesApp.swift`, `RootView.swift` | App entry, phase-based view switching |
 | **Views** | `QuizView.swift`, `WorldView.swift`, `RootView.swift` | Splash, quiz, loading, world |
 | **Display** | `Immersive360View.swift` (iOS), `ImmersiveWorldView.swift` (visionOS) | 360° sphere rendering |
 | **Voice (v4 · 6a)** | `NarrationService.swift`, `NarrationComposer.swift` | On-device TTS entry narration: composes a welcome from `AxisScores` and speaks it via `AVSpeechSynthesizer` when `.world` appears. No mic, no network, no permissions |

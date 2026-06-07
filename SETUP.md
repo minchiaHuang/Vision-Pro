@@ -1,6 +1,6 @@
-# Visiting Artisan — Build & Run
+# Visual Eyes — Build & Run
 
-> v1 now includes `VisitingArtisan.xcodeproj` in this repo.
+> v1 now includes `VisualEyes.xcodeproj` in this repo.
 > You no longer need to create an Xcode project manually or copy `Sources/` into a target.
 
 ---
@@ -10,12 +10,12 @@
 Open:
 
 ```text
-/Users/tommyhuang/Desktop/Vision-Pro/VisitingArtisan.xcodeproj
+/Users/tommyhuang/Desktop/Vision-Pro/VisualEyes.xcodeproj
 ```
 
-The `VisitingArtisan` target uses:
+The `VisualEyes` target uses:
 
-- Product name: `VisitingArtisan`
+- Product name: `VisualEyes`
 - Bundle ID: `com.tommy.VisitingArtisan`
 - Shared SwiftUI source from `Sources/`
 - Supported destinations: iPhone, iPad, Apple Vision
@@ -53,8 +53,8 @@ gitignored.
 
 ## Run in Xcode
 
-1. Open `VisitingArtisan.xcodeproj`.
-2. Select the `VisitingArtisan` scheme.
+1. Open `VisualEyes.xcodeproj`.
+2. Select the `VisualEyes` scheme.
 3. Choose one of:
    - `iPad Pro 13-inch (M5)` simulator
    - `Apple Vision Pro` simulator
@@ -73,14 +73,14 @@ Splash -> Quiz -> Building your world... -> sample 360 world
 List the project:
 
 ```bash
-xcodebuild -list -project VisitingArtisan.xcodeproj
+xcodebuild -list -project VisualEyes.xcodeproj
 ```
 
 Build for iPad simulator:
 
 ```bash
-xcodebuild -project VisitingArtisan.xcodeproj \
-  -scheme VisitingArtisan \
+xcodebuild -project VisualEyes.xcodeproj \
+  -scheme VisualEyes \
   -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M5),OS=26.5' \
   CODE_SIGNING_ALLOWED=NO \
   build
@@ -89,8 +89,8 @@ xcodebuild -project VisitingArtisan.xcodeproj \
 Build for visionOS simulator:
 
 ```bash
-xcodebuild -project VisitingArtisan.xcodeproj \
-  -scheme VisitingArtisan \
+xcodebuild -project VisualEyes.xcodeproj \
+  -scheme VisualEyes \
   -destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=26.5' \
   CODE_SIGNING_ALLOWED=NO \
   build

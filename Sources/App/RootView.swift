@@ -34,7 +34,7 @@ struct SplashView: View {
             OrbView(size: 120)
 
             VStack(spacing: 16) {
-                Eyebrow("Visiting Artisan")
+                Eyebrow("Visual Eyes")
 
                 Text("A world, woven for who\nyou are right now.")
                     .vaLargeThinTitle(size: 38)

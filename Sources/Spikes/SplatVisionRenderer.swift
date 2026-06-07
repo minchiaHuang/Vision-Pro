@@ -37,7 +37,7 @@ struct SplatLayerConfiguration: CompositorLayerConfiguration {
 /// model loading uses async/await, and the locomotion struct is only mutated on the
 /// render thread.
 final class SplatVisionRenderer: @unchecked Sendable {
-    private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "VisitingArtisan",
+    private static let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "VisualEyes",
                                     category: "SplatVision")
 
     private static let maxSimultaneousRenders = 3

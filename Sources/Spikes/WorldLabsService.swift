@@ -73,7 +73,7 @@ final class WorldLabsService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let body = GenerateRequest(
-            display_name: "Visiting Artisan spike",
+            display_name: "Visual Eyes spike",
             model: model,
             world_prompt: .init(type: "text", text_prompt: prompt),
             permission: .init(public: false)

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# bin/verify.sh — Clean-build smoke test for Visiting Artisan.
+# bin/verify.sh — Clean-build smoke test for Visual Eyes.
 #
 # Runs `xcodebuild clean build` for the iPad and Apple Vision Pro
 # simulators and prints a pass/fail summary. Designed to catch
@@ -16,12 +16,12 @@
 #
 # Requirements:
 #   - Xcode 26.5+ with iOS 26 and visionOS 26 simulator runtimes installed
-#   - Run from the repo root (where VisitingArtisan.xcodeproj lives)
+#   - Run from the repo root (where VisualEyes.xcodeproj lives)
 
 set -uo pipefail
 
-PROJECT="VisitingArtisan.xcodeproj"
-SCHEME="VisitingArtisan"
+PROJECT="VisualEyes.xcodeproj"
+SCHEME="VisualEyes"
 
 if [[ ! -d "$PROJECT" ]]; then
     echo "Error: $PROJECT not found in $(pwd)."
@@ -57,7 +57,7 @@ run_build() {
     fi
 }
 
-echo "Visiting Artisan — clean-build verification"
+echo "Visual Eyes — clean-build verification"
 echo "==========================================="
 
 run_build "iPad Pro 13-inch (M5) sim" \

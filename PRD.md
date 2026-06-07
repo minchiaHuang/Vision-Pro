@@ -1,4 +1,4 @@
-# Visiting Artisan — PRD & Technical Architecture
+# Visual Eyes — PRD & Technical Architecture
 
 > Apple Vision Pro app　|　AFP project + personal portfolio
 > Document version: v0.1 (2026-05-25)
@@ -12,7 +12,7 @@ letting university students *feel* — not just understand — what their balanc
 
 | | |
 |---|---|
-| **App name** | Visiting Artisan |
+| **App name** | Visual Eyes |
 | **Platform** | Apple Vision Pro (primary) + iPad/iPhone (validation + daily entry point) |
 | **Challenge Statement** | Helping individuals achieve balance through authentic self-alignment |
 | **App Statement** | An app that helps university students understand who they are, by guiding them through a personalised quiz and immersing themselves in a world that they describe, letting them feel what their authentic self feels like. |

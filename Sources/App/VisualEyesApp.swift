@@ -16,10 +16,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 #endif
 
 /// App entry point.
-/// ⚠️ This replaces the VisitingArtisanApp.swift that Xcode generates by default
+/// ⚠️ This replaces the VisualEyesApp.swift that Xcode generates by default
 /// (paste this content over it).
 @main
-struct VisitingArtisanApp: App {
+struct VisualEyesApp: App {
     #if os(iOS)
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     #endif
