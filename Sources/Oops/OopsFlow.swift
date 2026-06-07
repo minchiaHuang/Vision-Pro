@@ -78,21 +78,12 @@ struct OopsFlowView: View {
         .preferredColorScheme(.dark)
         .statusBarHidden()
         .onAppear {
-            // Returning from the immersive splat world recreates this window; resume at
+            // Returning from the gallery world recreates this window; resume at
             // the requested screen (reflection) rather than restarting at .opening.
             if let resume = appState.oopsResumeScreen {
                 screen = resume
                 appState.oopsResumeScreen = nil
             }
-            #if os(visionOS)
-            // Pre-decode vibrant_loft in the background so the cache is ready by the
-            // time the user finishes the quiz and taps Enter World.
-            Task.detached(priority: .background) {
-                await SplatCache.warmIfNeeded(bundleResource: "vibrant_loft_art_studio",
-                                              withExtension: "spz",
-                                              flipUpsideDown: true)
-            }
-            #endif
         }
         #if os(visionOS)
         // Let the cover background go clear so the transparent `OopsPassthrough`
@@ -133,27 +124,23 @@ struct OopsFlowView: View {
         }
     }
 
-    /// Enters the walkable 3D world.
-    /// - visionOS: opens the 6DoF Gaussian-splat immersive space directly (bundled
-    ///   "Vibrant Loft Art Studio"), then swaps the dev-menu window for the small
-    ///   `oops-world-controls` window so full immersion isn't cluttered by a floating
-    ///   panel. Leaving that window reopens the dev-menu at the reflection screen.
-    /// - iPad: prepares a neutral default world and shows the in-cover `WorldView`.
+    /// Enters the Richards Art Gallery.
+    /// - visionOS: sets worldParams to the gallery archetype, opens the shared RealityKit
+    ///   `world` ImmersiveSpace (head tracking + gamepad locomotion), and shows the small
+    ///   `oops-gallery-controls` floating panel. Leaving that panel reopens the dev-menu
+    ///   at the reflection screen.
+    /// - iPad: loads gallery worldParams and shows the in-cover `WorldView` (ParametricWorldView).
     private func enterWorld() {
         #if os(visionOS)
         Task {
-            guard let url = Bundle.main.url(forResource: "vibrant_loft_art_studio",
-                                            withExtension: "spz") else { return }
-            SplatManualInput.shared.reset()
-            if case .opened = await openImmersiveSpace(id: "splat",
-                                                       value: SplatEntry(url: url, flipUpsideDown: true)) {
-                openWindow(id: "oops-world-controls")
-                openWindow(id: "oops-voice-orb")
+            appState.loadGalleryWorld()
+            if case .opened = await openImmersiveSpace(id: "world") {
+                openWindow(id: "oops-gallery-controls")
                 dismissWindow(id: "dev-menu")
             }
         }
         #else
-        appState.loadDefaultWorld()
+        appState.loadGalleryWorld()
         go(.world)
         #endif
     }

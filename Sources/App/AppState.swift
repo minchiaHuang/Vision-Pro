@@ -77,6 +77,24 @@ final class AppState {
         world = WorldCatalog.world(for: params.archetype)
     }
 
+    /// Loads the Richards Art Gallery USDZ as the Oops flow world. No narration/title
+    /// world object is needed — the Oops flow has its own copy. Social density = 0 keeps
+    /// companion orbs out of the gallery. Light params are neutral so the USDZ's own
+    /// baked lighting reads correctly without a heavy additive directional overlay.
+    func loadGalleryWorld() {
+        worldParams = WorldParams(
+            archetype: .artGallery,
+            lightIntensity: 300,
+            colorTemperature: 5500,
+            saturation: 1.0,
+            socialDensity: 0,
+            openness: 0.5,
+            biophilicDensity: 0.5,
+            focal: .ownPath
+        )
+        world = nil
+    }
+
     /// DEV ONLY — preload a neutral default world so the dev menu's "World" option
     /// can jump straight into `WorldView`, skipping the quiz.
     func loadDefaultWorldForTesting() {
