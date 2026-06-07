@@ -58,7 +58,8 @@ struct VisitingArtisanApp: App {
                 if let entry {
                     SplatVisionRenderer.startRendering(layerRenderer,
                                                        splatURL: entry.url,
-                                                       flipUpsideDown: entry.flipUpsideDown)
+                                                       flipUpsideDown: entry.flipUpsideDown,
+                                                       modelNames: entry.modelNames)
                 }
             }
         }

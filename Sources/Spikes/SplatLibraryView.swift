@@ -79,24 +79,43 @@ struct SeedSplatWorld: Identifiable {
     /// Raw marble exports load upside-down and need a 180° flip; the bundled sample
     /// is already upright. Defaults to upright so existing entries are unaffected.
     var flipUpsideDown: Bool = false
+    /// Bundle resource base-names of the USDZ objects to float inside this world (arranged
+    /// in a ring in front of the start viewpoint). Empty → renderer uses its demo fallback.
+    var modelNames: [String] = []
 }
 
-/// What the splat immersive space needs to render a world: where the `.spz` is and
-/// whether it must be flipped upright. Passed as the `"splat"` space's value (visionOS).
+/// What the splat immersive space needs to render a world: where the `.spz` is, whether it
+/// must be flipped upright, and which USDZ objects to overlay. Passed as the `"splat"`
+/// space's value (visionOS).
 struct SplatEntry: Codable, Hashable {
     let url: URL
     var flipUpsideDown: Bool = false
+    /// Bundle resource base-names of USDZ objects to composite into the world. Empty → the
+    /// renderer falls back to its single bundled demo model (legacy behaviour).
+    var modelNames: [String] = []
 }
 
 enum SplatSeeds {
-    // V3 demo: only the bundled "Vibrant Loft Art Studio" marble world ships. The
-    // sample and other marble exports were removed from the bundle to slim the app.
-    // Raw marble export — loads upside-down, needs a 180° flip.
+    // V3 demo: the bundled "Vibrant Loft Art Studio" marble world plus the two
+    // personality worlds (Extroverted / Introverted), each carrying its own USDZ objects.
+    // All three are raw marble exports — they load upside-down and need a 180° flip.
     static let all: [SeedSplatWorld] = [
         SeedSplatWorld(id: "vibrant_loft_art_studio",
                        name: "Vibrant Loft Art Studio",
                        source: .bundled(resource: "vibrant_loft_art_studio"),
-                       flipUpsideDown: true)
+                       flipUpsideDown: true),
+        SeedSplatWorld(id: "extroverted_world",
+                       name: "Extroverted",
+                       source: .bundled(resource: "Extroverted_world"),
+                       flipUpsideDown: true,
+                       modelNames: ["MacBook_Neo", "Coeur_Amoureux", "Jack_Daniel", "Backpack"]),
+        SeedSplatWorld(id: "introverted_world",
+                       name: "Introverted",
+                       source: .bundled(resource: "Introverted_world"),
+                       flipUpsideDown: true,
+                       modelNames: ["Unseen_Fancy_Mirror", "Coffee_Cup", "Globe",
+                                    "Book_animated_book__historical_book", "Hour_Glass",
+                                    "Candles_set"])
     ]
 }
 
@@ -516,9 +535,11 @@ struct SplatLibraryView: View {
                 errorMessage = "Bundled \(resource).spz not found"
                 return
             }
-            enter(SplatEntry(url: url, flipUpsideDown: seed.flipUpsideDown))
+            enter(SplatEntry(url: url, flipUpsideDown: seed.flipUpsideDown,
+                             modelNames: seed.modelNames))
         case .remote(let url):
-            enter(SplatEntry(url: url, flipUpsideDown: seed.flipUpsideDown))
+            enter(SplatEntry(url: url, flipUpsideDown: seed.flipUpsideDown,
+                             modelNames: seed.modelNames))
         }
     }
 

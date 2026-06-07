@@ -85,39 +85,42 @@ final class SplatVisionRenderer: @unchecked Sendable {
     /// Edge-trigger state for the gamepad exit button (☰); see `renderFrame`.
     private var exitButtonWasPressed = false
 
-    // Render-thread-owned manipulation pose for the in-world model. The model is anchored
-    // at `modelAnchor` (the framing placement) and the user's hand gestures accumulate a
-    // yaw + uniform scale about its centre. Rebuilt into `worldPlacement` each frame.
-    private var modelAnchor: simd_float4x4 = matrix_identity_float4x4
+    // Render-thread-owned whole-group manipulation. Hand gestures accumulate a yaw +
+    // uniform scale applied to the entire object cluster (about the group anchor); fed to
+    // the mesh renderer as `groupTransform` each frame.
     private var modelYaw: Float = 0
     private var modelScale: Float = 1
 
-    /// Optional USDZ model composited into the splat world (Phase 1: a bundled demo
-    /// model, static, walk-aroundable). Nil if the pipeline failed to build.
+    /// Optional USDZ overlay engine compositing this world's objects into the splat scene.
+    /// Nil if the pipeline failed to build.
     private let meshRenderer: SplatMeshRenderer?
 
-    /// Bundled demo model rendered inside the world. Loaded off-thread at construction.
+    /// Fallback model when a world ships no object list (legacy single-demo behaviour).
     private static let demoModelName = "hummingbird_anim"
 
-    init(layerRenderer: LayerRenderer, splatURL: URL, flipUpsideDown: Bool) {
+    init(layerRenderer: LayerRenderer, splatURL: URL, flipUpsideDown: Bool, modelNames: [String] = []) {
         self.layerRenderer = layerRenderer
         self.device = layerRenderer.device
         self.commandQueue = device.makeCommandQueue()!
         self.splatURL = splatURL
         self.flipUpsideDown = flipUpsideDown
 
-        // Build the mesh overlay pipeline up front; load the bundled model off-thread.
-        // Use error-level logs (persisted) so failures are visible in `log show`.
+        // Build the mesh overlay pipeline up front; load this world's objects off-thread.
+        // Empty list → fall back to the single bundled demo model. Use error-level logs
+        // (persisted) so failures are visible in `log show`.
         do {
             let mr = try SplatMeshRenderer(device: device,
                                            colorFormat: layerRenderer.configuration.colorFormat,
                                            depthFormat: layerRenderer.configuration.depthFormat)
             self.meshRenderer = mr
-            if let url = Bundle.main.url(forResource: Self.demoModelName, withExtension: "usdz") {
-                Self.log.notice("MESH: loading \(Self.demoModelName).usdz")
-                mr.loadModel(url: url)
-            } else {
-                Self.log.error("MESH: \(Self.demoModelName).usdz NOT in bundle")
+            let names = modelNames.isEmpty ? [Self.demoModelName] : modelNames
+            for (slot, name) in names.enumerated() {
+                if let url = Bundle.main.url(forResource: name, withExtension: "usdz") {
+                    Self.log.notice("MESH: loading \(name).usdz (slot \(slot)/\(names.count))")
+                    mr.loadModel(url: url, slot: slot, count: names.count)
+                } else {
+                    Self.log.error("MESH: \(name).usdz NOT in bundle")
+                }
             }
         } catch {
             self.meshRenderer = nil
@@ -128,8 +131,8 @@ final class SplatVisionRenderer: @unchecked Sendable {
     /// Entry point used by the `CompositorLayer` closure. The render loop starts
     /// immediately (presenting cleared frames so the immersive space is never black /
     /// frozen) while the splat loads off-thread; the loop adopts it when ready.
-    static func startRendering(_ layerRenderer: LayerRenderer, splatURL: URL, flipUpsideDown: Bool) {
-        let renderer = SplatVisionRenderer(layerRenderer: layerRenderer, splatURL: splatURL, flipUpsideDown: flipUpsideDown)
+    static func startRendering(_ layerRenderer: LayerRenderer, splatURL: URL, flipUpsideDown: Bool, modelNames: [String] = []) {
+        let renderer = SplatVisionRenderer(layerRenderer: layerRenderer, splatURL: splatURL, flipUpsideDown: flipUpsideDown, modelNames: modelNames)
 
         // Load off the render thread; publishes a LoadedScene when done.
         Task.detached(priority: .userInitiated) {
@@ -356,11 +359,11 @@ final class SplatVisionRenderer: @unchecked Sendable {
                 splat = scene.splat
                 sceneCalibration = scene.calibration
                 locomotion = scene.initialLocomotion
-                // The model lives in world space; the per-eye viewMatrix already folds in
+                // The objects live in world space; the per-eye viewMatrix already folds in
                 // sceneCalibration, so the mesh renderer cancels it back out (otherwise the
-                // model gets calibrated twice — flipped + offset by the centroid).
-                modelAnchor = scene.modelPlacement
-                meshRenderer?.worldPlacement = modelAnchor
+                // objects get calibrated twice — flipped + offset by the centroid). The
+                // framing placement is the group anchor the objects ring around.
+                meshRenderer?.anchor = scene.modelPlacement
                 meshRenderer?.sceneCalibrationInverse = scene.calibration.inverse
             }
         }
@@ -394,15 +397,17 @@ final class SplatVisionRenderer: @unchecked Sendable {
         let manual = SplatManualInput.shared.snapshot()
         locomotion.tick(deltaTime: dt, gamepad: gamepad, manual: manual)
 
-        // Apply accumulated model manipulation (two-hand pinch on device; on-screen debug
-        // pad in the Simulator). Yaw + uniform scale about the model's centre; scale clamped
-        // so it can't shrink to nothing or fill the world. Rebuilt from the fixed anchor each
-        // frame so repeated deltas don't drift the matrix.
+        // Apply accumulated manipulation (two-hand pinch on device; on-screen debug pad in
+        // the Simulator) to the WHOLE object group: yaw + uniform scale about the group
+        // anchor, scale clamped so it can't vanish or fill the world. Rebuilt from the
+        // accumulated yaw/scale each frame so repeated deltas don't drift the matrix.
+        // TODO(phase3): per-object selection — route the gesture to a single picked object
+        // (gaze/point selection + per-model transform) instead of the whole cluster.
         if let g = SplatModelManipulation.shared.consume() {
             modelYaw += g.yaw
             modelScale = min(max(modelScale * g.scaleMul, 0.3), 4.0)
-            meshRenderer?.worldPlacement =
-                modelAnchor * Self.rotationY(modelYaw) * Self.uniformScale(modelScale)
+            meshRenderer?.groupTransform =
+                Self.rotationY(modelYaw) * Self.uniformScale(modelScale)
         }
 
         // Leave the world, edge-triggered: gamepad ☰ (Menu/Options). The mouse / gaze-tap

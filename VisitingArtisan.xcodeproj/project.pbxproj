@@ -52,6 +52,18 @@
 		AA00000100000000000000B4 /* SplatHandGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B4 /* SplatHandGesture.swift */; };
 		AA00000100000000000000B2 /* SplatMeshShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B2 /* SplatMeshShaders.metal */; };
 		AA00000100000000000000B3 /* hummingbird_anim.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B3 /* hummingbird_anim.usdz */; };
+		AA00000100000000000000C0 /* Extroverted_world.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000000D0 /* Extroverted_world.spz */; };
+		AA00000100000000000000C1 /* Introverted_world.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000000D1 /* Introverted_world.spz */; };
+		AA00000100000000000000C2 /* MacBook_Neo.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000000D2 /* MacBook_Neo.usdz */; };
+		AA00000100000000000000C3 /* Coeur_Amoureux.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000000D3 /* Coeur_Amoureux.usdz */; };
+		AA00000100000000000000C4 /* Jack_Daniel.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000000D4 /* Jack_Daniel.usdz */; };
+		AA00000100000000000000C5 /* Backpack.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000000D5 /* Backpack.usdz */; };
+		AA00000100000000000000C6 /* Unseen_Fancy_Mirror.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000000D6 /* Unseen_Fancy_Mirror.usdz */; };
+		AA00000100000000000000C7 /* Coffee_Cup.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000000D7 /* Coffee_Cup.usdz */; };
+		AA00000100000000000000C8 /* Globe.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000000D8 /* Globe.usdz */; };
+		AA00000100000000000000C9 /* Book_animated_book__historical_book.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000000D9 /* Book_animated_book__historical_book.usdz */; };
+		AA00000100000000000000CA /* Hour_Glass.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000000DA /* Hour_Glass.usdz */; };
+		AA00000100000000000000CB /* Candles_set.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000000DB /* Candles_set.usdz */; };
 		AA00000100000000000000F2 /* VoiceTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F2 /* VoiceTestView.swift */; };
 		AA00000100000000000000F3 /* DevMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F3 /* DevMenuView.swift */; };
 		AA00000100000000000000F4 /* SpeechVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F4 /* SpeechVoice.swift */; };
@@ -105,6 +117,18 @@
 		AA00000100000000000001B4 /* SplatHandGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatHandGesture.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B2 /* SplatMeshShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SplatMeshShaders.metal; sourceTree = "<group>"; };
 		AA00000100000000000001B3 /* hummingbird_anim.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = hummingbird_anim.usdz; sourceTree = "<group>"; };
+		AA00000100000000000000D0 /* Extroverted_world.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Extroverted_world.spz; sourceTree = "<group>"; };
+		AA00000100000000000000D1 /* Introverted_world.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Introverted_world.spz; sourceTree = "<group>"; };
+		AA00000100000000000000D2 /* MacBook_Neo.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = MacBook_Neo.usdz; sourceTree = "<group>"; };
+		AA00000100000000000000D3 /* Coeur_Amoureux.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Coeur_Amoureux.usdz; sourceTree = "<group>"; };
+		AA00000100000000000000D4 /* Jack_Daniel.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Jack_Daniel.usdz; sourceTree = "<group>"; };
+		AA00000100000000000000D5 /* Backpack.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Backpack.usdz; sourceTree = "<group>"; };
+		AA00000100000000000000D6 /* Unseen_Fancy_Mirror.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Unseen_Fancy_Mirror.usdz; sourceTree = "<group>"; };
+		AA00000100000000000000D7 /* Coffee_Cup.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Coffee_Cup.usdz; sourceTree = "<group>"; };
+		AA00000100000000000000D8 /* Globe.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Globe.usdz; sourceTree = "<group>"; };
+		AA00000100000000000000D9 /* Book_animated_book__historical_book.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Book_animated_book__historical_book.usdz; sourceTree = "<group>"; };
+		AA00000100000000000000DA /* Hour_Glass.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Hour_Glass.usdz; sourceTree = "<group>"; };
+		AA00000100000000000000DB /* Candles_set.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = Candles_set.usdz; sourceTree = "<group>"; };
 		AA00000100000000000001F2 /* VoiceTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceTestView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F3 /* DevMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevMenuView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F4 /* SpeechVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechVoice.swift; sourceTree = "<group>"; };
@@ -179,6 +203,18 @@
 			children = (
 				AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */,
 				AA00000100000000000001B3 /* hummingbird_anim.usdz */,
+				AA00000100000000000000D0 /* Extroverted_world.spz */,
+				AA00000100000000000000D1 /* Introverted_world.spz */,
+				AA00000100000000000000D2 /* MacBook_Neo.usdz */,
+				AA00000100000000000000D3 /* Coeur_Amoureux.usdz */,
+				AA00000100000000000000D4 /* Jack_Daniel.usdz */,
+				AA00000100000000000000D5 /* Backpack.usdz */,
+				AA00000100000000000000D6 /* Unseen_Fancy_Mirror.usdz */,
+				AA00000100000000000000D7 /* Coffee_Cup.usdz */,
+				AA00000100000000000000D8 /* Globe.usdz */,
+				AA00000100000000000000D9 /* Book_animated_book__historical_book.usdz */,
+				AA00000100000000000000DA /* Hour_Glass.usdz */,
+				AA00000100000000000000DB /* Candles_set.usdz */,
 			);
 			path = SpikeAssets;
 			sourceTree = "<group>";
@@ -353,6 +389,18 @@
 				AA000001000000000000000C /* Assets.xcassets in Resources */,
 				AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */,
 				AA00000100000000000000B3 /* hummingbird_anim.usdz in Resources */,
+				AA00000100000000000000C0 /* Extroverted_world.spz in Resources */,
+				AA00000100000000000000C1 /* Introverted_world.spz in Resources */,
+				AA00000100000000000000C2 /* MacBook_Neo.usdz in Resources */,
+				AA00000100000000000000C3 /* Coeur_Amoureux.usdz in Resources */,
+				AA00000100000000000000C4 /* Jack_Daniel.usdz in Resources */,
+				AA00000100000000000000C5 /* Backpack.usdz in Resources */,
+				AA00000100000000000000C6 /* Unseen_Fancy_Mirror.usdz in Resources */,
+				AA00000100000000000000C7 /* Coffee_Cup.usdz in Resources */,
+				AA00000100000000000000C8 /* Globe.usdz in Resources */,
+				AA00000100000000000000C9 /* Book_animated_book__historical_book.usdz in Resources */,
+				AA00000100000000000000CA /* Hour_Glass.usdz in Resources */,
+				AA00000100000000000000CB /* Candles_set.usdz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

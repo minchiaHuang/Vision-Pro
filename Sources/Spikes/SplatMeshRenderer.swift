@@ -39,6 +39,7 @@ final class SplatMeshRenderer: @unchecked Sendable {
         let meshes: [MTKMesh]
         let textures: [[MTLTexture]] // [meshIndex][submeshIndex], always populated
         let normalize: simd_float4x4 // recentre + uniform scale to targetSize
+        let ringOffset: simd_float4x4 // placement on the group ring, relative to `anchor`
     }
 
     private let device: MTLDevice
@@ -47,11 +48,17 @@ final class SplatMeshRenderer: @unchecked Sendable {
     private let defaultTexture: MTLTexture
 
     private let lock = NSLock()
-    private var pendingModel: LoadedModel?
-    private var model: LoadedModel?            // render-thread owned after adoption
+    private var pendingModels: [LoadedModel] = []
+    private var models: [LoadedModel] = []     // render-thread owned after adoption
 
-    /// World placement (in world/calibrated space) set by the owner before adoption.
-    var worldPlacement: simd_float4x4 = matrix_identity_float4x4
+    /// Group anchor (world/calibrated space): the centre the objects ring around. Set by
+    /// the owner before adoption (the framing placement, ~2 m in front of the start).
+    var anchor: simd_float4x4 = matrix_identity_float4x4
+
+    /// Whole-group manipulation (yaw + uniform scale about the anchor), driven by the
+    /// two-hand pinch gesture. Applied to every object so the cluster rotates/scales
+    /// together. TODO(phase3): per-object selection would make this per-model instead.
+    var groupTransform: simd_float4x4 = matrix_identity_float4x4
 
     /// Inverse of the splat `sceneCalibration`. The per-eye `viewMatrix` bakes in
     /// `sceneCalibration` (to map raw splat space → world); the model is already in world
@@ -114,14 +121,16 @@ final class SplatMeshRenderer: @unchecked Sendable {
 
     // MARK: - Loading
 
-    /// Kicks off an off-thread USDZ load; the render thread adopts it when ready.
-    /// Failure is non-fatal — the world simply renders without the model.
-    func loadModel(url: URL) {
+    /// Kicks off an off-thread USDZ load; the render thread adopts it when ready. `slot`
+    /// of `count` places the object on the group ring. Failure is non-fatal — the world
+    /// simply renders without that object.
+    func loadModel(url: URL, slot: Int = 0, count: Int = 1) {
+        let ringOffset = Self.ringOffset(slot: slot, count: count)
         Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             do {
-                let loaded = try self.load(url: url)
-                self.lock.withLock { self.pendingModel = loaded }
+                let loaded = try self.load(url: url, ringOffset: ringOffset)
+                self.lock.withLock { self.pendingModels.append(loaded) }
                 let submeshes = loaded.meshes.reduce(0) { $0 + $1.submeshes.count }
                 Self.log.notice("MESH: loaded \(url.lastPathComponent) — \(loaded.meshes.count) meshes, \(submeshes) submeshes")
             } catch {
@@ -130,7 +139,20 @@ final class SplatMeshRenderer: @unchecked Sendable {
         }
     }
 
-    private func load(url: URL) throws -> LoadedModel {
+    /// Even placement of `count` objects on a circle (XZ plane) about the group anchor,
+    /// each yaw-rotated to face the anchor centre. A single object stays at the centre
+    /// (identity), preserving the legacy single-demo-model placement.
+    private static func ringOffset(slot: Int, count: Int) -> simd_float4x4 {
+        guard count > 1 else { return matrix_identity_float4x4 }
+        let radius: Float = 0.18 * Float(count) + 0.45   // grows with object count
+        let theta = 2 * Float.pi * Float(slot) / Float(count)
+        let x = radius * sin(theta)
+        let z = radius * cos(theta)
+        // Face the centre: object's local -Z points back toward the anchor.
+        return translation(x, 0, z) * rotationY(theta + .pi)
+    }
+
+    private func load(url: URL, ringOffset: simd_float4x4) throws -> LoadedModel {
         let allocator = MTKMeshBufferAllocator(device: device)
         let asset = MDLAsset(url: url,
                              vertexDescriptor: Self.sharedVertexDescriptor,
@@ -179,7 +201,8 @@ final class SplatMeshRenderer: @unchecked Sendable {
         let scale = Self.targetSize / maxDim
         let normalize = Self.scaleMatrix(scale) * Self.translation(-center.x, -center.y, -center.z)
 
-        return LoadedModel(meshes: mtkMeshes, textures: textures, normalize: normalize)
+        return LoadedModel(meshes: mtkMeshes, textures: textures,
+                           normalize: normalize, ringOffset: ringOffset)
     }
 
     private func baseColorTexture(for material: MDLMaterial?, loader: MTKTextureLoader) -> MTLTexture {
@@ -204,19 +227,18 @@ final class SplatMeshRenderer: @unchecked Sendable {
 
     // MARK: - Encoding (called on the render thread, inside the drawables loop)
 
-    /// Composites the model into the already-rendered splat frame. No-op until the model
-    /// has loaded. Uses its own render pass that LOADs the splat color + depth.
+    /// Composites the loaded objects into the already-rendered splat frame. No-op until at
+    /// least one object has loaded. Uses its own render pass that LOADs the splat color + depth.
     func encode(into commandBuffer: MTLCommandBuffer,
                 colorTexture: MTLTexture,
                 depthTexture: MTLTexture?,
                 rasterizationRateMap: MTLRasterizationRateMap?,
                 renderTargetArrayLength: Int,
                 viewports: [SplatRenderer.ViewportDescriptor]) {
-        if model == nil {
-            lock.lock(); let pending = pendingModel; lock.unlock()
-            if let pending { model = pending }
-        }
-        guard let model, !viewports.isEmpty else { return }
+        // Drain any newly-loaded objects (each lands independently off-thread).
+        lock.lock(); let newlyLoaded = pendingModels; pendingModels.removeAll(); lock.unlock()
+        if !newlyLoaded.isEmpty { models.append(contentsOf: newlyLoaded) }
+        guard !models.isEmpty, !viewports.isEmpty else { return }
 
         let rpd = MTLRenderPassDescriptor()
         rpd.colorAttachments[0].texture = colorTexture
@@ -239,35 +261,38 @@ final class SplatMeshRenderer: @unchecked Sendable {
         enc.setCullMode(.back)
         enc.setFrontFacing(.counterClockwise)
 
-        // World transform of the model (for normals / lighting in world space).
-        let worldModel = worldPlacement * model.normalize
-        // Position transform: cancel the calibration baked into viewMatrix so the model
-        // sits at its world placement (not double-calibrated).
-        let positionModel = sceneCalibrationInverse * worldModel
         let layered = renderTargetArrayLength > 1
 
-        // One draw per eye: set this eye's viewport + MVP + target layer, then draw the
-        // model. Mirrors how the splat pass handles both layered (device) and dedicated
+        // One pass per eye, drawing every object. Each object's world transform =
+        // anchor · groupTransform (shared gesture) · its ring offset · its normalize.
+        // Mirrors how the splat pass handles both layered (device) and dedicated
         // (Simulator) layouts without vertex amplification.
         for (eyeIndex, vp) in viewports.enumerated() {
             enc.setViewport(vp.viewport)
-            var uniforms = VertexUniforms(
-                modelViewProjection: vp.projectionMatrix * vp.viewMatrix * positionModel,
-                model: worldModel,
-                layer: layered ? UInt32(eyeIndex) : 0)
-            enc.setVertexBytes(&uniforms, length: MemoryLayout<VertexUniforms>.stride, index: 1)
+            for model in models {
+                // World transform of this object (for normals / lighting in world space).
+                let worldModel = anchor * groupTransform * model.ringOffset * model.normalize
+                // Cancel the calibration baked into viewMatrix so the object sits at its
+                // world placement (not double-calibrated).
+                let positionModel = sceneCalibrationInverse * worldModel
+                var uniforms = VertexUniforms(
+                    modelViewProjection: vp.projectionMatrix * vp.viewMatrix * positionModel,
+                    model: worldModel,
+                    layer: layered ? UInt32(eyeIndex) : 0)
+                enc.setVertexBytes(&uniforms, length: MemoryLayout<VertexUniforms>.stride, index: 1)
 
-            for (meshIndex, mesh) in model.meshes.enumerated() {
-                for (bufferIndex, vb) in mesh.vertexBuffers.enumerated() {
-                    enc.setVertexBuffer(vb.buffer, offset: vb.offset, index: bufferIndex)
-                }
-                for (submeshIndex, submesh) in mesh.submeshes.enumerated() {
-                    enc.setFragmentTexture(model.textures[meshIndex][submeshIndex], index: 0)
-                    enc.drawIndexedPrimitives(type: submesh.primitiveType,
-                                              indexCount: submesh.indexCount,
-                                              indexType: submesh.indexType,
-                                              indexBuffer: submesh.indexBuffer.buffer,
-                                              indexBufferOffset: submesh.indexBuffer.offset)
+                for (meshIndex, mesh) in model.meshes.enumerated() {
+                    for (bufferIndex, vb) in mesh.vertexBuffers.enumerated() {
+                        enc.setVertexBuffer(vb.buffer, offset: vb.offset, index: bufferIndex)
+                    }
+                    for (submeshIndex, submesh) in mesh.submeshes.enumerated() {
+                        enc.setFragmentTexture(model.textures[meshIndex][submeshIndex], index: 0)
+                        enc.drawIndexedPrimitives(type: submesh.primitiveType,
+                                                  indexCount: submesh.indexCount,
+                                                  indexType: submesh.indexType,
+                                                  indexBuffer: submesh.indexBuffer.buffer,
+                                                  indexBufferOffset: submesh.indexBuffer.offset)
+                    }
                 }
             }
         }
@@ -301,6 +326,14 @@ final class SplatMeshRenderer: @unchecked Sendable {
                                 SIMD4(0, s, 0, 0),
                                 SIMD4(0, 0, s, 0),
                                 SIMD4(0, 0, 0, 1)))
+    }
+
+    private static func rotationY(_ radians: Float) -> simd_float4x4 {
+        let c = cos(radians), s = sin(radians)
+        return simd_float4x4(columns: (SIMD4(c, 0, -s, 0),
+                                       SIMD4(0, 1, 0, 0),
+                                       SIMD4(s, 0, c, 0),
+                                       SIMD4(0, 0, 0, 1)))
     }
 }
 
