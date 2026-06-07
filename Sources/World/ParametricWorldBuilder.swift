@@ -86,33 +86,41 @@ enum ParametricWorldBuilder {
 
     // MARK: - Gallery frame photos
 
-    /// Bundled placeholder photos shown in the gallery's wall frames, in cycle order.
-    /// (Loose resource files added under SpikeAssets — note the mixed extensions.)
-    private static let galleryPhotoFiles: [(name: String, ext: String)] = [
-        ("beach 2", "jpeg"),
-        ("beach 4", "jpg"),
-        ("beach 7", "jpg"),
-    ]
-
-    /// Loads the bundled beach placeholder textures, skipping any that fail to load.
+    /// Loads every bundled `beach*` image (jpg/jpeg/png) as a texture, sorted by filename
+    /// (beach 2, beach 4, beach 7, …) so the photo-to-frame assignment is stable. Enumerating
+    /// the bundle — rather than hard-coding names — means whatever beach files are dropped in
+    /// are picked up automatically. Skips any that fail to load.
     @MainActor
     static func loadGalleryPhotoTextures() async -> [TextureResource] {
+        var urls: [URL] = []
+        for ext in ["jpg", "jpeg", "png"] {
+            let found = Bundle.main.urls(forResourcesWithExtension: ext, subdirectory: nil) ?? []
+            urls += found.filter {
+                $0.deletingPathExtension().lastPathComponent.lowercased().hasPrefix("beach")
+            }
+        }
+        urls.sort { $0.lastPathComponent < $1.lastPathComponent }
+
         var textures: [TextureResource] = []
-        for file in galleryPhotoFiles {
-            guard let url = Bundle.main.url(forResource: file.name, withExtension: file.ext)
-            else { continue }
-            if let tex = try? await TextureResource(contentsOf: url) {
+        for url in urls {
+            if let tex = try? await TextureResource(contentsOf: url,
+                                                    options: .init(semantic: .color)) {
                 textures.append(tex)
             }
         }
         return textures
     }
 
-    /// Replaces the emissive (photo) texture on every wall-frame mesh with a beach photo,
-    /// cycling through `textures`. Frames are identified by mesh name: the baked artworks
-    /// all contain "manual_bake"; the corridor door (also "manual_bake") is excluded, while
-    /// butterflies ("butterfly_baked") and dream-catchers ("dream_catcher") never match.
-    /// Frames are sorted by name so the photo-to-frame assignment is deterministic.
+    /// Replaces every wall-frame mesh's material with an `UnlitMaterial` showing a beach photo,
+    /// cycling through `textures`. The whole gallery is unlit-baked (each material feeds its
+    /// texture into emissiveColor over a black diffuse), so an UnlitMaterial reproduces the flat,
+    /// evenly-lit look and renders the photo reliably — mutating the PBR emissive texture in place
+    /// instead rendered flat white. Reusing each mesh's existing UVs keeps the photo on the wall
+    /// with correct placement, orientation, perspective, and scale.
+    ///
+    /// Frames are identified by mesh name containing "bake" (the baked artworks — note asset
+    /// typos: "manual"/"manuel"/"manua"), excluding the corridor door and the butterfly wings.
+    /// Walls, floor, plant, curtains, dream-catchers, etc. have no "bake" in their mesh names.
     @MainActor
     static func applyGalleryPhotos(_ root: Entity, textures: [TextureResource]) {
         guard !textures.isEmpty else { return }
@@ -120,23 +128,18 @@ enum ParametricWorldBuilder {
         var frames: [ModelEntity] = []
         forEachModelEntity(root) { entity in
             let name = entity.name.lowercased()
-            if name.contains("manual_bake") && !name.contains("door") {
-                frames.append(entity)
-            }
+            guard name.contains("bake") else { return }
+            if name.contains("door") || name.contains("butterfly") { return }
+            frames.append(entity)
         }
         frames.sort { $0.name < $1.name }
 
         for (index, frame) in frames.enumerated() {
             guard var model = frame.model else { continue }
             let texture = textures[index % textures.count]
-            // Mutate the existing PBR material in place so metallic/roughness/black diffuse
-            // are preserved — only the emissive photo changes (keeps the unlit-photo look).
-            model.materials = model.materials.map { material in
-                guard var pbr = material as? PhysicallyBasedMaterial else { return material }
-                pbr.emissiveColor = .init(color: .white, texture: .init(texture))
-                pbr.emissiveIntensity = 1.0
-                return pbr
-            }
+            var unlit = UnlitMaterial()
+            unlit.color = .init(tint: .white, texture: .init(texture))
+            model.materials = Array(repeating: unlit, count: model.materials.count)
             frame.model = model
         }
     }
