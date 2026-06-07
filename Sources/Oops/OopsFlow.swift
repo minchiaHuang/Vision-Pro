@@ -114,7 +114,8 @@ struct OopsFlowView: View {
         case .quiz:
             QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
         case .generating:
-            GeneratingScreen { go(.preview) }
+            // TODO: wire `goal` from a free-text quiz answer once the dynamic quiz lands.
+            GeneratingScreen(goal: "I want to be a world class ballerina") { go(.preview) }
         case .preview:
             PreviewScreen(onEnter: { enterWorld() }, onRetry: { go(.quiz) })
         case .world:

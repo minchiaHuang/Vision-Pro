@@ -27,6 +27,11 @@ final class AppState {
     var generatedSplatURL: URL?
     var generatedWorldId: String?
 
+    /// AI-generated Hero's-Journey series (current self → ideal self) shown in the art
+    /// gallery's wall frames. When non-empty, the gallery uses these instead of the bundled
+    /// beach placeholders. Set by `GeneratingScreen` before the user enters the gallery.
+    var galleryImages: [UIImage] = []
+
     /// Hidden continuous scores (the bottom layer of research direction 6) and the world
     /// parameters they map to (direction 7). Computed and stored from Phase 3 on; the
     /// display layer consumes `worldParams` from Phase 2 on.

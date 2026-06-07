@@ -21,7 +21,8 @@ enum ParametricWorldBuilder {
     /// (each caller shows its own failure state). Saturation (axis 4) is applied by the caller
     /// — iOS via a SwiftUI overlay; visionOS via `applySaturation(_:saturation:)` (below).
     @MainActor
-    static func build(params: WorldParams) async -> ParametricWorldBuild? {
+    static func build(params: WorldParams,
+                      galleryPhotos: [UIImage] = []) async -> ParametricWorldBuild? {
         guard let model = try? await Entity(named: params.archetype.usdzName) else {
             return nil
         }
@@ -29,12 +30,14 @@ enum ParametricWorldBuilder {
         let container = Entity()
         container.addChild(model)
 
-        // Gallery only: swap the baked artwork on the wall frames for placeholder beach
-        // photos. The frames' photos are bound to `emissiveColor` (diffuse is black), so the
-        // swap targets the emissive texture. This is the hook a future AI-image step plugs
-        // into — replace `loadGalleryPhotoTextures()` with generated images.
+        // Gallery only: swap the baked artwork on the wall frames. Prefer AI-generated photos
+        // (the Hero's-Journey series) when supplied; otherwise fall back to the bundled beach
+        // placeholders. The frames bind their image to `emissiveColor` (diffuse is black), so
+        // `applyGalleryPhotos` reuses each mesh's UVs to keep correct on-wall placement.
         if params.archetype == .artGallery {
-            let photos = await loadGalleryPhotoTextures()
+            let photos = galleryPhotos.isEmpty
+                ? await loadGalleryPhotoTextures()
+                : texturesFrom(galleryPhotos)
             applyGalleryPhotos(model, textures: photos)
         }
 
@@ -85,6 +88,16 @@ enum ParametricWorldBuilder {
     }
 
     // MARK: - Gallery frame photos
+
+    /// Converts in-memory images (the AI-generated Hero's-Journey series) into textures, in the
+    /// same order. Images that can't produce a `CGImage`/`TextureResource` are skipped.
+    @MainActor
+    static func texturesFrom(_ images: [UIImage]) -> [TextureResource] {
+        images.compactMap { image in
+            guard let cg = image.cgImage else { return nil }
+            return try? TextureResource(image: cg, options: .init(semantic: .color))
+        }
+    }
 
     /// Loads every bundled `beach*` image (jpg/jpeg/png) as a texture, sorted by filename
     /// (beach 2, beach 4, beach 7, …) so the photo-to-frame assignment is stable. Enumerating

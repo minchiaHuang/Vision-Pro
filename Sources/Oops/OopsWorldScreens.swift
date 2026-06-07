@@ -2,17 +2,15 @@ import SwiftUI
 
 // MARK: - Generating interstitial
 
-/// Spinner + "Building your world…" with staged hint copy, then advances to the preview.
+/// Spinner + "Building your world…" while the Hero's-Journey image series is generated, then
+/// advances to the preview. Generated images are stored on `AppState` for the gallery to show.
 struct GeneratingScreen: View {
+    @Environment(AppState.self) private var appState
+    /// The user's "ideal self" goal that drives the generated series.
+    let goal: String
     let onDone: () -> Void
 
-    /// Staged copy shown while "generating". Each stage fades into the next.
-    private let stages = [
-        "Reading your answers…",
-        "Shaping the light and the space…",
-        "Adding the finishing touches…",
-    ]
-    @State private var stage = 0
+    @State private var statusText = "Reading your answer…"
 
     var body: some View {
         ZStack {
@@ -22,26 +20,28 @@ struct GeneratingScreen: View {
                 Text("Building your world…")
                     .font(.system(size: 30, weight: .semibold))
                     .foregroundStyle(.white)
-                Text(stages[stage])
+                Text(statusText)
                     .oopsSub(20)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 620)
-                    .id(stage)                       // re-identity each stage so it crossfades
+                    .id(statusText)                  // re-identity each stage so it crossfades
                     .transition(.opacity)
             }
-            .animation(.easeInOut(duration: 0.5), value: stage)
+            .animation(.easeInOut(duration: 0.5), value: statusText)
         }
         .task { await runGeneration() }
     }
 
-    /// Placeholder generation step: cycles the staged copy, then advances. When a real
-    /// generation backend lands, replace the per-stage sleeps with the actual work —
-    /// the `onDone()` completion contract stays the same.
+    /// Generates the 5-image journey from `goal`, stores it on `AppState`, then advances. On
+    /// failure (or missing key) the result is empty and the gallery falls back to its bundled
+    /// placeholders — the flow always completes so the user is never trapped.
     private func runGeneration() async {
-        for i in stages.indices {
-            withAnimation { stage = i }
-            try? await Task.sleep(for: .seconds(1.1))
+        let images = await OpenAIImageService.generateJourney(goal: goal) { done, total in
+            statusText = done >= total
+                ? "Adding the finishing touches…"
+                : "Painting scene \(done + 1) of \(total)…"
         }
+        appState.galleryImages = images
         onDone()
     }
 }
@@ -107,7 +107,8 @@ struct PreviewScreen: View {
 // MARK: - Previews (Generating + PreviewScreen — no AppState dependency)
 
 #Preview("Generating") {
-    GeneratingScreen(onDone: {})
+    GeneratingScreen(goal: "I want to be a world class ballerina", onDone: {})
+        .environment(AppState())
         .preferredColorScheme(.dark)
 }
 

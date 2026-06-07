@@ -242,6 +242,7 @@ struct iOSWorldView: View {
 struct ParametricWorldView: View {
     let params: WorldParams
 
+    @Environment(AppState.self) private var appState
     @State private var rig = WorldCameraRig()
     @State private var gamepad = GamepadManager()
     @State private var status: PVStatus = .loading
@@ -279,7 +280,8 @@ struct ParametricWorldView: View {
             RealityView { content in
                 // Model + lights + orbs are assembled by the shared builder (also used by the
                 // visionOS immersive path). iOS adds its own camera + rig on top.
-                guard let build = await ParametricWorldBuilder.build(params: ep) else {
+                guard let build = await ParametricWorldBuilder.build(params: ep,
+                                                                     galleryPhotos: appState.galleryImages) else {
                     status = .failed; return
                 }
                 content.add(build.container)
