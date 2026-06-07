@@ -7,15 +7,10 @@ enum OopsScreen {
 }
 
 /// Held-in-memory answers for the quiz + post-world reflection (front-end only — never
-/// scored or stored in this pass). String for text/area questions, Int 0...10 for the
-/// single slider; `r1`–`r5` hold the reflection free-text answers.
+/// scored or stored in this pass). `quiz` maps each quiz question id to the selected
+/// option index; `r1`–`r5` hold the reflection free-text answers.
 struct OopsAnswers {
-    var q1 = "To find my passion"
-    var q3 = ""
-    var q4 = ""
-    var q5 = ""
-    var q6 = ""
-    var q2 = 6   // slider
+    var quiz: [String: Int] = [:]   // quiz question id -> selected option index
     var r1 = ""
     var r2 = ""
     var r3 = ""

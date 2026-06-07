@@ -28,28 +28,46 @@ enum OopsContent {
               text: "Used for AR movement and spatial awareness within your world. No images or video are captured or stored at any point."),
     ]
 
-    /// The 6 reflective questions. `kind` selects the input control.
-    enum QKind { case text, slider, area }
+    /// The 4 quiz questions. Each is single-select with four options.
     struct Question: Identifiable {
         let id: String
         let label: String
-        let kind: QKind
-        var placeholder: String = ""
-        var hasMic: Bool = false
+        let options: [String]
     }
 
     static let questions: [Question] = [
-        .init(id: "q1", label: "Question 1: What is the meaning of life?",
-              kind: .text, placeholder: "To find my passion", hasMic: true),
-        .init(id: "q2", label: "Question 2: From a scale from 1 to 10", kind: .slider),
-        .init(id: "q3", label: "Question 3: What are your priorities?",
-              kind: .text, placeholder: "Family, calm, a little adventure…"),
-        .init(id: "q4", label: "Question 4: Who's in the room, or nearby? What's the energy like between you? (Companionship, laughter, focus?)",
-              kind: .area, placeholder: "Describe who's there with you…"),
-        .init(id: "q5", label: "Question 5: What's the thing you're working towards that makes the hard days feel worth it? (What pulls you forward?)",
-              kind: .area, placeholder: "What keeps you going…"),
-        .init(id: "q6", label: "Question 6: When you picture this place, what's the one feeling you want it to hold?",
-              kind: .text, placeholder: "Stillness, warmth, possibility…"),
+        .init(id: "q1",
+              label: "When your schedule is completely empty, you feel:",
+              options: [
+                "Relief : finally, space to breathe",
+                "Restless : you need something to fill it",
+                "Peaceful : you settle into the quiet naturally",
+                "Uncomfortable : you need something to fill it",
+              ]),
+        .init(id: "q2",
+              label: "Your mind at its natural state is closest to:",
+              options: [
+                "A still lake, occasional ripples",
+                "A busy street, always something moving",
+                "A quiet garden, slow and unhurried",
+                "A live wire, buzzing with thoughts",
+              ]),
+        .init(id: "q3",
+              label: "When something unexpected happens, your first instinct is...",
+              options: [
+                "Pause and recalibrate",
+                "React and keep moving",
+                "Take a breath and observe first",
+                "Jump straight into solving it",
+              ]),
+        .init(id: "q4",
+              label: "You feel most like yourself when ...",
+              options: [
+                "You have time to think before you speak",
+                "You are thinking out loud in the middle of things",
+                "Life has a gentle, predictable rhythm",
+                "there's something new that demands your attention",
+              ]),
     ]
 
     // Reflection copy (frames 17–21) — shown one question per screen after the user
