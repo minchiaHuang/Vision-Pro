@@ -40,13 +40,18 @@ enum SplatCache {
         return dir
     }()
 
+    /// Bump whenever `SplatVisionRenderer.framing()` changes its cached outputs (spawn
+    /// position / model placement), so persisted scenes don't mask the new framing.
+    /// r2: spawn moved to the world centre + object anchor placed in front of the spawn.
+    private static let framingRev = 2
+
     static func cachePath(for url: URL, flipUpsideDown: Bool) -> URL {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
         let name = url.isFileURL
             ? url.deletingPathExtension().lastPathComponent
             : String(format: "%llx", UInt64(bitPattern: Int64(url.absoluteString.hashValue)))
         let flip = flipUpsideDown ? "f" : "n"
-        return cacheDir.appendingPathComponent("\(name)-v\(version)-\(flip).splatchache")
+        return cacheDir.appendingPathComponent("\(name)-v\(version)-r\(framingRev)-\(flip).splatchache")
     }
 
     // MARK: - Load

@@ -303,15 +303,17 @@ final class SplatVisionRenderer: @unchecked Sendable {
         // 180° about X (recentre first, then flip about the origin).
         var calibration = translation(-center.x, -center.y, -center.z)
         if flipUpsideDown { calibration = rotationX180() * calibration }
-        let frameDistance = meanRadius * 3
-        let locomotion = SplatLocomotion(position: SIMD3(0, 0, frameDistance),
+        // Spawn at the world CENTRE (the centroid = origin in calibrated space) so the user
+        // begins inside the scene rather than backed off outside it. `span` still scales
+        // movement speed by the scene size. (Y stays 0 = centroid height; tune on device.)
+        let locomotion = SplatLocomotion(position: SIMD3(0, 0, 0),
                                          span: max(meanRadius, 1))
 
-        // Place the in-world USDZ model ~2 m in front of the start viewpoint (the user
-        // begins at +Z looking toward -Z / the centroid), so it's immediately visible
-        // and walk-aroundable. Calibrated space is centred on the splat centroid.
-        let standoff: Float = 2.0
-        let modelPlacement = translation(0, 0, max(frameDistance - standoff, 0))
+        // Place the in-world USDZ object group ~1.5 m in front of the spawn. The user faces
+        // -Z (forward), so a negative-Z standoff keeps the cluster ahead and visible from the
+        // centre. Calibrated space is centred on the splat centroid.
+        let standoff: Float = 1.5
+        let modelPlacement = translation(0, 0, -standoff)
         return (calibration, locomotion, modelPlacement)
     }
 
