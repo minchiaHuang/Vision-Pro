@@ -14,10 +14,10 @@ import UIKit
 /// gracefully to the bundled placeholders.
 enum OpenAIImageService {
 
-    // Switch to "gpt-image-1" (and set usesResponseFormat = false) to use the newer model.
-    // gpt-image-1 always returns b64 and rejects `response_format`; it may require a verified org.
-    private static let model = "dall-e-3"
-    private static let usesResponseFormat = true
+    // This account exposes the gpt-image-1 family (no dall-e). gpt-image-1 always returns b64
+    // and rejects `response_format`, so that flag is off. (dall-e-3 would need it back on.)
+    private static let model = "gpt-image-1"
+    private static let usesResponseFormat = false
     private static let size = "1024x1024"
     private static let endpoint = URL(string: "https://api.openai.com/v1/images/generations")!
 
