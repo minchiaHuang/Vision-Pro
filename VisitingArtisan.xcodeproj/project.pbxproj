@@ -77,6 +77,8 @@
 		BB0000010000000000000012 /* SplatCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000113 /* SplatCacheTests.swift */; };
 		BB0000010000000000000015 /* MetalSplatter in Frameworks */ = {isa = PBXBuildFile; productRef = BB0000010000000000000902 /* MetalSplatter */; };
 		BB0000010000000000000016 /* SplatIO in Frameworks */ = {isa = PBXBuildFile; productRef = BB0000010000000000000903 /* SplatIO */; };
+		BB0000010000000000000013 /* StubURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000114 /* StubURLProtocol.swift */; };
+		BB0000010000000000000014 /* NetworkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000115 /* NetworkServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -149,6 +151,8 @@
 		BB0000010000000000000111 /* SplatModelManipulationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatModelManipulationTests.swift; sourceTree = "<group>"; };
 		BB0000010000000000000112 /* SplatSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSessionTests.swift; sourceTree = "<group>"; };
 		BB0000010000000000000113 /* SplatCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatCacheTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000114 /* StubURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StubURLProtocol.swift; sourceTree = "<group>"; };
+		BB0000010000000000000115 /* NetworkServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -230,6 +234,8 @@
 				BB0000010000000000000111 /* SplatModelManipulationTests.swift */,
 				BB0000010000000000000112 /* SplatSessionTests.swift */,
 				BB0000010000000000000113 /* SplatCacheTests.swift */,
+				BB0000010000000000000114 /* StubURLProtocol.swift */,
+				BB0000010000000000000115 /* NetworkServiceTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -552,6 +558,8 @@
 				BB0000010000000000000010 /* SplatModelManipulationTests.swift in Sources */,
 				BB0000010000000000000011 /* SplatSessionTests.swift in Sources */,
 				BB0000010000000000000012 /* SplatCacheTests.swift in Sources */,
+				BB0000010000000000000013 /* StubURLProtocol.swift in Sources */,
+				BB0000010000000000000014 /* NetworkServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -32,11 +32,7 @@ final class ConversationService {
     private var cloudDisabled = false
 
     private var systemPrompt = ""
-    private var history: [Message] = []
-
-    /// Conversation model. Single switchable constant — change to
-    /// `"claude-sonnet-4-6"` for richer (slower) replies.
-    private static let model = "claude-haiku-4-5-20251001"
+    private var history: [AnthropicClient.ChatMessage] = []
 
     init() {
         let n = NarrationService()
@@ -121,11 +117,11 @@ final class ConversationService {
         guard !text.isEmpty else { turn = .idle; return }
 
         turn = .thinking
-        history.append(Message(role: "user", content: text))
+        history.append(AnthropicClient.ChatMessage(role: "user", content: text))
         Task {
             do {
                 let reply = try await send()
-                history.append(Message(role: "assistant", content: reply))
+                history.append(AnthropicClient.ChatMessage(role: "assistant", content: reply))
                 // Back to idle so a tap can barge in; `isSpeaking` drives the
                 // mascot's speaking glow while the reply is read aloud.
                 turn = .idle
@@ -148,44 +144,15 @@ final class ConversationService {
 
     // MARK: - Claude (Messages API over URLSession)
 
-    private struct Message: Codable { let role: String; let content: String }
-
-    private struct Request: Encodable {
-        let model: String
-        let max_tokens: Int
-        let system: String
-        let messages: [Message]
-    }
-
-    private struct Response: Decodable {
-        struct Block: Decodable { let type: String; let text: String? }
-        let content: [Block]
-    }
-
+    /// Error surface for the conversation; `describe(_:)` and callers pattern-match on it.
     enum ConvError: Error { case missingKey, http(String), empty }
 
+    /// Claude client. Default talks to the real API with the key from `Secrets`;
+    /// `AnthropicClient` is independently injectable/testable (stubbed `URLSession`).
+    private let claude = AnthropicClient()
+
     private func send() async throws -> String {
-        let key = Secrets.anthropicAPIKey
-        guard !key.isEmpty else { throw ConvError.missingKey }
-
-        var req = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
-        req.httpMethod = "POST"
-        req.setValue(key, forHTTPHeaderField: "x-api-key")
-        req.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try JSONEncoder().encode(
-            Request(model: Self.model, max_tokens: 300, system: systemPrompt, messages: history)
-        )
-
-        let (data, response) = try await URLSession.shared.data(for: req)
-        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            throw ConvError.http("HTTP \(http.statusCode): \(body.prefix(200))")
-        }
-        let decoded = try JSONDecoder().decode(Response.self, from: data)
-        let text = decoded.content.compactMap { $0.text }.joined(separator: " ")
-        guard !text.isEmpty else { throw ConvError.empty }
-        return text
+        try await claude.reply(system: systemPrompt, history: history)
     }
 
     static func describe(_ error: Error) -> String {
@@ -251,5 +218,59 @@ final class ConversationService {
         The world looks and feels like: \(scene).
         Speak about THIS world and what it gently reflects in them. Strict tone rules: never say "should" or "must"; frame everything as a direction they are moving toward, never a flaw or a lack; invite rather than instruct. Keep every reply to 2-3 short spoken sentences — it will be read aloud. End with one gentle, open question that helps them notice what feels true. Never mention scores, axes, parameters, or that this is an app or a quiz.
         """
+    }
+}
+
+// MARK: - Anthropic Messages API client
+
+/// Thin Claude Messages API client over plain `URLSession`. Split out of
+/// `ConversationService` so the HTTP path is testable in isolation (no audio session,
+/// stubbed `URLSession`) — `ConversationService` just owns one and feeds it the prompt.
+struct AnthropicClient {
+
+    /// One conversation turn. `role` is "user" / "assistant".
+    struct ChatMessage: Codable { let role: String; let content: String }
+
+    var apiKey: String = Secrets.anthropicAPIKey
+    var session: URLSession = .shared
+    /// Conversation model — change to `"claude-sonnet-4-6"` for richer (slower) replies.
+    var model: String = "claude-haiku-4-5-20251001"
+    var maxTokens: Int = 300
+
+    /// Sends the grounded system prompt + history and returns the assistant's text.
+    /// Throws `ConversationService.ConvError` on a missing key, HTTP error, or empty reply.
+    func reply(system: String, history: [ChatMessage]) async throws -> String {
+        guard !apiKey.isEmpty else { throw ConversationService.ConvError.missingKey }
+
+        var req = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
+        req.httpMethod = "POST"
+        req.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        req.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(
+            Request(model: model, max_tokens: maxTokens, system: system, messages: history)
+        )
+
+        let (data, response) = try await session.data(for: req)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw ConversationService.ConvError.http("HTTP \(http.statusCode): \(body.prefix(200))")
+        }
+        let decoded = try JSONDecoder().decode(Response.self, from: data)
+        let text = decoded.content.compactMap { $0.text }.joined(separator: " ")
+        guard !text.isEmpty else { throw ConversationService.ConvError.empty }
+        return text
+    }
+
+    private struct Request: Encodable {
+        let model: String
+        let max_tokens: Int
+        let system: String
+        let messages: [ChatMessage]
+    }
+
+    private struct Response: Decodable {
+        struct Block: Decodable { let type: String; let text: String? }
+        let content: [Block]
     }
 }
