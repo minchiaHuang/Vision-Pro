@@ -36,4 +36,11 @@ enum Secrets {
     /// Empty by default; replace locally only. With an empty key the companion
     /// falls back to ElevenLabs (if set) or on-device AVSpeech.
     static let azureSpeechKey: String = ""
+
+    /// OpenAI API key for the Future Museum generation pipeline — Stage A (the
+    /// Curator: answers → 5-beat Hero's-Journey JSON) and Stage B (gpt-image-2:
+    /// each beat's prompt → image). Empty by default; replace locally only. With an
+    /// empty key, `CuratorService` / `ImageGenerationService` report "Missing API
+    /// key" and the museum gallery shows a friendly hint instead of crashing.
+    static let openAIAPIKey: String = ""
 }
