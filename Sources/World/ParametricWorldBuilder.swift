@@ -29,6 +29,15 @@ enum ParametricWorldBuilder {
         let container = Entity()
         container.addChild(model)
 
+        // Gallery only: swap the baked artwork on the wall frames for placeholder beach
+        // photos. The frames' photos are bound to `emissiveColor` (diffuse is black), so the
+        // swap targets the emissive texture. This is the hook a future AI-image step plugs
+        // into — replace `loadGalleryPhotoTextures()` with generated images.
+        if params.archetype == .artGallery {
+            let photos = await loadGalleryPhotoTextures()
+            applyGalleryPhotos(model, textures: photos)
+        }
+
         let bounds = model.visualBounds(relativeTo: nil)
         let span = max(bounds.extents.x, max(bounds.extents.y, bounds.extents.z))
         let eye = SIMD3<Float>(bounds.center.x,
@@ -72,6 +81,63 @@ enum ParametricWorldBuilder {
             guard var model = entity.model else { return }
             model.materials = model.materials.map { desaturate($0, amount: amount) }
             entity.model = model
+        }
+    }
+
+    // MARK: - Gallery frame photos
+
+    /// Bundled placeholder photos shown in the gallery's wall frames, in cycle order.
+    /// (Loose resource files added under SpikeAssets — note the mixed extensions.)
+    private static let galleryPhotoFiles: [(name: String, ext: String)] = [
+        ("beach 2", "jpeg"),
+        ("beach 4", "jpg"),
+        ("beach 7", "jpg"),
+    ]
+
+    /// Loads the bundled beach placeholder textures, skipping any that fail to load.
+    @MainActor
+    static func loadGalleryPhotoTextures() async -> [TextureResource] {
+        var textures: [TextureResource] = []
+        for file in galleryPhotoFiles {
+            guard let url = Bundle.main.url(forResource: file.name, withExtension: file.ext)
+            else { continue }
+            if let tex = try? await TextureResource(contentsOf: url) {
+                textures.append(tex)
+            }
+        }
+        return textures
+    }
+
+    /// Replaces the emissive (photo) texture on every wall-frame mesh with a beach photo,
+    /// cycling through `textures`. Frames are identified by mesh name: the baked artworks
+    /// all contain "manual_bake"; the corridor door (also "manual_bake") is excluded, while
+    /// butterflies ("butterfly_baked") and dream-catchers ("dream_catcher") never match.
+    /// Frames are sorted by name so the photo-to-frame assignment is deterministic.
+    @MainActor
+    static func applyGalleryPhotos(_ root: Entity, textures: [TextureResource]) {
+        guard !textures.isEmpty else { return }
+
+        var frames: [ModelEntity] = []
+        forEachModelEntity(root) { entity in
+            let name = entity.name.lowercased()
+            if name.contains("manual_bake") && !name.contains("door") {
+                frames.append(entity)
+            }
+        }
+        frames.sort { $0.name < $1.name }
+
+        for (index, frame) in frames.enumerated() {
+            guard var model = frame.model else { continue }
+            let texture = textures[index % textures.count]
+            // Mutate the existing PBR material in place so metallic/roughness/black diffuse
+            // are preserved — only the emissive photo changes (keeps the unlit-photo look).
+            model.materials = model.materials.map { material in
+                guard var pbr = material as? PhysicallyBasedMaterial else { return material }
+                pbr.emissiveColor = .init(color: .white, texture: .init(texture))
+                pbr.emissiveIntensity = 1.0
+                return pbr
+            }
+            frame.model = model
         }
     }
 
