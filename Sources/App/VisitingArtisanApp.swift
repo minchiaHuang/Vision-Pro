@@ -59,7 +59,7 @@ struct VisitingArtisanApp: App {
                     SplatVisionRenderer.startRendering(layerRenderer,
                                                        splatURL: entry.url,
                                                        flipUpsideDown: entry.flipUpsideDown,
-                                                       modelNames: entry.modelNames)
+                                                       objects: entry.objects)
                 }
             }
         }

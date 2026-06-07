@@ -121,15 +121,15 @@ final class SplatMeshRenderer: @unchecked Sendable {
 
     // MARK: - Loading
 
-    /// Kicks off an off-thread USDZ load; the render thread adopts it when ready. `slot`
-    /// of `count` places the object on the group ring. Failure is non-fatal — the world
-    /// simply renders without that object.
-    func loadModel(url: URL, slot: Int = 0, count: Int = 1) {
-        let ringOffset = Self.ringOffset(slot: slot, count: count)
+    /// Kicks off an off-thread USDZ load; the render thread adopts it when ready. `offset`
+    /// is the object's fixed placement relative to the group anchor (translation · yaw ·
+    /// scale, authored per object). Failure is non-fatal — the world simply renders without
+    /// that object.
+    func loadModel(url: URL, offset: simd_float4x4) {
         Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             do {
-                let loaded = try self.load(url: url, ringOffset: ringOffset)
+                let loaded = try self.load(url: url, ringOffset: offset)
                 self.lock.withLock { self.pendingModels.append(loaded) }
                 let submeshes = loaded.meshes.reduce(0) { $0 + $1.submeshes.count }
                 Self.log.notice("MESH: loaded \(url.lastPathComponent) — \(loaded.meshes.count) meshes, \(submeshes) submeshes")
@@ -137,19 +137,6 @@ final class SplatMeshRenderer: @unchecked Sendable {
                 Self.log.error("MESH: load FAILED: \(error.localizedDescription)")
             }
         }
-    }
-
-    /// Even placement of `count` objects on a circle (XZ plane) about the group anchor,
-    /// each yaw-rotated to face the anchor centre. A single object stays at the centre
-    /// (identity), preserving the legacy single-demo-model placement.
-    private static func ringOffset(slot: Int, count: Int) -> simd_float4x4 {
-        guard count > 1 else { return matrix_identity_float4x4 }
-        let radius: Float = 0.18 * Float(count) + 0.45   // grows with object count
-        let theta = 2 * Float.pi * Float(slot) / Float(count)
-        let x = radius * sin(theta)
-        let z = radius * cos(theta)
-        // Face the centre: object's local -Z points back toward the anchor.
-        return translation(x, 0, z) * rotationY(theta + .pi)
     }
 
     private func load(url: URL, ringOffset: simd_float4x4) throws -> LoadedModel {
@@ -326,14 +313,6 @@ final class SplatMeshRenderer: @unchecked Sendable {
                                 SIMD4(0, s, 0, 0),
                                 SIMD4(0, 0, s, 0),
                                 SIMD4(0, 0, 0, 1)))
-    }
-
-    private static func rotationY(_ radians: Float) -> simd_float4x4 {
-        let c = cos(radians), s = sin(radians)
-        return simd_float4x4(columns: (SIMD4(c, 0, -s, 0),
-                                       SIMD4(0, 1, 0, 0),
-                                       SIMD4(s, 0, c, 0),
-                                       SIMD4(0, 0, 0, 1)))
     }
 }
 

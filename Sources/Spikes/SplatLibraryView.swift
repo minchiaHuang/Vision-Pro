@@ -70,6 +70,26 @@ enum SeedSource {
     case remote(URL)
 }
 
+/// One USDZ object placed at a FIXED position inside a world. Positions are in metres in
+/// calibrated/world space, relative to the world centre where the user spawns
+/// (+X right, +Y up, −Z forward — the direction the user initially faces). `yawDegrees`
+/// turns the object about Y; `scale` multiplies the renderer's 0.6 m normalize.
+/// Hand-edit these tables in `SplatSeeds` to fine-tune placement.
+struct SplatObject: Codable, Hashable {
+    var name: String            // USDZ resource base-name (no extension)
+    var position: SIMD3<Float> = .zero
+    var yawDegrees: Float = 0
+    var scale: Float = 1
+
+    init(_ name: String, x: Float = 0, y: Float = 0, z: Float = 0,
+         yaw: Float = 0, scale: Float = 1) {
+        self.name = name
+        self.position = SIMD3(x, y, z)
+        self.yawDegrees = yaw
+        self.scale = scale
+    }
+}
+
 /// A known world that always appears in the list. Currently just the bundled spike
 /// asset; add more entries here once their spz URL is known.
 struct SeedSplatWorld: Identifiable {
@@ -79,26 +99,27 @@ struct SeedSplatWorld: Identifiable {
     /// Raw marble exports load upside-down and need a 180° flip; the bundled sample
     /// is already upright. Defaults to upright so existing entries are unaffected.
     var flipUpsideDown: Bool = false
-    /// Bundle resource base-names of the USDZ objects to float inside this world (arranged
-    /// in a ring in front of the start viewpoint). Empty → renderer uses its demo fallback.
-    var modelNames: [String] = []
+    /// Fixed-placement USDZ objects floating inside this world. Empty → renderer uses its
+    /// single demo fallback (hummingbird) at the centre.
+    var objects: [SplatObject] = []
 }
 
 /// What the splat immersive space needs to render a world: where the `.spz` is, whether it
-/// must be flipped upright, and which USDZ objects to overlay. Passed as the `"splat"`
-/// space's value (visionOS).
+/// must be flipped upright, and which fixed-placement USDZ objects to overlay. Passed as the
+/// `"splat"` space's value (visionOS).
 struct SplatEntry: Codable, Hashable {
     let url: URL
     var flipUpsideDown: Bool = false
-    /// Bundle resource base-names of USDZ objects to composite into the world. Empty → the
-    /// renderer falls back to its single bundled demo model (legacy behaviour).
-    var modelNames: [String] = []
+    /// Fixed-placement objects to composite into the world. Empty → the renderer falls back
+    /// to its single bundled demo model (legacy behaviour).
+    var objects: [SplatObject] = []
 }
 
 enum SplatSeeds {
-    // V3 demo: the bundled "Vibrant Loft Art Studio" marble world plus the two
-    // personality worlds (Extroverted / Introverted), each carrying its own USDZ objects.
-    // All three are raw marble exports — they load upside-down and need a 180° flip.
+    // V3 demo: the bundled "Vibrant Loft Art Studio" marble world plus the two personality
+    // worlds (Extroverted / Introverted), each carrying its own fixed-placement USDZ objects
+    // ringed around the centre where the user spawns. All three are raw marble exports —
+    // they load upside-down and need a 180° flip.
     static let all: [SeedSplatWorld] = [
         SeedSplatWorld(id: "vibrant_loft_art_studio",
                        name: "Vibrant Loft Art Studio",
@@ -108,14 +129,26 @@ enum SplatSeeds {
                        name: "Extroverted",
                        source: .bundled(resource: "Extroverted_world"),
                        flipUpsideDown: true,
-                       modelNames: ["MacBook_Neo", "Coeur_Amoureux", "Jack_Daniel", "Backpack"]),
+                       // Ring of 4 around the centre (radius 1.6 m), each facing inward.
+                       objects: [
+                           SplatObject("MacBook_Neo",    x:  0.0, z:  1.6, yaw: 180),
+                           SplatObject("Coeur_Amoureux", x:  1.6, z:  0.0, yaw: 270),
+                           SplatObject("Jack_Daniel",    x:  0.0, z: -1.6, yaw:   0),
+                           SplatObject("Backpack",       x: -1.6, z:  0.0, yaw:  90),
+                       ]),
         SeedSplatWorld(id: "introverted_world",
                        name: "Introverted",
                        source: .bundled(resource: "Introverted_world"),
                        flipUpsideDown: true,
-                       modelNames: ["Unseen_Fancy_Mirror", "Coffee_Cup", "Globe",
-                                    "Book_animated_book__historical_book", "Hour_Glass",
-                                    "Candles_set"])
+                       // Ring of 6 around the centre (radius 1.7 m), each facing inward.
+                       objects: [
+                           SplatObject("Unseen_Fancy_Mirror",                 x:  0.000, z:  1.70, yaw: 180),
+                           SplatObject("Coffee_Cup",                          x:  1.472, z:  0.85, yaw: 240),
+                           SplatObject("Globe",                               x:  1.472, z: -0.85, yaw: 300),
+                           SplatObject("Book_animated_book__historical_book", x:  0.000, z: -1.70, yaw:   0),
+                           SplatObject("Hour_Glass",                          x: -1.472, z: -0.85, yaw:  60),
+                           SplatObject("Candles_set",                         x: -1.472, z:  0.85, yaw: 120),
+                       ]),
     ]
 }
 
@@ -536,10 +569,10 @@ struct SplatLibraryView: View {
                 return
             }
             enter(SplatEntry(url: url, flipUpsideDown: seed.flipUpsideDown,
-                             modelNames: seed.modelNames))
+                             objects: seed.objects))
         case .remote(let url):
             enter(SplatEntry(url: url, flipUpsideDown: seed.flipUpsideDown,
-                             modelNames: seed.modelNames))
+                             objects: seed.objects))
         }
     }
 

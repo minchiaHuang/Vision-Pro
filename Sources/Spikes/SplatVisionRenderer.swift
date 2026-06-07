@@ -85,41 +85,39 @@ final class SplatVisionRenderer: @unchecked Sendable {
     /// Edge-trigger state for the gamepad exit button (☰); see `renderFrame`.
     private var exitButtonWasPressed = false
 
-    // Render-thread-owned whole-group manipulation. Hand gestures accumulate a yaw +
-    // uniform scale applied to the entire object cluster (about the group anchor); fed to
-    // the mesh renderer as `groupTransform` each frame.
-    private var modelYaw: Float = 0
-    private var modelScale: Float = 1
-
-    /// Optional USDZ overlay engine compositing this world's objects into the splat scene.
-    /// Nil if the pipeline failed to build.
+    /// USDZ overlay engine compositing this world's fixed-placement objects into the splat
+    /// scene. Nil if the pipeline failed to build. Objects are placed at authored positions
+    /// (see `SplatObject`) and stay put — the whole-group gesture was removed in Iteration B.
     private let meshRenderer: SplatMeshRenderer?
 
     /// Fallback model when a world ships no object list (legacy single-demo behaviour).
     private static let demoModelName = "hummingbird_anim"
 
-    init(layerRenderer: LayerRenderer, splatURL: URL, flipUpsideDown: Bool, modelNames: [String] = []) {
+    init(layerRenderer: LayerRenderer, splatURL: URL, flipUpsideDown: Bool, objects: [SplatObject] = []) {
         self.layerRenderer = layerRenderer
         self.device = layerRenderer.device
         self.commandQueue = device.makeCommandQueue()!
         self.splatURL = splatURL
         self.flipUpsideDown = flipUpsideDown
 
-        // Build the mesh overlay pipeline up front; load this world's objects off-thread.
-        // Empty list → fall back to the single bundled demo model. Use error-level logs
-        // (persisted) so failures are visible in `log show`.
+        // Build the mesh overlay pipeline up front; load this world's objects off-thread at
+        // their authored placements. Empty list → fall back to the single demo model at the
+        // centre. Use error-level logs (persisted) so failures are visible in `log show`.
         do {
             let mr = try SplatMeshRenderer(device: device,
                                            colorFormat: layerRenderer.configuration.colorFormat,
                                            depthFormat: layerRenderer.configuration.depthFormat)
             self.meshRenderer = mr
-            let names = modelNames.isEmpty ? [Self.demoModelName] : modelNames
-            for (slot, name) in names.enumerated() {
-                if let url = Bundle.main.url(forResource: name, withExtension: "usdz") {
-                    Self.log.notice("MESH: loading \(name).usdz (slot \(slot)/\(names.count))")
-                    mr.loadModel(url: url, slot: slot, count: names.count)
+            let placed = objects.isEmpty ? [SplatObject(Self.demoModelName)] : objects
+            for obj in placed {
+                if let url = Bundle.main.url(forResource: obj.name, withExtension: "usdz") {
+                    let offset = Self.translation(obj.position.x, obj.position.y, obj.position.z)
+                        * Self.rotationY(obj.yawDegrees * .pi / 180)
+                        * Self.uniformScale(obj.scale)
+                    Self.log.notice("MESH: loading \(obj.name).usdz @ \(obj.position)")
+                    mr.loadModel(url: url, offset: offset)
                 } else {
-                    Self.log.error("MESH: \(name).usdz NOT in bundle")
+                    Self.log.error("MESH: \(obj.name).usdz NOT in bundle")
                 }
             }
         } catch {
@@ -131,8 +129,8 @@ final class SplatVisionRenderer: @unchecked Sendable {
     /// Entry point used by the `CompositorLayer` closure. The render loop starts
     /// immediately (presenting cleared frames so the immersive space is never black /
     /// frozen) while the splat loads off-thread; the loop adopts it when ready.
-    static func startRendering(_ layerRenderer: LayerRenderer, splatURL: URL, flipUpsideDown: Bool, modelNames: [String] = []) {
-        let renderer = SplatVisionRenderer(layerRenderer: layerRenderer, splatURL: splatURL, flipUpsideDown: flipUpsideDown, modelNames: modelNames)
+    static func startRendering(_ layerRenderer: LayerRenderer, splatURL: URL, flipUpsideDown: Bool, objects: [SplatObject] = []) {
+        let renderer = SplatVisionRenderer(layerRenderer: layerRenderer, splatURL: splatURL, flipUpsideDown: flipUpsideDown, objects: objects)
 
         // Load off the render thread; publishes a LoadedScene when done.
         Task.detached(priority: .userInitiated) {
@@ -309,11 +307,9 @@ final class SplatVisionRenderer: @unchecked Sendable {
         let locomotion = SplatLocomotion(position: SIMD3(0, 0, 0),
                                          span: max(meanRadius, 1))
 
-        // Place the in-world USDZ object group ~1.5 m in front of the spawn. The user faces
-        // -Z (forward), so a negative-Z standoff keeps the cluster ahead and visible from the
-        // centre. Calibrated space is centred on the splat centroid.
-        let standoff: Float = 1.5
-        let modelPlacement = translation(0, 0, -standoff)
+        // Object group anchor = the world centre (identity). Each object carries its own
+        // absolute centre-relative placement (see `SplatObject`), so they encircle the spawn.
+        let modelPlacement = matrix_identity_float4x4
         return (calibration, locomotion, modelPlacement)
     }
 
@@ -399,18 +395,10 @@ final class SplatVisionRenderer: @unchecked Sendable {
         let manual = SplatManualInput.shared.snapshot()
         locomotion.tick(deltaTime: dt, gamepad: gamepad, manual: manual)
 
-        // Apply accumulated manipulation (two-hand pinch on device; on-screen debug pad in
-        // the Simulator) to the WHOLE object group: yaw + uniform scale about the group
-        // anchor, scale clamped so it can't vanish or fill the world. Rebuilt from the
-        // accumulated yaw/scale each frame so repeated deltas don't drift the matrix.
-        // TODO(phase3): per-object selection — route the gesture to a single picked object
-        // (gaze/point selection + per-model transform) instead of the whole cluster.
-        if let g = SplatModelManipulation.shared.consume() {
-            modelYaw += g.yaw
-            modelScale = min(max(modelScale * g.scaleMul, 0.3), 4.0)
-            meshRenderer?.groupTransform =
-                Self.rotationY(modelYaw) * Self.uniformScale(modelScale)
-        }
+        // Iteration B: objects are FIXED at their authored placements — the whole-group
+        // rotate/scale gesture was removed, so `groupTransform` stays identity here.
+        // TODO(phase3): per-object selection — route the two-hand gesture to a single picked
+        // object (gaze/point selection + a per-object transform) instead of the whole cluster.
 
         // Leave the world, edge-triggered: gamepad ☰ (Menu/Options). The mouse / gaze-tap
         // "Leave world" button in the controls window is the primary exit; the gamepad ☰ is
