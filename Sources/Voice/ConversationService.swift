@@ -188,7 +188,7 @@ final class ConversationService {
         return text
     }
 
-    private static func describe(_ error: Error) -> String {
+    static func describe(_ error: Error) -> String {
         switch error {
         case ConvError.missingKey: return "Add an Anthropic API key in Secrets.swift to talk with your guide."
         default: return "The guide couldn't answer just now."
@@ -222,7 +222,7 @@ final class ConversationService {
 
     // MARK: - Grounded system prompt (research direction 4 tone)
 
-    private static func makeSystemPrompt(world: World, scores: AxisScores,
+    static func makeSystemPrompt(world: World, scores: AxisScores,
                                          params: WorldParams, hopeFreeText: String) -> String {
         func lean(_ v: Double, _ low: String, _ high: String) -> String { v < 0.5 ? low : high }
         let leanings = [
