@@ -91,6 +91,17 @@ struct VisitingArtisanApp: App {
         // on launch, or visionOS resurrects a stale panel stuck on an idle session.
         .restorationBehavior(.disabled)
 
+        // visionOS only: floating controls panel for the Oops art gallery world. Shown while
+        // the RealityKit `world` ImmersiveSpace is open from the Oops flow. A single `Window`
+        // so re-entering the gallery can't stack duplicate panels.
+        Window("Art Gallery Controls", id: "oops-gallery-controls") {
+            OopsGalleryControls()
+                .environment(appState)
+        }
+        .defaultSize(width: 340, height: 220)
+        .windowResizability(.contentSize)
+        .restorationBehavior(.disabled)
+
         // visionOS only: floating AI voice companion — a vertical glass pill (X · orb · replay).
         // .plain style lets the Capsule background show through instead of the default glass rect.
         // Invisible while the splat loads (Color.clear body); pill appears once SplatSession is .ready.

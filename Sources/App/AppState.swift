@@ -27,6 +27,11 @@ final class AppState {
     var generatedSplatURL: URL?
     var generatedWorldId: String?
 
+    /// AI-generated Hero's-Journey series (current self → ideal self) shown in the art
+    /// gallery's wall frames. When non-empty, the gallery uses these instead of the bundled
+    /// beach placeholders. Set by `GeneratingScreen` before the user enters the gallery.
+    var galleryImages: [UIImage] = []
+
     /// Hidden continuous scores (the bottom layer of research direction 6) and the world
     /// parameters they map to (direction 7). Computed and stored from Phase 3 on; the
     /// display layer consumes `worldParams` from Phase 2 on.
@@ -75,6 +80,24 @@ final class AppState {
         let params = WorldMapper.map(scores)
         worldParams = params
         world = WorldCatalog.world(for: params.archetype)
+    }
+
+    /// Loads the Richards Art Gallery USDZ as the Oops flow world. No narration/title
+    /// world object is needed — the Oops flow has its own copy. Social density = 0 keeps
+    /// companion orbs out of the gallery. Light params are neutral so the USDZ's own
+    /// baked lighting reads correctly without a heavy additive directional overlay.
+    func loadGalleryWorld() {
+        worldParams = WorldParams(
+            archetype: .artGallery,
+            lightIntensity: 300,
+            colorTemperature: 5500,
+            saturation: 1.0,
+            socialDensity: 0,
+            openness: 0.5,
+            biophilicDensity: 0.5,
+            focal: .ownPath
+        )
+        world = nil
     }
 
     /// DEV ONLY — preload a neutral default world so the dev menu's "World" option

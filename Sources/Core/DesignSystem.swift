@@ -115,7 +115,10 @@ struct ZoomableContent<Content: View>: View {
     var body: some View {
         content
             .scaleEffect(scale)
-            .gesture(
+            // `simultaneousGesture` (not `gesture`) so the two-hand magnify never swallows
+            // a child ScrollView's scroll drag — otherwise scrollable screens (e.g. the
+            // quiz) can't scroll while this wrapper is in place.
+            .simultaneousGesture(
                 MagnifyGesture()
                     .onChanged { gesture = $0.magnification }
                     .onEnded { _ in committed = scale; gesture = 1 }

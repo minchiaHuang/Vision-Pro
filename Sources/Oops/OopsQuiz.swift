@@ -1,7 +1,6 @@
 import SwiftUI
-import AVFAudio
 
-/// 05 · Quiz — a scrollable glass window of 6 reflective questions, a back button that
+/// 05 · Quiz — a scrollable glass window of 4 single-select questions, a back button that
 /// raises the "Are you sure?" dialog, and a Finish CTA. Answers are front-end only.
 struct QuizScreen: View {
     @Binding var answers: OopsAnswers
@@ -9,18 +8,25 @@ struct QuizScreen: View {
     let onBack: () -> Void
 
     @State private var confirm = false
-    @State private var dictation = QuizDictation()
 
     var body: some View {
         ZStack {
             OopsPassthrough(dim: true)
 
+            // Fixed-size glass card. The dev-menu window has no defaultSize on visionOS,
+            // so it is freely resizable and geo.size.height can be far larger than the
+            // visible viewport. Centering a proportionally-sized card inside that large
+            // layout space pushes the card's bottom edge below the viewport. Using a fixed
+            // 920×530 pt frame side-steps the dependency on window height entirely:
+            // the card is always small enough to leave comfortable margins (≥95 pt top/bottom
+            // in the 720 pt visionOS default window, ≥150 pt on iPad landscape), and the
+            // ZStack below centers it without any special geometry tricks.
             VStack(spacing: 0) {
                 header
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 44) {
-                        ForEach(OopsContent.questions) { q in
-                            questionView(q)
+                    VStack(alignment: .leading, spacing: 56) {
+                        ForEach(Array(OopsContent.questions.enumerated()), id: \.element.id) { index, q in
+                            questionView(number: index + 1, q)
                         }
                         HStack {
                             Spacer()
@@ -34,15 +40,13 @@ struct QuizScreen: View {
                     .padding(.bottom, 60)
                 }
             }
-            .frame(maxWidth: 1180, maxHeight: 820)
+            .frame(width: 920, height: 530)
             .oopsWindow()
-            .padding(.horizontal, 40)
-            .padding(.vertical, 50)
 
             if confirm {
                 OopsDialog(
                     title: "Are you sure?",
-                    message: "Your progress will be lost forever and you'll need to reenter all your answers if you start over.",
+                    message: "Your progress will be lost forever and you will need to re-enter all answers if you re-enter.",
                     confirmTitle: "Yes",
                     onConfirm: { confirm = false; onBack() },
                     onCancel: { confirm = false })
@@ -50,18 +54,13 @@ struct QuizScreen: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: confirm)
-        // Live dictation streams into Q1 while the mic is active.
-        .onChange(of: dictation.transcript) { _, newValue in
-            if dictation.isListening { answers.q1 = newValue }
-        }
-        .onDisappear { dictation.stop() }
     }
 
     private var header: some View {
         ZStack(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Quiz").oopsTitle(34)
-                Text("Take a few minutes to reflect. Your answers will shape the world that's built for you.")
+                Text("Take a few minutes to answer these questions. Your answers will shape the world that's built for you")
                     .oopsSub(20)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -82,127 +81,52 @@ struct QuizScreen: View {
         }
     }
 
+    /// One numbered question with its four single-select options laid out 2×2.
     @ViewBuilder
-    private func questionView(_ q: OopsContent.Question) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(q.label)
-                .font(.system(size: 24, weight: .regular))
-                .foregroundStyle(OopsGlass.label1)
+    private func questionView(number: Int, _ q: OopsContent.Question) -> some View {
+        VStack(alignment: .leading, spacing: 22) {
+            Text("\(number). \(q.label)")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
 
-            switch q.kind {
-            case .text:
-                VStack(alignment: .leading, spacing: 8) {
-                    ZStack(alignment: .trailing) {
-                        OopsField(text: bindingFor(q.id), placeholder: q.placeholder, multiline: false)
-                        if q.hasMic {
-                            Button { Task { await dictation.toggle() } } label: {
-                                Image(systemName: dictation.isListening ? "mic.fill" : "mic")
-                                    .font(.system(size: 26))
-                                    .foregroundStyle(dictation.isListening
-                                                     ? Color(red: 1.0, green: 0.36, blue: 0.36)
-                                                     : OopsGlass.label2)
-                                    .frame(width: 44, height: 44)
-                                    .contentShape(Circle())
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.trailing, 18)
-                            .accessibilityLabel(dictation.isListening ? "Stop dictation" : "Dictate answer")
-                        }
+            LazyVGrid(
+                columns: [GridItem(.flexible(), spacing: 24),
+                          GridItem(.flexible(), spacing: 24)],
+                spacing: 18
+            ) {
+                ForEach(Array(q.options.enumerated()), id: \.offset) { idx, option in
+                    optionButton(option, selected: answers.quiz[q.id] == idx) {
+                        answers.quiz[q.id] = idx
                     }
-                    if q.hasMic {
-                        if let err = dictation.error {
-                            Text(err)
-                                .font(.system(size: 15))
-                                .foregroundStyle(.yellow.opacity(0.9))
-                        } else if dictation.isListening {
-                            Text("Listening… tap the mic to stop")
-                                .font(.system(size: 15))
-                                .foregroundStyle(OopsGlass.label2)
-                        }
-                    }
-                }
-            case .area:
-                OopsField(text: bindingFor(q.id), placeholder: q.placeholder, multiline: true)
-            case .slider:
-                VStack(spacing: 6) {
-                    Slider(value: Binding(
-                        get: { Double(answers.q2) },
-                        set: { answers.q2 = Int($0.rounded()) }), in: 0...10, step: 1)
-                    .tint(.white)
-                    HStack {
-                        Text("0"); Spacer()
-                        Text("\(answers.q2)").fontWeight(.medium)
-                        Spacer(); Text("10")
-                    }
-                    .font(.system(size: 20))
-                    .foregroundStyle(.white)
                 }
             }
         }
     }
 
-    private func bindingFor(_ id: String) -> Binding<String> {
-        switch id {
-        case "q1": return $answers.q1
-        case "q3": return $answers.q3
-        case "q4": return $answers.q4
-        case "q5": return $answers.q5
-        case "q6": return $answers.q6
-        default:   return .constant("")
+    /// A frosted glass pill option. Selected = brighter fill and a full white ring.
+    private func optionButton(_ text: String, selected: Bool,
+                              action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(text)
+                .font(.system(size: 20, weight: .medium))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 60)
+                .padding(.horizontal, 22)
+                .background(.ultraThinMaterial)
+                .background(Color.white.opacity(selected ? 0.30 : 0.10))
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule().strokeBorder(.white.opacity(selected ? 0.95 : 0.32),
+                                           lineWidth: selected ? 2.5 : 1.5))
+                .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
         }
-    }
-}
-
-// MARK: - Dictation
-
-/// Push-to-talk dictation for the quiz, wrapping the shared `SpeechRecognizer`. Owns a
-/// record-capable audio session for the duration of a dictation turn (mirrors
-/// `ConversationService.activateRecordSession()`); the live `transcript` is streamed
-/// into the bound answer by the view.
-@MainActor
-@Observable
-final class QuizDictation {
-    private let stt = SpeechRecognizer()
-    var error: String?
-
-    var isListening: Bool { stt.isListening }
-    var transcript: String { stt.transcript }
-
-    /// Tap the mic: start dictating, or stop if already listening.
-    func toggle() async {
-        if stt.isListening { stop(); return }
-        error = nil
-        guard await stt.requestAuthorization() else {
-            error = "Microphone or speech permission is needed to dictate."
-            return
-        }
-        do {
-            try activateRecordSession()
-            try stt.start()
-        } catch {
-            self.error = "Could not start the microphone."
-        }
-    }
-
-    func stop() {
-        stt.stop()
-        deactivateSession()
-    }
-
-    private func activateRecordSession() throws {
-        #if !os(macOS)
-        let s = AVAudioSession.sharedInstance()
-        try s.setCategory(.playAndRecord, mode: .spokenAudio,
-                          options: [.duckOthers, .defaultToSpeaker, .allowBluetoothHFP])
-        try s.setActive(true)
-        #endif
-    }
-
-    private func deactivateSession() {
-        #if !os(macOS)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        #endif
+        .buttonStyle(.plain)
+        .animation(.easeOut(duration: 0.18), value: selected)
     }
 }
 

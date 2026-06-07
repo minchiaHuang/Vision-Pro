@@ -2,17 +2,15 @@ import SwiftUI
 
 // MARK: - Generating interstitial
 
-/// Spinner + "Building your world…" with staged hint copy, then advances to the preview.
+/// Spinner + "Building your world…" while the Hero's-Journey image series is generated, then
+/// advances to the preview. Generated images are stored on `AppState` for the gallery to show.
 struct GeneratingScreen: View {
+    @Environment(AppState.self) private var appState
+    /// The user's "ideal self" goal that drives the generated series.
+    let goal: String
     let onDone: () -> Void
 
-    /// Staged copy shown while "generating". Each stage fades into the next.
-    private let stages = [
-        "Reading your answers…",
-        "Shaping the light and the space…",
-        "Adding the finishing touches…",
-    ]
-    @State private var stage = 0
+    @State private var statusText = "Reading your answer…"
 
     var body: some View {
         ZStack {
@@ -22,26 +20,28 @@ struct GeneratingScreen: View {
                 Text("Building your world…")
                     .font(.system(size: 30, weight: .semibold))
                     .foregroundStyle(.white)
-                Text(stages[stage])
+                Text(statusText)
                     .oopsSub(20)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 620)
-                    .id(stage)                       // re-identity each stage so it crossfades
+                    .id(statusText)                  // re-identity each stage so it crossfades
                     .transition(.opacity)
             }
-            .animation(.easeInOut(duration: 0.5), value: stage)
+            .animation(.easeInOut(duration: 0.5), value: statusText)
         }
         .task { await runGeneration() }
     }
 
-    /// Placeholder generation step: cycles the staged copy, then advances. When a real
-    /// generation backend lands, replace the per-stage sleeps with the actual work —
-    /// the `onDone()` completion contract stays the same.
+    /// Generates the 5-image journey from `goal`, stores it on `AppState`, then advances. On
+    /// failure (or missing key) the result is empty and the gallery falls back to its bundled
+    /// placeholders — the flow always completes so the user is never trapped.
     private func runGeneration() async {
-        for i in stages.indices {
-            withAnimation { stage = i }
-            try? await Task.sleep(for: .seconds(1.1))
+        let images = await OpenAIImageService.generateJourney(goal: goal) { done, total in
+            statusText = done >= total
+                ? "Adding the finishing touches…"
+                : "Painting scene \(done + 1) of \(total)…"
         }
+        appState.galleryImages = images
         onDone()
     }
 }
@@ -107,7 +107,8 @@ struct PreviewScreen: View {
 // MARK: - Previews (Generating + PreviewScreen — no AppState dependency)
 
 #Preview("Generating") {
-    GeneratingScreen(onDone: {})
+    GeneratingScreen(goal: "I want to be a world class ballerina", onDone: {})
+        .environment(AppState())
         .preferredColorScheme(.dark)
 }
 
@@ -118,10 +119,10 @@ struct PreviewScreen: View {
 
 // MARK: - 09 · World (hosts the existing 3D world)
 
-/// iPad: "Enter Now" enters the existing 3D `WorldView` (parametric USDZ + voice
-/// companion). A glass close control overlays the top-left to leave to the reflection
-/// flow. (On visionOS the world is the fully-immersive 6DoF splat space, opened directly
-/// from `OopsFlowView.enterWorld` — this container is not used there.)
+/// iPad: "Enter Now" enters the Richards Art Gallery as a first-person USDZ world
+/// (ParametricWorldView). A glass close control overlays the top-left to leave to the
+/// reflection flow. (On visionOS the gallery opens as a fully-immersive RealityKit
+/// ImmersiveSpace via `OopsFlowView.enterWorld` — this container is not used there.)
 struct OopsWorldContainer: View {
     let onExit: () -> Void
 
@@ -248,6 +249,51 @@ struct OopsWorldControls: View {
             openWindow(id: "dev-menu")
             dismissWindow(id: "oops-world-controls")
             dismissWindow(id: "oops-voice-orb")
+        }
+    }
+}
+
+// MARK: - Gallery controls (visionOS floating panel)
+
+/// Floating control panel shown while the Richards Art Gallery ImmersiveSpace is open.
+/// Unlike `OopsWorldControls` (which tracks `SplatSession` loading phases), the gallery
+/// world is a standard RealityKit `Entity` load — no splat pipeline, no progress phases.
+/// This panel therefore shows only the movement pad and an exit button immediately.
+struct OopsGalleryControls: View {
+    @Environment(AppState.self) private var appState
+    @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
+    @State private var isExiting = false
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Text("Richards Art Gallery")
+                .font(.headline)
+            Text("Walk to explore · Use gamepad or arrows to move")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            SplatMovePad()
+            Button("Leave gallery", action: performExit)
+                .buttonStyle(.borderedProminent)
+                .disabled(isExiting)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func performExit() {
+        guard !isExiting else { return }
+        isExiting = true
+        Task {
+            await dismissImmersiveSpace()
+            appState.worldParams = nil
+            // Return to the Oops reflection screen (same pattern as OopsWorldControls).
+            appState.oopsResumeScreen = .reflection
+            appState.devActiveFeature = .oops
+            openWindow(id: "dev-menu")
+            dismissWindow(id: "oops-gallery-controls")
         }
     }
 }

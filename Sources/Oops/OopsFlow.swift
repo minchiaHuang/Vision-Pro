@@ -7,15 +7,10 @@ enum OopsScreen {
 }
 
 /// Held-in-memory answers for the quiz + post-world reflection (front-end only — never
-/// scored or stored in this pass). String for text/area questions, Int 0...10 for the
-/// single slider; `r1`–`r5` hold the reflection free-text answers.
+/// scored or stored in this pass). `quiz` maps each quiz question id to the selected
+/// option index; `r1`–`r5` hold the reflection free-text answers.
 struct OopsAnswers {
-    var q1 = "To find my passion"
-    var q3 = ""
-    var q4 = ""
-    var q5 = ""
-    var q6 = ""
-    var q2 = 6   // slider
+    var quiz: [String: Int] = [:]   // quiz question id -> selected option index
     var r1 = ""
     var r2 = ""
     var r3 = ""
@@ -83,21 +78,12 @@ struct OopsFlowView: View {
         .preferredColorScheme(.dark)
         .statusBarHidden()
         .onAppear {
-            // Returning from the immersive splat world recreates this window; resume at
+            // Returning from the gallery world recreates this window; resume at
             // the requested screen (reflection) rather than restarting at .opening.
             if let resume = appState.oopsResumeScreen {
                 screen = resume
                 appState.oopsResumeScreen = nil
             }
-            #if os(visionOS)
-            // Pre-decode vibrant_loft in the background so the cache is ready by the
-            // time the user finishes the quiz and taps Enter World.
-            Task.detached(priority: .background) {
-                await SplatCache.warmIfNeeded(bundleResource: "vibrant_loft_art_studio",
-                                              withExtension: "spz",
-                                              flipUpsideDown: true)
-            }
-            #endif
         }
         #if os(visionOS)
         // Let the cover background go clear so the transparent `OopsPassthrough`
@@ -124,11 +110,12 @@ struct OopsFlowView: View {
             DeclarationScreen(
                 label: "04 Privacy Preferences", title: "Privacy Preferences",
                 items: OopsContent.privacy, cta: "Start",
-                checks: $privacy, onCta: { go(.quiz) })
+                checks: $privacy, requireAll: false, onCta: { go(.quiz) })
         case .quiz:
             QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
         case .generating:
-            GeneratingScreen { go(.preview) }
+            // TODO: wire `goal` from a free-text quiz answer once the dynamic quiz lands.
+            GeneratingScreen(goal: "I want to be a world class ballerina") { go(.preview) }
         case .preview:
             PreviewScreen(onEnter: { enterWorld() }, onRetry: { go(.quiz) })
         case .world:
@@ -138,27 +125,23 @@ struct OopsFlowView: View {
         }
     }
 
-    /// Enters the walkable 3D world.
-    /// - visionOS: opens the 6DoF Gaussian-splat immersive space directly (bundled
-    ///   "Vibrant Loft Art Studio"), then swaps the dev-menu window for the small
-    ///   `oops-world-controls` window so full immersion isn't cluttered by a floating
-    ///   panel. Leaving that window reopens the dev-menu at the reflection screen.
-    /// - iPad: prepares a neutral default world and shows the in-cover `WorldView`.
+    /// Enters the Richards Art Gallery.
+    /// - visionOS: sets worldParams to the gallery archetype, opens the shared RealityKit
+    ///   `world` ImmersiveSpace (head tracking + gamepad locomotion), and shows the small
+    ///   `oops-gallery-controls` floating panel. Leaving that panel reopens the dev-menu
+    ///   at the reflection screen.
+    /// - iPad: loads gallery worldParams and shows the in-cover `WorldView` (ParametricWorldView).
     private func enterWorld() {
         #if os(visionOS)
         Task {
-            guard let url = Bundle.main.url(forResource: "vibrant_loft_art_studio",
-                                            withExtension: "spz") else { return }
-            SplatManualInput.shared.reset()
-            if case .opened = await openImmersiveSpace(id: "splat",
-                                                       value: SplatEntry(url: url, flipUpsideDown: true)) {
-                openWindow(id: "oops-world-controls")
-                openWindow(id: "oops-voice-orb")
+            appState.loadGalleryWorld()
+            if case .opened = await openImmersiveSpace(id: "world") {
+                openWindow(id: "oops-gallery-controls")
                 dismissWindow(id: "dev-menu")
             }
         }
         #else
-        appState.loadDefaultWorld()
+        appState.loadGalleryWorld()
         go(.world)
         #endif
     }

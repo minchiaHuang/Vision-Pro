@@ -83,15 +83,18 @@ enum WorldArchetype {
     case openNature     // Open nature       → Free_Low_Poly_Forest
     case cozyCommunal   // Cozy communal     → Cozy_living_room_baked
     case solitaryPath   // Solitary / path   → FREE_Dirt_Road_Through_Forest
+    case artGallery     // Richards Art Gallery (Oops flow) → bundled USDZ
 
-    /// Archetype USDZ resource name (no extension). NOTE: these USDZ are no longer
-    /// bundled (test-only; the parametric full-world path degrades when absent — see
-    /// `ParametricWorldBuilder.build` returning nil). Kept for the test flow's mapping.
+    /// Archetype USDZ resource name (no extension). NOTE: the three original archetypes
+    /// are no longer bundled (test-only; the parametric full-world path degrades when
+    /// absent — see `ParametricWorldBuilder.build` returning nil). `artGallery` IS
+    /// bundled (SpikeAssets) and used by the Oops flow.
     var usdzName: String {
         switch self {
         case .openNature:   return "Free_Low_Poly_Forest"
         case .cozyCommunal: return "Cozy_living_room_baked"
         case .solitaryPath: return "FREE_Dirt_Road_Through_Forest"
+        case .artGallery:   return "Richards_Art_Gallery_-_Audio_Tour"
         }
     }
 }
