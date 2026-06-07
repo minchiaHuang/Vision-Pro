@@ -8,10 +8,7 @@ import SwiftUI
 /// One testable feature reachable from the dev menu.
 enum DevFeature: String, Identifiable, CaseIterable {
     case oops
-    case full
-    case world
     case voice
-    case usdz
     case splat
 
     var id: String { rawValue }
@@ -19,10 +16,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
     var title: String {
         switch self {
         case .oops:  return "Oops Flow"
-        case .full:  return "Full Flow"
-        case .world: return "World — Enter Directly"
         case .voice: return "Voice — Speech Test"
-        case .usdz:  return "USDZ — Model Viewer"
         case .splat: return "Splat — 6DoF Walkthrough"
         }
     }
@@ -30,10 +24,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
     var subtitle: String {
         switch self {
         case .oops:  return "visionOS glass · onboarding → quiz → world"
-        case .full:  return "splash → quiz → world"
-        case .world: return "Default world, skips the quiz"
         case .voice: return "Tap the orb to talk · ASR / LLM / TTS"
-        case .usdz:  return "RealityKit USDZ, first person"
         case .splat: return "Generate or open a World Labs splat"
         }
     }
@@ -41,10 +32,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
     var systemImage: String {
         switch self {
         case .oops:  return "rectangle.stack.badge.play"
-        case .full:  return "sparkles"
-        case .world: return "globe.asia.australia"
         case .voice: return "waveform"
-        case .usdz:  return "cube"
         case .splat: return "point.3.connected.trianglepath.dotted"
         }
     }
@@ -68,59 +56,83 @@ enum DevFeature: String, Identifiable, CaseIterable {
 /// The launcher screen: a vertical list of feature buttons.
 struct DevMenuView: View {
     @Environment(AppState.self) private var appState
-    @State private var active: DevFeature?
+
+    /// Presented feature lives in `AppState` (not local `@State`) so the Oops splat
+    /// world can dismiss + reopen this window without losing the user's place.
+    private var activeBinding: Binding<DevFeature?> {
+        Binding(get: { appState.devActiveFeature },
+                set: { appState.devActiveFeature = $0 })
+    }
 
     var body: some View {
         ZStack {
+            // Hide the menu (and its warm background) while a feature is presented full
+            // screen, so transparent features — the Oops passthrough screens — reveal the
+            // real room behind, not this cream background.
+            if appState.devActiveFeature == nil {
             WarmBackground()
 
-            VStack(spacing: 24) {
-                Eyebrow("Dev Menu")
+            ZoomableContent {
+                VStack(spacing: 24) {
+                    Eyebrow("Dev Menu")
 
-                Text("Pick a feature to test")
-                    .font(.title.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    Text("Pick a feature to test")
+                        .font(.system(size: 34, weight: .semibold))
+                        .foregroundStyle(.black)
 
-                VStack(spacing: 14) {
-                    ForEach(DevFeature.allCases) { feature in
-                        Button { active = feature } label: {
-                            HStack(spacing: 16) {
-                                Image(systemName: feature.systemImage)
-                                    .font(.title3)
-                                    .frame(width: 32)
-                                    .foregroundStyle(VATheme.amber)
+                    VStack(spacing: 14) {
+                        ForEach(DevFeature.allCases) { feature in
+                            Button { appState.devActiveFeature = feature } label: {
+                                HStack(spacing: 16) {
+                                    Image(systemName: feature.systemImage)
+                                        .font(.title3)
+                                        .frame(width: 32)
+                                        .foregroundStyle(VATheme.amber)
 
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(feature.title)
-                                        .font(.headline)
-                                        .foregroundStyle(.primary)
-                                    Text(feature.subtitle)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(feature.title)
+                                            .font(.system(size: 20, weight: .semibold))
+                                            .foregroundStyle(.black)
+                                        Text(feature.subtitle)
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(.black.opacity(0.5))
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.footnote)
+                                        .foregroundStyle(.black.opacity(0.4))
                                 }
-
-                                Spacer()
-
-                                Image(systemName: "chevron.right")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
+                                .padding(.vertical, 14)
+                                .padding(.horizontal, 18)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                // Explicit light fill on visionOS so the cards read lighter
+                                // than the cream (matching iPad), instead of being darkened
+                                // by glass vibrancy over the passthrough room.
+                                #if os(visionOS)
+                                .background(Color.white.opacity(0.5), in: RoundedRectangle(cornerRadius: 16))
+                                #else
+                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                                #endif
                             }
-                            .padding(.vertical, 14)
-                            .padding(.horizontal, 18)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
+                    .frame(maxWidth: 480)
                 }
-                .frame(maxWidth: 480)
+                .padding(40)
             }
-            .padding(40)
+            }
         }
-        .fullScreenCover(item: $active) { feature in
-            DevFeatureContainer(feature: feature) { active = nil }
+        .fullScreenCover(item: activeBinding) { feature in
+            DevFeatureContainer(feature: feature) { appState.devActiveFeature = nil }
                 .environment(appState)
         }
+        // Warm golden look (matches the "Weaving" loading screen): force light so
+        // `WarmBackground` uses its cream gradient + amber glow and text/material
+        // contrast flip to suit it. The Oops flow re-asserts `.dark` for its glass.
+        .preferredColorScheme(.light)
     }
 }
 
@@ -144,6 +156,7 @@ private struct DevFeatureContainer: View {
                         .padding(12)
                         .background(.ultraThinMaterial, in: Circle())
                 }
+                .buttonStyle(.plain)
                 .padding(.leading, 16)
                 .padding(.top, 16)
                 .accessibilityLabel("Back to menu")
@@ -157,15 +170,8 @@ private struct DevFeatureContainer: View {
         case .oops:
             // The visionOS glass prototype flow (own coordinator + screen state).
             OopsFlowView()
-        case .full:
-            // Fresh start each time the full flow is opened.
-            RootView().onAppear { appState.restart() }
-        case .world:
-            WorldView().onAppear { appState.loadDefaultWorldForTesting() }
         case .voice:
             VoiceTestView()
-        case .usdz:
-            USDZTestView()
         case .splat:
             SplatLibraryView(onClose: onClose)
         }

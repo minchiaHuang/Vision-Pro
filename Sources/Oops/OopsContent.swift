@@ -52,6 +52,18 @@ enum OopsContent {
               kind: .text, placeholder: "Stillness, warmth, possibility…"),
     ]
 
+    // Reflection copy (frames 17–21) — shown one question per screen after the user
+    // steps out of the 3D world. Free-text only; front-end, never stored or scored.
+    static let reflectionEyebrow = "YOUR REFLECTION"
+    static let reflectionPlaceholder = "Write your thoughts here…"
+    static let reflectionQuestions: [String] = [
+        "Walking out of that world, what was the first feeling that hit you?",
+        "You came here for stillness. Did you find it in there?",
+        "Was there a moment inside that felt completely, quietly right — like “yes this is me”? What was happening in that moment?",
+        "Was there anything that felt off, or not quite you? Even something small.",
+        "If there’s one thing you could change for this world we built for you, what would it be?",
+    ]
+
     // Preview screen copy.
     static let previewTitle = "Quiet Meadow"
     static let previewBody = "This is what you needed. Not loud, not busy. Just stillness that actually feels like relief. Somewhere between the grass and the golden sky, time slows down and the weight of everything lifts, just a little. This is the quiet you've been carrying around, waiting to find."

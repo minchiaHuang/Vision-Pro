@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 // ⚠️ DEV ONLY — the dev-menu entry point for the splat feature. Lets you generate a
 // new World Labs world from a prompt (walking straight into the resulting splat) and
@@ -7,18 +8,33 @@ import SwiftUI
 
 // MARK: - Local store
 
-/// A World Labs world that was generated on this device. Persisted so the dev menu can
-/// reopen its walkable splat without regenerating (which costs ~5 min + paid credits).
+/// A walkable splat the dev menu can reopen without redoing the work to get it: either
+/// a World Labs world generated on this device (its CDN `.spz`), or a `.spz` imported
+/// from the Files app (copied into `Documents/ImportedSplats`). Persisted locally.
 struct SavedSplatWorld: Codable, Identifiable {
-    let id: String        // world_id from the API
-    let name: String      // the prompt it was generated from (truncated for display)
-    let spzURL: URL       // public CDN .spz URL
+    let id: String        // world_id (generated) or filename (imported)
+    let name: String      // the prompt / the file's display name
     let createdAt: Date
+    /// marble/raw exports load upside-down; remembered so reopening keeps the fix.
+    var flipUpsideDown: Bool = false
+    /// World Labs generated worlds: the public CDN `.spz` URL.
+    var remoteURL: URL? = nil
+    /// Imported worlds: filename under `SplatImporter.importedDir()` (stored relative
+    /// so the sandbox path changing between launches doesn't break the reference).
+    var localFilename: String? = nil
+
+    /// The URL to hand the renderer: rebuilds the local path from Documents each time,
+    /// else the remote CDN URL.
+    func resolvedURL() -> URL? {
+        if let localFilename { return SplatImporter.importedDir().appendingPathComponent(localFilename) }
+        return remoteURL
+    }
 }
 
-/// UserDefaults-backed list of generated worlds (dev-only convenience).
+/// UserDefaults-backed list of generated + imported worlds (dev-only convenience).
 enum SplatLibrary {
-    private static let key = "splat.library.v1"
+    // v2: schema gained flip / remoteURL / localFilename (old v1 data is ignored).
+    private static let key = "splat.library.v2"
 
     static func load() -> [SavedSplatWorld] {
         guard let data = UserDefaults.standard.data(forKey: key),
@@ -60,13 +76,27 @@ struct SeedSplatWorld: Identifiable {
     let id: String
     let name: String
     let source: SeedSource
+    /// Raw marble exports load upside-down and need a 180° flip; the bundled sample
+    /// is already upright. Defaults to upright so existing entries are unaffected.
+    var flipUpsideDown: Bool = false
+}
+
+/// What the splat immersive space needs to render a world: where the `.spz` is and
+/// whether it must be flipped upright. Passed as the `"splat"` space's value (visionOS).
+struct SplatEntry: Codable, Hashable {
+    let url: URL
+    var flipUpsideDown: Bool = false
 }
 
 enum SplatSeeds {
+    // V3 demo: only the bundled "Vibrant Loft Art Studio" marble world ships. The
+    // sample and other marble exports were removed from the bundle to slim the app.
+    // Raw marble export — loads upside-down, needs a 180° flip.
     static let all: [SeedSplatWorld] = [
-        SeedSplatWorld(id: "world_a236ea24",
-                       name: "Sample world (a236ea24)",
-                       source: .bundled(resource: SplatSpikeDebug.bundledSplat))
+        SeedSplatWorld(id: "vibrant_loft_art_studio",
+                       name: "Vibrant Loft Art Studio",
+                       source: .bundled(resource: "vibrant_loft_art_studio"),
+                       flipUpsideDown: true)
     ]
 }
 
@@ -182,8 +212,8 @@ struct SplatLibraryView: View {
         }
         let world = SavedSplatWorld(id: worldId,
                                     name: prompt.trimmingCharacters(in: .whitespacesAndNewlines),
-                                    spzURL: spzURL,
-                                    createdAt: Date())
+                                    createdAt: Date(),
+                                    remoteURL: spzURL)
         SplatLibrary.add(world)
         saved = SplatLibrary.load()
         route = .remote(spzURL)
@@ -208,7 +238,9 @@ struct SplatLibraryView: View {
             }
 
             ForEach(saved) { world in
-                Button { route = .remote(world.spzURL) } label: {
+                Button {
+                    if let url = world.resolvedURL() { route = .remote(url) }
+                } label: {
                     worldRow(title: world.name.isEmpty ? world.id : world.name,
                              subtitle: world.id)
                 }
@@ -276,17 +308,24 @@ struct SplatLibraryView: View {
     let onClose: () -> Void
 
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
 
     @State private var service = WorldLabsService()
     @State private var prompt = "A cozy artisan's workshop with wooden workbenches, hanging tools, and warm afternoon light through a window"
     @State private var saved: [SavedSplatWorld] = SplatLibrary.load()
     /// Shown when a generation finished without a splat URL, or a bundled seed is missing.
     @State private var errorMessage: String?
+    /// Files importer state. `flipImported` defaults on because marble exports load
+    /// upside-down; turn it off for an already-upright `.spz`.
+    @State private var showImporter = false
+    @State private var flipImported = true
 
     var body: some View {
         NavigationStack {
             List {
                 generateSection
+                importSection
                 historySection
             }
             .navigationTitle("Splat")
@@ -301,6 +340,46 @@ struct SplatLibraryView: View {
             .onChange(of: service.status) { _, newValue in
                 if case .ready = newValue { handleGenerated() }
             }
+            .fileImporter(isPresented: $showImporter,
+                          allowedContentTypes: [UTType(filenameExtension: "spz") ?? .data],
+                          allowsMultipleSelection: false) { result in
+                handleImport(result)
+            }
+        }
+    }
+
+    // MARK: Load from Files
+
+    private var importSection: some View {
+        Section("Load from Files") {
+            Toggle("Flip upright (marble export)", isOn: $flipImported)
+            Button("Load .spz from Files…") { showImporter = true }
+        }
+    }
+
+    /// Copies a picked `.spz` into durable storage, remembers it, and walks straight in.
+    private func handleImport(_ result: Result<[URL], Error>) {
+        errorMessage = nil
+        switch result {
+        case .success(let urls):
+            guard let picked = urls.first else { return }
+            do {
+                let filename = try SplatImporter.storeImported(picked)
+                let world = SavedSplatWorld(id: filename,
+                                            name: picked.deletingPathExtension().lastPathComponent,
+                                            createdAt: Date(),
+                                            flipUpsideDown: flipImported,
+                                            localFilename: filename)
+                SplatLibrary.add(world)
+                saved = SplatLibrary.load()
+                if let url = world.resolvedURL() {
+                    enter(SplatEntry(url: url, flipUpsideDown: world.flipUpsideDown))
+                }
+            } catch {
+                errorMessage = "Import failed: \(error.localizedDescription)"
+            }
+        case .failure(let error):
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -366,11 +445,11 @@ struct SplatLibraryView: View {
         }
         let world = SavedSplatWorld(id: worldId,
                                     name: prompt.trimmingCharacters(in: .whitespacesAndNewlines),
-                                    spzURL: spzURL,
-                                    createdAt: Date())
+                                    createdAt: Date(),
+                                    remoteURL: spzURL)
         SplatLibrary.add(world)
         saved = SplatLibrary.load()
-        enter(spzURL)
+        enter(SplatEntry(url: spzURL))
     }
 
     private var isBusy: Bool {
@@ -386,13 +465,19 @@ struct SplatLibraryView: View {
     private var historySection: some View {
         Section("Previously generated") {
             ForEach(SplatSeeds.all) { seed in
-                Button { open(seed.source) } label: {
+                Button { open(seed) } label: {
                     worldRow(title: seed.name, subtitle: "Sample · \(seed.id)")
                 }
             }
 
             ForEach(saved) { world in
-                Button { enter(world.spzURL) } label: {
+                Button {
+                    if let url = world.resolvedURL() {
+                        enter(SplatEntry(url: url, flipUpsideDown: world.flipUpsideDown))
+                    } else {
+                        errorMessage = "World file is missing."
+                    }
+                } label: {
                     worldRow(title: world.name.isEmpty ? world.id : world.name,
                              subtitle: world.id)
                 }
@@ -421,26 +506,36 @@ struct SplatLibraryView: View {
 
     // MARK: Enter the immersive splat space
 
-    /// Resolves a seed's source to a URL and opens the walkable world. Bundled seeds
-    /// resolve to their packaged `.spz`; remote seeds pass their CDN URL straight through.
-    private func open(_ source: SeedSource) {
-        switch source {
+    /// Resolves a seed to a `SplatEntry` (URL + upright flip) and opens the walkable
+    /// world. Bundled seeds resolve to their packaged `.spz`; remote seeds pass their
+    /// CDN URL straight through.
+    private func open(_ seed: SeedSplatWorld) {
+        switch seed.source {
         case .bundled(let resource):
             guard let url = Bundle.main.url(forResource: resource, withExtension: "spz") else {
                 errorMessage = "Bundled \(resource).spz not found"
                 return
             }
-            enter(url)
+            enter(SplatEntry(url: url, flipUpsideDown: seed.flipUpsideDown))
         case .remote(let url):
-            enter(url)
+            enter(SplatEntry(url: url, flipUpsideDown: seed.flipUpsideDown))
         }
     }
 
     /// Opens the CompositorServices full-immersion splat space. `SplatVisionRenderer`
     /// downloads + caches remote URLs, so both bundled files and CDN URLs work here.
-    private func enter(_ url: URL) {
+    /// On success, show the floating exit-controls window and hide the dev-menu window
+    /// so only the world remains; the exit button reverses both.
+    private func enter(_ entry: SplatEntry) {
         errorMessage = nil
-        Task { await openImmersiveSpace(id: "splat", value: url) }
+        Task {
+            if case .opened = await openImmersiveSpace(id: "splat", value: entry) {
+                openWindow(id: "splat-controls")
+                dismissWindow(id: "dev-menu")
+            } else {
+                errorMessage = "Couldn't open the world."
+            }
+        }
     }
 }
 

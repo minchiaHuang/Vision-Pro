@@ -22,6 +22,8 @@ enum SplatSpikeDebug {
 /// and the visionOS `SplatVisionRenderer`.
 enum SplatDownloader {
     static func fetch(_ remote: URL) async throws -> URL {
+        // Already a local file (e.g. an imported .spz) — hand it back as-is.
+        if remote.isFileURL { return remote }
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         let dest = caches.appendingPathComponent("worldlabs-\(remote.lastPathComponent)")
         if FileManager.default.fileExists(atPath: dest.path) { return dest }
@@ -35,6 +37,37 @@ enum SplatDownloader {
     }
 }
 
+/// Copies user-picked `.spz` files (from the Files app, via `fileImporter`) into a
+/// durable app folder so they survive restarts and outlive the picker's security scope.
+/// Platform-agnostic (Foundation only).
+enum SplatImporter {
+    /// Durable home for imported splats, under Documents (caches can be evicted).
+    /// Created on demand. Filenames are stored relative to this so the sandbox path
+    /// changing between launches doesn't break saved references.
+    static func importedDir() -> URL {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let dir = docs.appendingPathComponent("ImportedSplats", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    /// Copies a security-scoped picked file into `importedDir`, overwriting any file
+    /// of the same name, and returns the stored filename. The scope is accessed only
+    /// for the duration of the copy.
+    static func storeImported(_ picked: URL) throws -> String {
+        let scoped = picked.startAccessingSecurityScopedResource()
+        defer { if scoped { picked.stopAccessingSecurityScopedResource() } }
+
+        let filename = picked.lastPathComponent
+        let dest = importedDir().appendingPathComponent(filename)
+        if FileManager.default.fileExists(atPath: dest.path) {
+            try FileManager.default.removeItem(at: dest)
+        }
+        try FileManager.default.copyItem(at: picked, to: dest)
+        return filename
+    }
+}
+
 #if !os(visionOS)
 import MetalKit
 import Metal
@@ -45,7 +78,7 @@ import os
 
 /// Walkable splat viewer for a local `.spz` file. Owns the `WorldCameraRig` and
 /// `GamepadManager` so touch gestures and the renderer's per-frame gamepad poll
-/// mutate the same first-person rig (same pattern as `USDZTestView`).
+/// mutate the same first-person rig (the shared `WorldCameraRig`).
 struct SplatSceneView: View {
     let splatFileURL: URL
 

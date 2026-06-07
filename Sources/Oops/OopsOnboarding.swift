@@ -14,16 +14,13 @@ struct OpeningScreen: View {
     var body: some View {
         ZStack {
             OopsPassthrough()
-            HStack {
-                Spacer()
-                WorldWindow()
-                    .frame(maxWidth: 980, maxHeight: 620)
-                Spacer()
-            }
-            .padding(.horizontal, 60)
 
-            // right sidebar
-            HStack { Spacer(); SideBar().padding(.trailing, 36) }
+            // Clean centered image — no glass card frame, no sidebar.
+            Image("oops_meadow")
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: 980, maxHeight: 620)
+                .clipShape(RoundedRectangle(cornerRadius: OopsGlass.radiusWindow, style: .continuous))
 
             VStack {
                 Spacer()
@@ -32,7 +29,6 @@ struct OpeningScreen: View {
                     .opacity(breathe ? 0.95 : 0.45)
                     .padding(.bottom, 120)
                 PageDots().padding(.bottom, 18)
-                HomePill().padding(.bottom, 14)
             }
         }
         .contentShape(Rectangle())
@@ -71,12 +67,9 @@ struct HomeScreen: View {
             }
             .padding(.horizontal, 60)
 
-            HStack { Spacer(); SideBar().padding(.trailing, 36) }
-
             VStack {
                 Spacer()
                 PageDots().padding(.bottom, 18)
-                HomePill().padding(.bottom, 14)
             }
         }
     }
@@ -152,9 +145,26 @@ struct DeclarationScreen: View {
             .padding(.horizontal, 40)
             .padding(.vertical, 60)
 
-            HStack { Spacer(); SideBar().padding(.trailing, 28) }
-
-            VStack { Spacer(); PageDots().padding(.bottom, 18); HomePill().padding(.bottom, 14) }
+            VStack { Spacer(); PageDots().padding(.bottom, 18) }
         }
     }
 }
+
+// MARK: - Previews
+
+// Note: the real screens float over a clear passthrough (the room) and inside a
+// `.plain` window with no glass. Previews can't render the window/passthrough, so the
+// gray fill below just stands in for the room to make the floating layout legible.
+
+#Preview("Opening") {
+    OpeningScreen(onBegin: {})
+        .preferredColorScheme(.dark)
+        .background(Color.gray.opacity(0.35))
+}
+
+#Preview("Home") {
+    HomeScreen(onGenerate: {}, onVisitOld: {})
+        .preferredColorScheme(.dark)
+        .background(Color.gray.opacity(0.35))
+}
+ 

@@ -27,7 +27,6 @@ struct RootView: View {
 /// Opening screen.
 struct SplashView: View {
     @Environment(AppState.self) private var appState
-    @State private var showWorldLabs = false
 
     var body: some View {
         VStack(spacing: 30) {
@@ -49,19 +48,9 @@ struct SplashView: View {
                 appState.phase = .quiz
             }
             .buttonStyle(PrimaryPillButtonStyle())
-
-            Button("Experimental: World Labs") {
-                showWorldLabs = true
-            }
-            .buttonStyle(.borderless)
-            .font(.footnote)
-            .foregroundStyle(.secondary)
         }
         .frame(maxWidth: 520)
         .padding(32)
-        .sheet(isPresented: $showWorldLabs) {
-            WorldLabsTestView()
-        }
     }
 }
 

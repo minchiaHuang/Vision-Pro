@@ -84,7 +84,9 @@ enum WorldArchetype {
     case cozyCommunal   // Cozy communal     → Cozy_living_room_baked
     case solitaryPath   // Solitary / path   → FREE_Dirt_Road_Through_Forest
 
-    /// Bundled USDZ resource name (no extension). Matches `USDZDebug.models`.
+    /// Archetype USDZ resource name (no extension). NOTE: these USDZ are no longer
+    /// bundled (test-only; the parametric full-world path degrades when absent — see
+    /// `ParametricWorldBuilder.build` returning nil). Kept for the test flow's mapping.
     var usdzName: String {
         switch self {
         case .openNature:   return "Free_Low_Poly_Forest"

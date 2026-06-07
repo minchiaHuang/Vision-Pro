@@ -25,6 +25,14 @@ enum OopsGlass {
 struct OopsPassthrough: View {
     var dim: Bool = false
     var body: some View {
+        #if os(visionOS)
+        // Vision Pro: the window glass already frosts the real room behind it, so this
+        // layer stays transparent — no fake passthrough photo. The glass panels float
+        // over the actual environment. `dim` keeps a faint scrim for text legibility.
+        Color.clear
+            .overlay { if dim { Color.black.opacity(0.18) } }
+            .ignoresSafeArea()
+        #else
         ZStack {
             Color(red: 0.04, green: 0.04, blue: 0.05)
             Image("oops_passthrough")
@@ -33,6 +41,7 @@ struct OopsPassthrough: View {
             if dim { Color.black.opacity(0.28) }
         }
         .ignoresSafeArea()
+        #endif
     }
 }
 
@@ -109,6 +118,38 @@ struct OopsButton: ButtonStyle {
     }
 }
 
+// MARK: - Frosted text field / textarea
+
+/// `.quiz-input` — frosted single-line field or multi-line textarea. Shared by the quiz
+/// and the reflection screens.
+struct OopsField: View {
+    @Binding var text: String
+    let placeholder: String
+    let multiline: Bool
+
+    var body: some View {
+        Group {
+            if multiline {
+                TextField(placeholder, text: $text, axis: .vertical)
+                    .lineLimit(3...5)
+                    .padding(.vertical, 22)
+            } else {
+                TextField(placeholder, text: $text)
+                    .frame(height: 80)
+            }
+        }
+        .font(.system(size: 23))
+        .foregroundStyle(.white)
+        .padding(.horizontal, 28)
+        .background(.white.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(.white.opacity(0.18), lineWidth: 1))
+        .tint(.white)
+    }
+}
+
 // MARK: - Vertical glass bars
 
 /// Generic vertical glass bar (`.glass-bar`) hosting circular controls.
@@ -141,18 +182,6 @@ struct BarButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-    }
-}
-
-/// Right-edge sidebar shown on most onboarding screens: assistant orb + chat + photos.
-/// chat/photos are decorative in this front-end pass (as in the prototype).
-struct SideBar: View {
-    var body: some View {
-        GlassBar {
-            GlassOrb(size: 56)
-            BarButton(systemImage: "bubble.left")
-            BarButton(systemImage: "photo")
-        }
     }
 }
 
@@ -262,25 +291,11 @@ struct GlassOrb: View {
 
 // MARK: - Progress indicators
 
-/// `.page-dots` — dot + long bar centered near the bottom.
+/// `.page-dots` — intentionally empty. The prototype drew a dot + long home-pill capsule
+/// near the bottom, but on visionOS/iPad both visually duplicate the system window
+/// grabber bar, so nothing is rendered here.
 struct PageDots: View {
-    var body: some View {
-        HStack(spacing: 24) {
-            Circle().fill(.white.opacity(0.4)).frame(width: 16, height: 16)
-            Capsule().fill(.white.opacity(0.4)).frame(width: 150, height: 12)
-        }
-    }
-}
-
-/// `.home-pill` — the visionOS home indicator at the very bottom.
-struct HomePill: View {
-    var body: some View {
-        HStack(spacing: 22) {
-            Circle().fill(.white.opacity(0.3)).frame(width: 13, height: 13)
-            Capsule().fill(.white.opacity(0.3)).frame(width: 130, height: 11)
-        }
-        .opacity(0.6)
-    }
+    var body: some View { EmptyView() }
 }
 
 // MARK: - Checkbox statement
@@ -382,4 +397,86 @@ struct OopsDialog: View {
             .oopsCard(cornerRadius: 42)
         }
     }
+}
+
+// MARK: - Previews
+
+#Preview("Passthrough") { OopsPassthrough() }
+#Preview("Passthrough – dim") { OopsPassthrough(dim: true) }
+
+#Preview("OopsButton – solid") {
+    Button("Generate New") {}
+        .buttonStyle(OopsButton())
+        .padding()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("OopsButton – ghost") {
+    Button("Visit Old World") {}
+        .buttonStyle(OopsButton(ghost: true))
+        .padding()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("OopsField – single") {
+    OopsField(text: .constant(""), placeholder: "Your answer…", multiline: false)
+        .padding()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("OopsField – multi") {
+    OopsField(text: .constant("This is a longer answer spanning multiple lines."),
+              placeholder: "Reflect…", multiline: true)
+        .padding()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("GlassBar + BarButton") {
+    GlassBar {
+        BarButton(systemImage: "xmark")
+        BarButton(systemImage: "arrow.clockwise")
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("WorldBar") {
+    WorldBar()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("GlassOrb") {
+    GlassOrb(size: 72)
+        .padding(40)
+        .background(Color.black)
+}
+
+#Preview("CheckStatement – unchecked") {
+    CheckStatement(head: "I understand",
+                   text: "This experience may be emotionally intense.",
+                   checked: false, onToggle: {})
+        .padding()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("CheckStatement – checked") {
+    CheckStatement(head: "I understand",
+                   text: "This experience may be emotionally intense.",
+                   checked: true, onToggle: {})
+        .padding()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("OopsSpinner") {
+    OopsSpinner()
+        .padding(40)
+        .background(Color.black)
+}
+
+#Preview("OopsDialog") {
+    OopsDialog(title: "Are you sure?",
+               message: "Your progress will be lost forever.",
+               confirmTitle: "Yes, start over",
+               onConfirm: {}, onCancel: {})
+        .background(Color.gray.opacity(0.3))
+        .preferredColorScheme(.dark)
 }

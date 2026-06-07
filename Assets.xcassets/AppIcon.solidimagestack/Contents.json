@@ -1,13 +1,13 @@
 {
   "layers" : [
     {
-      "filename" : "Back.solidimagestacklayer"
+      "filename" : "Front.solidimagestacklayer"
     },
     {
       "filename" : "Middle.solidimagestacklayer"
     },
     {
-      "filename" : "Front.solidimagestacklayer"
+      "filename" : "Back.solidimagestacklayer"
     }
   ],
   "info" : {

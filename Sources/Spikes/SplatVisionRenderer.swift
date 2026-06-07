@@ -52,17 +52,25 @@ final class SplatVisionRenderer: @unchecked Sendable {
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
     private let splatURL: URL
+    /// Raw marble/World Labs exports load upside-down; flip them upright at framing.
+    private let flipUpsideDown: Bool
 
     private let inFlight = DispatchSemaphore(value: maxSimultaneousRenders)
 
     private let arSession = ARKitSession()
     private let worldTracking = WorldTrackingProvider()
+    /// Nil on the visionOS Simulator (`HandTrackingProvider.isSupported == false` there);
+    /// gesture manipulation then comes only from the on-screen debug pad.
+    private let handTracking: HandTrackingProvider? =
+        HandTrackingProvider.isSupported ? HandTrackingProvider() : nil
 
     /// Result of an off-thread load, handed to the render thread exactly once.
     private struct LoadedScene {
         let splat: SplatRenderer
         let calibration: simd_float4x4
         let initialLocomotion: SplatLocomotion
+        /// World placement (calibrated space) for the in-world USDZ model, if any.
+        let modelPlacement: simd_float4x4
     }
     /// Published by `load()` under `loadLock`; the render thread adopts it once (then
     /// owns the copies below outright), so `splat`/`locomotion` never race.
@@ -74,19 +82,54 @@ final class SplatVisionRenderer: @unchecked Sendable {
     private var sceneCalibration: simd_float4x4 = matrix_identity_float4x4
     private var locomotion = SplatLocomotion()
     private var lastTickTime: CFTimeInterval?
+    /// Edge-trigger state for the gamepad exit button (☰); see `renderFrame`.
+    private var exitButtonWasPressed = false
 
-    init(layerRenderer: LayerRenderer, splatURL: URL) {
+    // Render-thread-owned manipulation pose for the in-world model. The model is anchored
+    // at `modelAnchor` (the framing placement) and the user's hand gestures accumulate a
+    // yaw + uniform scale about its centre. Rebuilt into `worldPlacement` each frame.
+    private var modelAnchor: simd_float4x4 = matrix_identity_float4x4
+    private var modelYaw: Float = 0
+    private var modelScale: Float = 1
+
+    /// Optional USDZ model composited into the splat world (Phase 1: a bundled demo
+    /// model, static, walk-aroundable). Nil if the pipeline failed to build.
+    private let meshRenderer: SplatMeshRenderer?
+
+    /// Bundled demo model rendered inside the world. Loaded off-thread at construction.
+    private static let demoModelName = "hummingbird_anim"
+
+    init(layerRenderer: LayerRenderer, splatURL: URL, flipUpsideDown: Bool) {
         self.layerRenderer = layerRenderer
         self.device = layerRenderer.device
         self.commandQueue = device.makeCommandQueue()!
         self.splatURL = splatURL
+        self.flipUpsideDown = flipUpsideDown
+
+        // Build the mesh overlay pipeline up front; load the bundled model off-thread.
+        // Use error-level logs (persisted) so failures are visible in `log show`.
+        do {
+            let mr = try SplatMeshRenderer(device: device,
+                                           colorFormat: layerRenderer.configuration.colorFormat,
+                                           depthFormat: layerRenderer.configuration.depthFormat)
+            self.meshRenderer = mr
+            if let url = Bundle.main.url(forResource: Self.demoModelName, withExtension: "usdz") {
+                Self.log.notice("MESH: loading \(Self.demoModelName).usdz")
+                mr.loadModel(url: url)
+            } else {
+                Self.log.error("MESH: \(Self.demoModelName).usdz NOT in bundle")
+            }
+        } catch {
+            self.meshRenderer = nil
+            Self.log.error("MESH: pipeline build FAILED: \(error.localizedDescription)")
+        }
     }
 
     /// Entry point used by the `CompositorLayer` closure. The render loop starts
     /// immediately (presenting cleared frames so the immersive space is never black /
     /// frozen) while the splat loads off-thread; the loop adopts it when ready.
-    static func startRendering(_ layerRenderer: LayerRenderer, splatURL: URL) {
-        let renderer = SplatVisionRenderer(layerRenderer: layerRenderer, splatURL: splatURL)
+    static func startRendering(_ layerRenderer: LayerRenderer, splatURL: URL, flipUpsideDown: Bool) {
+        let renderer = SplatVisionRenderer(layerRenderer: layerRenderer, splatURL: splatURL, flipUpsideDown: flipUpsideDown)
 
         // Load off the render thread; publishes a LoadedScene when done.
         Task.detached(priority: .userInitiated) {
@@ -94,24 +137,50 @@ final class SplatVisionRenderer: @unchecked Sendable {
                 try await renderer.load()
             } catch {
                 log.error("Failed to load splat: \(error.localizedDescription)")
+                await SplatSession.shared.fail(error.localizedDescription)
             }
         }
 
         // ARKit + render loop on the dedicated render-priority executor.
         Task(executorPreference: SplatRenderExecutor.shared) {
+            // Hand tracking (device only) drives the in-world model's rotate/scale gesture.
+            var providers: [any DataProvider] = [renderer.worldTracking]
+            if let handTracking = renderer.handTracking {
+                _ = await renderer.arSession.requestAuthorization(for: [.handTracking])
+                providers.append(handTracking)
+            }
             do {
-                try await renderer.arSession.run([renderer.worldTracking])
+                try await renderer.arSession.run(providers)
             } catch {
                 log.error("Failed to start ARKit session: \(error.localizedDescription)")
             }
+            if let handTracking = renderer.handTracking {
+                renderer.startHandGestureTask(handTracking)
+            }
             renderer.renderLoop()
+        }
+    }
+
+    /// Consumes hand-anchor updates and feeds the two-hand pinch gesture into the shared
+    /// manipulation sink (the render loop applies it). Device only — `handTracking` is nil
+    /// in the Simulator, so this is never started there.
+    private func startHandGestureTask(_ handTracking: HandTrackingProvider) {
+        let processor = SplatHandGestureProcessor()
+        Task.detached(priority: .userInitiated) {
+            for await update in handTracking.anchorUpdates {
+                if let delta = processor.process(anchor: update.anchor) {
+                    SplatModelManipulation.shared.add(yaw: delta.yaw, scaleMul: delta.scaleMul)
+                }
+            }
         }
     }
 
     // MARK: - Loading
 
     private func load() async throws {
-        // Remote World Labs URLs are downloaded + cached; bundled/local files read directly.
+        await SplatSession.shared.beginLoading()
+        await SplatSession.shared.setPreparing()
+
         let localURL = splatURL.isFileURL ? splatURL : try await SplatDownloader.fetch(splatURL)
 
         let renderer = try SplatRenderer(device: device,
@@ -120,26 +189,84 @@ final class SplatVisionRenderer: @unchecked Sendable {
                                          sampleCount: 1,
                                          maxViewCount: layerRenderer.properties.viewCount,
                                          maxSimultaneousRenders: Self.maxSimultaneousRenders)
+
+        // Fast path: load pre-decoded GPU data from disk cache (skips 30 s readAll).
+        if let cached = try? SplatCache.loadScene(for: localURL, flipUpsideDown: flipUpsideDown) {
+            do {
+                let splatBuf = try MetalBuffer<EncodedSplatPoint>(device: device,
+                                                                  capacity: cached.pointCount)
+                cached.splatData.withUnsafeBytes { ptr in
+                    guard let src = ptr.baseAddress else { return }
+                    memcpy(splatBuf.values, src, cached.splatData.count)
+                }
+                splatBuf.count = cached.pointCount
+
+                var shBuf: MetalBuffer<Float16>?
+                if !cached.shData.isEmpty {
+                    let shCount = cached.shData.count / MemoryLayout<Float16>.stride
+                    let buf = try MetalBuffer<Float16>(device: device, capacity: shCount)
+                    cached.shData.withUnsafeBytes { ptr in
+                        guard let src = ptr.baseAddress else { return }
+                        memcpy(buf.values, src, cached.shData.count)
+                    }
+                    buf.count = shCount
+                    shBuf = buf
+                }
+
+                let chunk = SplatChunk(splats: splatBuf, shCoefficients: shBuf,
+                                       shDegree: cached.shDegree)
+                _ = await renderer.addChunk(chunk)
+                let locomotion = SplatLocomotion(position: cached.locomotionPosition,
+                                                 span: cached.locomotionSpan)
+                loadLock.withLock {
+                    pendingScene = LoadedScene(splat: renderer,
+                                              calibration: cached.calibration,
+                                              initialLocomotion: locomotion,
+                                              modelPlacement: cached.modelPlacement)
+                }
+                await SplatSession.shared.setReady()
+                Self.log.info("SplatCache hit: \(cached.pointCount) pts")
+                return
+            } catch {
+                Self.log.warning("SplatCache load failed, falling back to decode: \(error)")
+            }
+        }
+
+        // Slow path: full zstd decode (first entry or cache miss).
         let rawPoints = try await AutodetectSceneReader(localURL).readAll()
         guard !rawPoints.isEmpty else {
             Self.log.error("Splat decoded to 0 points")
+            await SplatSession.shared.fail("World decoded to 0 points.")
             return
         }
 
-        // Cap point count before framing + chunk build (bounds decode/memory/GPU cost).
         let points = Self.downsample(rawPoints, to: Self.maxSplatPoints)
-        let (calibration, initialLocomotion) = Self.framing(points)
-
+        let (calibration, initialLocomotion, modelPlacement) = Self.framing(points,
+                                                                             flipUpsideDown: flipUpsideDown)
         let chunk = try SplatChunk(device: device, from: points)
         _ = await renderer.addChunk(chunk)
 
-        // Hand the finished scene to the render thread (adopted once, then owned there).
-        loadLock.lock()
-        pendingScene = LoadedScene(splat: renderer,
-                                   calibration: calibration,
-                                   initialLocomotion: initialLocomotion)
-        loadLock.unlock()
-        Self.log.info("Loaded splat: \(rawPoints.count) points → \(points.count) after cap")
+        // Persist to cache in background so the next entry is fast.
+        let urlForSave = localURL
+        let flip = flipUpsideDown
+        Task.detached(priority: .background) {
+            try? SplatCache.saveScene(chunk: chunk,
+                                      calibration: calibration,
+                                      locomotionPosition: initialLocomotion.position,
+                                      locomotionSpan: initialLocomotion.span,
+                                      modelPlacement: modelPlacement,
+                                      for: urlForSave,
+                                      flipUpsideDown: flip)
+        }
+
+        loadLock.withLock {
+            pendingScene = LoadedScene(splat: renderer,
+                                       calibration: calibration,
+                                       initialLocomotion: initialLocomotion,
+                                       modelPlacement: modelPlacement)
+        }
+        await SplatSession.shared.setReady()
+        Self.log.info("Loaded splat: \(rawPoints.count) pts → \(points.count) after cap")
     }
 
     /// Uniformly strides a point cloud down to at most `budget` points. Returns the
@@ -157,8 +284,10 @@ final class SplatVisionRenderer: @unchecked Sendable {
     /// Centroid recentre + mean radius → scene calibration and the start viewpoint.
     /// The user begins backed off along +Z (the proven iOS framing) and walks in.
     /// Pure (no `self` mutation) so it can run on the load thread before handoff.
-    private static func framing(_ points: [SplatPoint]) -> (calibration: simd_float4x4,
-                                                            locomotion: SplatLocomotion) {
+    static func framing(_ points: [SplatPoint],
+                        flipUpsideDown: Bool) -> (calibration: simd_float4x4,
+                                                  locomotion: SplatLocomotion,
+                                                  modelPlacement: simd_float4x4) {
         var sum = SIMD3<Float>.zero
         for p in points { sum += p.position }
         let center = sum / Float(points.count)
@@ -167,11 +296,20 @@ final class SplatVisionRenderer: @unchecked Sendable {
         for p in points { distSum += simd_length(p.position - center) }
         let meanRadius = max(distSum / Float(points.count), 0.001)
 
-        let calibration = translation(-center.x, -center.y, -center.z)
+        // Recentre on the centroid; for upside-down exports, also rotate the world
+        // 180° about X (recentre first, then flip about the origin).
+        var calibration = translation(-center.x, -center.y, -center.z)
+        if flipUpsideDown { calibration = rotationX180() * calibration }
         let frameDistance = meanRadius * 3
         let locomotion = SplatLocomotion(position: SIMD3(0, 0, frameDistance),
                                          span: max(meanRadius, 1))
-        return (calibration, locomotion)
+
+        // Place the in-world USDZ model ~2 m in front of the start viewpoint (the user
+        // begins at +Z looking toward -Z / the centroid), so it's immediately visible
+        // and walk-aroundable. Calibrated space is centred on the splat centroid.
+        let standoff: Float = 2.0
+        let modelPlacement = translation(0, 0, max(frameDistance - standoff, 0))
+        return (calibration, locomotion, modelPlacement)
     }
 
     // MARK: - Per-frame viewports (locomotion + head tracking)
@@ -218,6 +356,12 @@ final class SplatVisionRenderer: @unchecked Sendable {
                 splat = scene.splat
                 sceneCalibration = scene.calibration
                 locomotion = scene.initialLocomotion
+                // The model lives in world space; the per-eye viewMatrix already folds in
+                // sceneCalibration, so the mesh renderer cancels it back out (otherwise the
+                // model gets calibrated twice — flipped + offset by the centroid).
+                modelAnchor = scene.modelPlacement
+                meshRenderer?.worldPlacement = modelAnchor
+                meshRenderer?.sceneCalibrationInverse = scene.calibration.inverse
             }
         }
 
@@ -242,7 +386,34 @@ final class SplatVisionRenderer: @unchecked Sendable {
         let dt = Float(now - (lastTickTime ?? now))
         lastTickTime = now
         let gamepad = SplatSpikeDebug.ignoreGamepad ? nil : Self.currentGamepad()
-        locomotion.tick(deltaTime: dt, gamepad: gamepad)
+
+        // No-controller fallback (Simulator + device): on-screen hold-to-move pad. Inert
+        // when untouched, so it's safe to always feed alongside the gamepad. (Keyboard
+        // input is intentionally not read: the visionOS Simulator captures WASD/QE/arrows
+        // to move the simulated device, so the app never receives them.)
+        let manual = SplatManualInput.shared.snapshot()
+        locomotion.tick(deltaTime: dt, gamepad: gamepad, manual: manual)
+
+        // Apply accumulated model manipulation (two-hand pinch on device; on-screen debug
+        // pad in the Simulator). Yaw + uniform scale about the model's centre; scale clamped
+        // so it can't shrink to nothing or fill the world. Rebuilt from the fixed anchor each
+        // frame so repeated deltas don't drift the matrix.
+        if let g = SplatModelManipulation.shared.consume() {
+            modelYaw += g.yaw
+            modelScale = min(max(modelScale * g.scaleMul, 0.3), 4.0)
+            meshRenderer?.worldPlacement =
+                modelAnchor * Self.rotationY(modelYaw) * Self.uniformScale(modelScale)
+        }
+
+        // Leave the world, edge-triggered: gamepad ☰ (Menu/Options). The mouse / gaze-tap
+        // "Leave world" button in the controls window is the primary exit; the gamepad ☰ is
+        // routed here (via the shared session, which owns `dismissImmersiveSpace`) so a
+        // controller user can exit no matter how far they've walked.
+        let exitPressed = gamepad?.buttonMenu.isPressed ?? false
+        if exitPressed && !exitButtonWasPressed {
+            Task { @MainActor in SplatSession.shared.requestExit() }
+        }
+        exitButtonWasPressed = exitPressed
 
         let primaryDrawable = drawables[0]
         let time = LayerRenderer.Clock.Instant.epoch
@@ -260,17 +431,28 @@ final class SplatVisionRenderer: @unchecked Sendable {
                 commandBuffer.addCompletedHandler { _ in semaphore.signal() }
             }
 
+            let vps = viewports(drawable: drawable, deviceAnchor: deviceAnchor)
+            let arrayLength = layered ? drawable.views.count : 1
             do {
-                _ = try splat.render(viewports: viewports(drawable: drawable, deviceAnchor: deviceAnchor),
+                _ = try splat.render(viewports: vps,
                                      colorTexture: drawable.colorTextures[0],
                                      colorStoreAction: .store,
                                      depthTexture: drawable.depthTextures[0],
                                      rasterizationRateMap: drawable.rasterizationRateMaps.first,
-                                     renderTargetArrayLength: layered ? drawable.views.count : 1,
+                                     renderTargetArrayLength: arrayLength,
                                      to: commandBuffer)
             } catch {
                 Self.log.error("Render failed: \(error.localizedDescription)")
             }
+
+            // Composite the in-world USDZ model on top of the splat frame (own render
+            // pass that LOADs the splat color + depth, so the two occlude correctly).
+            meshRenderer?.encode(into: commandBuffer,
+                                 colorTexture: drawable.colorTextures[0],
+                                 depthTexture: drawable.depthTextures[0],
+                                 rasterizationRateMap: drawable.rasterizationRateMaps.first,
+                                 renderTargetArrayLength: arrayLength,
+                                 viewports: vps)
 
             drawable.encodePresent(commandBuffer: commandBuffer)
             commandBuffer.commit()
@@ -312,6 +494,35 @@ final class SplatVisionRenderer: @unchecked Sendable {
             SIMD4(0, 1, 0, 0),
             SIMD4(0, 0, 1, 0),
             SIMD4(x, y, z, 1)))
+    }
+
+    /// 180° rotation about X (Y→-Y, Z→-Z): rights raw World Labs/marble exports that
+    /// load upside-down. A proper rotation (det +1), so it doesn't mirror the splats.
+    private static func rotationX180() -> simd_float4x4 {
+        simd_float4x4(columns: (
+            SIMD4(1, 0, 0, 0),
+            SIMD4(0, -1, 0, 0),
+            SIMD4(0, 0, -1, 0),
+            SIMD4(0, 0, 0, 1)))
+    }
+
+    /// Rotation about +Y by `radians`; used to spin the in-world model via hand gestures.
+    private static func rotationY(_ radians: Float) -> simd_float4x4 {
+        let c = cos(radians), s = sin(radians)
+        return simd_float4x4(columns: (
+            SIMD4( c, 0, -s, 0),
+            SIMD4( 0, 1,  0, 0),
+            SIMD4( s, 0,  c, 0),
+            SIMD4( 0, 0,  0, 1)))
+    }
+
+    /// Uniform scale; used to grow/shrink the in-world model via hand gestures.
+    private static func uniformScale(_ s: Float) -> simd_float4x4 {
+        simd_float4x4(columns: (
+            SIMD4(s, 0, 0, 0),
+            SIMD4(0, s, 0, 0),
+            SIMD4(0, 0, s, 0),
+            SIMD4(0, 0, 0, 1)))
     }
 }
 
