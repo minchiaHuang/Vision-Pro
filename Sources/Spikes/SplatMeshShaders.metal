@@ -39,7 +39,10 @@ vertex MeshVertexOut splatMeshVertex(MeshVertexIn in [[stage_in]],
     out.position = u.modelViewProjection * float4(in.position, 1.0);
     out.layer = u.layer;
     out.worldNormal = (u.model * float4(in.normal, 0.0)).xyz;
-    out.uv = in.uv;
+    // glTF/USD (and Tripo/Sketchfab exports) author UVs with a bottom-left origin, but
+    // Metal samples textures from the top-left. Flip V so baked-atlas textures sample the
+    // correct cell — without this, multi-region atlases scramble (see SplatMeshRenderer).
+    out.uv = float2(in.uv.x, 1.0 - in.uv.y);
     return out;
 }
 
