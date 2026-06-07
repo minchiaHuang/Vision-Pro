@@ -13,11 +13,12 @@ struct QuizScreen: View {
         ZStack {
             OopsPassthrough(dim: true)
 
-            // A fixed-height glass card (sized to the window) with the questions
-            // scrolling inside it. GeometryReader gives the card a definite height so
-            // the inner ScrollView is always bounded and scrolls when content overflows —
-            // rather than letting the card grow past the window and clip the lower
-            // questions with no way to reach them.
+            // A capped, centred glass card with the questions scrolling inside it. The
+            // height is bounded to a fraction of the window (so it always leaves a margin
+            // and stays inside the viewport on Vision Pro, where the window can be taller
+            // than the comfortable view) and clamped to an absolute max. The inner
+            // ScrollView then has a definite height, so content scrolls within the card
+            // instead of the card growing past the screen and clipping the lower questions.
             GeometryReader { geo in
                 VStack(spacing: 0) {
                     header
@@ -38,10 +39,10 @@ struct QuizScreen: View {
                         .padding(.bottom, 60)
                     }
                 }
-                .frame(width: min(1180, geo.size.width - 80),
-                       height: max(0, geo.size.height - 100))
+                .frame(width: min(1100, geo.size.width * 0.86),
+                       height: min(760, geo.size.height * 0.8))
                 .oopsWindow()
-                .frame(maxWidth: .infinity, maxHeight: .infinity) // centre the card
+                .frame(maxWidth: .infinity, maxHeight: .infinity) // centre within the window
             }
 
             if confirm {
