@@ -42,7 +42,29 @@ enum OpenAIImageService {
             }
         }
         await onProgress(prompts.count, prompts.count)
+        saveToDisk(images)
         return images
+    }
+
+    /// Writes the generated series to `Documents/GalleryJourney/scene_01.png …` so the images can
+    /// be inspected outside the app (the folder is reset each run). The path is logged in DEBUG.
+    /// Best-effort: failures are ignored and never block the flow.
+    @discardableResult
+    static func saveToDisk(_ images: [UIImage]) -> URL? {
+        guard !images.isEmpty else { return nil }
+        let fm = FileManager.default
+        guard let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
+        let dir = docs.appendingPathComponent("GalleryJourney", isDirectory: true)
+        try? fm.removeItem(at: dir)
+        try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        for (index, image) in images.enumerated() {
+            guard let data = image.pngData() else { continue }
+            try? data.write(to: dir.appendingPathComponent(String(format: "scene_%02d.png", index + 1)))
+        }
+        #if DEBUG
+        print("[OpenAIImageService] saved \(images.count) image(s) to \(dir.path)")
+        #endif
+        return dir
     }
 
     /// The 5 ordered scene prompts: Ordinary world → Call → Trials → Transformation → Mastery,
