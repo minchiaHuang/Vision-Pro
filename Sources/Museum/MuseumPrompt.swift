@@ -83,7 +83,7 @@ enum MuseumPrompt {
     }
     """
 
-    /// JSON schema for the OpenAI `response_format: json_schema` (strict). Every object
+    /// JSON schema for the OpenAI Responses API `text.format` json_schema (strict). Every object
     /// declares `additionalProperties: false` and lists all properties as required —
     /// OpenAI strict mode requires both. `refusal` is nullable via the `["string","null"]`
     /// type form.

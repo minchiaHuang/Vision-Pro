@@ -1,10 +1,10 @@
 import Foundation
 
 /// Stage A — "The Curator". Turns the visitor's answers into a 5-beat Hero's-Journey
-/// `MuseumStory` via OpenAI chat-completions over plain `URLSession` (mirrors
+/// `MuseumStory` via the OpenAI Responses API over plain `URLSession` (mirrors
 /// `ConversationService`'s networking shape). Structured output is constrained with a
-/// strict `json_schema`, so `choices[0].message.content` is guaranteed-valid JSON that
-/// decodes straight into `MuseumStory`.
+/// strict `text.format` json_schema, so the `output_text` content is guaranteed-valid JSON
+/// that decodes straight into `MuseumStory`.
 ///
 /// A value type (`struct`) so it is `Sendable` and can be captured by the gallery's
 /// generation tasks without actor ceremony.
@@ -12,11 +12,12 @@ struct CuratorService {
 
     enum CuratorError: Error { case missingKey, http(String), empty, decode }
 
-    /// Single switchable constant.
-    /// ⚠️ Set this to a CURRENT OpenAI text model that supports `json_schema` structured
-    /// outputs (verify at the OpenAI models docs). The default below may be retired —
-    /// change it when you add your key.
-    private static let model = "gpt-4o"
+    /// Single switchable constant. `json_schema` structured outputs require a model in the
+    /// gpt-4o-2024-08-06-or-later family. `gpt-5.5` is the 2026 flagship (best story
+    /// quality); if your account doesn't have it, fall back to `gpt-4o-2024-08-06`.
+    /// List what your key can use:
+    ///   curl https://api.openai.com/v1/models -H "Authorization: Bearer $OPENAI_API_KEY"
+    private static let model = "gpt-5.5"
 
     func generate(_ answers: MuseumAnswers) async throws -> MuseumStory {
         let key = Secrets.openAIAPIKey
@@ -26,23 +27,25 @@ struct CuratorService {
         // is far cleaner to express inline than to model as types.
         let body: [String: Any] = [
             "model": Self.model,
-            "messages": [
-                ["role": "system", "content": MuseumPrompt.system],
+            "instructions": MuseumPrompt.system,
+            "input": [
                 ["role": "user", "content": MuseumPrompt.fewShotUser],
                 ["role": "assistant", "content": MuseumPrompt.fewShotAssistant],
                 ["role": "user", "content": answers.promptInput],
             ],
-            "response_format": [
-                "type": "json_schema",
-                "json_schema": [
+            "text": [
+                "format": [
+                    "type": "json_schema",
                     "name": "museum_story",
                     "strict": true,
                     "schema": MuseumPrompt.jsonSchema,
                 ],
             ],
+            // Headroom so a reasoning model's tokens plus the ~2k JSON don't truncate the output.
+            "max_output_tokens": 8000,
         ]
 
-        var req = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
+        var req = URLRequest(url: URL(string: "https://api.openai.com/v1/responses")!)
         req.httpMethod = "POST"
         req.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -54,9 +57,16 @@ struct CuratorService {
             throw CuratorError.http("HTTP \(http.statusCode): \(snippet)")
         }
 
-        let envelope = try JSONDecoder().decode(ChatResponse.self, from: data)
-        guard let content = envelope.choices.first?.message.content,
-              let storyData = content.data(using: .utf8) else {
+        // Responses API returns an `output` array; the JSON lives in the message item's
+        // `output_text` content part(s). A reasoning item may precede it — filter by type.
+        let envelope = try JSONDecoder().decode(ResponsesEnvelope.self, from: data)
+        let text = envelope.output
+            .compactMap(\.content)
+            .flatMap { $0 }
+            .filter { $0.type == "output_text" }
+            .compactMap(\.text)
+            .joined()
+        guard !text.isEmpty, let storyData = text.data(using: .utf8) else {
             throw CuratorError.empty
         }
         do {
@@ -66,11 +76,12 @@ struct CuratorService {
         }
     }
 
-    /// The OpenAI chat-completions envelope (only the field we read).
-    private struct ChatResponse: Decodable {
-        struct Choice: Decodable { let message: Message }
-        struct Message: Decodable { let content: String? }
-        let choices: [Choice]
+    /// The OpenAI Responses API envelope (only the fields we read). `output` holds message
+    /// (and possibly reasoning) items; the JSON we want is in `output_text` content parts.
+    private struct ResponsesEnvelope: Decodable {
+        struct Item: Decodable { let content: [Part]? }
+        struct Part: Decodable { let type: String; let text: String? }
+        let output: [Item]
     }
 
     /// Friendly one-liner for the gallery's error state.
