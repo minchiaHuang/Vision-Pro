@@ -124,7 +124,7 @@ struct OopsFlowView: View {
             DeclarationScreen(
                 label: "04 Privacy Preferences", title: "Privacy Preferences",
                 items: OopsContent.privacy, cta: "Start",
-                checks: $privacy, onCta: { go(.quiz) })
+                checks: $privacy, requireAll: false, onCta: { go(.quiz) })
         case .quiz:
             QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
         case .generating:

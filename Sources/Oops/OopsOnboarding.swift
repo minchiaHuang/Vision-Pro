@@ -106,9 +106,12 @@ struct DeclarationScreen: View {
     let items: [OopsContent.Statement]
     let cta: String
     @Binding var checks: [Bool]
+    var requireAll: Bool = true   // true = all toggles required; false = no selection required
     let onCta: () -> Void
 
-    private var allChecked: Bool { checks.allSatisfy { $0 } }
+    private var canContinue: Bool {
+        requireAll ? checks.allSatisfy { $0 } : true
+    }
 
     var body: some View {
         ZStack {
@@ -138,9 +141,9 @@ struct DeclarationScreen: View {
 
                 Button(cta, action: onCta)
                     .buttonStyle(OopsButton())
-                    .disabled(!allChecked)
-                    .opacity(allChecked ? 1 : 0.4)
-                    .animation(.easeInOut(duration: 0.2), value: allChecked)
+                    .disabled(!canContinue)
+                    .opacity(canContinue ? 1 : 0.4)
+                    .animation(.easeInOut(duration: 0.2), value: canContinue)
             }
             .padding(.horizontal, 40)
             .padding(.vertical, 60)
