@@ -13,29 +13,36 @@ struct QuizScreen: View {
         ZStack {
             OopsPassthrough(dim: true)
 
-            VStack(spacing: 0) {
-                header
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 56) {
-                        ForEach(Array(OopsContent.questions.enumerated()), id: \.element.id) { index, q in
-                            questionView(number: index + 1, q)
+            // A fixed-height glass card (sized to the window) with the questions
+            // scrolling inside it. GeometryReader gives the card a definite height so
+            // the inner ScrollView is always bounded and scrolls when content overflows —
+            // rather than letting the card grow past the window and clip the lower
+            // questions with no way to reach them.
+            GeometryReader { geo in
+                VStack(spacing: 0) {
+                    header
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 56) {
+                            ForEach(Array(OopsContent.questions.enumerated()), id: \.element.id) { index, q in
+                                questionView(number: index + 1, q)
+                            }
+                            HStack {
+                                Spacer()
+                                Button("Finish", action: onFinish).buttonStyle(OopsButton())
+                                Spacer()
+                            }
+                            .padding(.top, 6)
                         }
-                        HStack {
-                            Spacer()
-                            Button("Finish", action: onFinish).buttonStyle(OopsButton())
-                            Spacer()
-                        }
-                        .padding(.top, 6)
+                        .padding(.horizontal, 80)
+                        .padding(.top, 24)
+                        .padding(.bottom, 60)
                     }
-                    .padding(.horizontal, 80)
-                    .padding(.top, 24)
-                    .padding(.bottom, 60)
                 }
+                .frame(width: min(1180, geo.size.width - 80),
+                       height: max(0, geo.size.height - 100))
+                .oopsWindow()
+                .frame(maxWidth: .infinity, maxHeight: .infinity) // centre the card
             }
-            .frame(maxWidth: 1180, maxHeight: 820)
-            .oopsWindow()
-            .padding(.horizontal, 40)
-            .padding(.vertical, 50)
 
             if confirm {
                 OopsDialog(
@@ -109,7 +116,7 @@ struct QuizScreen: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: 75)
+                .frame(minHeight: 60)
                 .padding(.horizontal, 22)
                 .background(.ultraThinMaterial)
                 .background(Color.white.opacity(selected ? 0.30 : 0.10))
