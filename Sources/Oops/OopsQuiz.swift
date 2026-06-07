@@ -13,37 +13,35 @@ struct QuizScreen: View {
         ZStack {
             OopsPassthrough(dim: true)
 
-            // A capped, centred glass card with the questions scrolling inside it. The
-            // height is bounded to a fraction of the window (so it always leaves a margin
-            // and stays inside the viewport on Vision Pro, where the window can be taller
-            // than the comfortable view) and clamped to an absolute max. The inner
-            // ScrollView then has a definite height, so content scrolls within the card
-            // instead of the card growing past the screen and clipping the lower questions.
-            GeometryReader { geo in
-                VStack(spacing: 0) {
-                    header
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 56) {
-                            ForEach(Array(OopsContent.questions.enumerated()), id: \.element.id) { index, q in
-                                questionView(number: index + 1, q)
-                            }
-                            HStack {
-                                Spacer()
-                                Button("Finish", action: onFinish).buttonStyle(OopsButton())
-                                Spacer()
-                            }
-                            .padding(.top, 6)
+            // Fixed-size glass card. The dev-menu window has no defaultSize on visionOS,
+            // so it is freely resizable and geo.size.height can be far larger than the
+            // visible viewport. Centering a proportionally-sized card inside that large
+            // layout space pushes the card's bottom edge below the viewport. Using a fixed
+            // 920×530 pt frame side-steps the dependency on window height entirely:
+            // the card is always small enough to leave comfortable margins (≥95 pt top/bottom
+            // in the 720 pt visionOS default window, ≥150 pt on iPad landscape), and the
+            // ZStack below centers it without any special geometry tricks.
+            VStack(spacing: 0) {
+                header
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 56) {
+                        ForEach(Array(OopsContent.questions.enumerated()), id: \.element.id) { index, q in
+                            questionView(number: index + 1, q)
                         }
-                        .padding(.horizontal, 80)
-                        .padding(.top, 24)
-                        .padding(.bottom, 60)
+                        HStack {
+                            Spacer()
+                            Button("Finish", action: onFinish).buttonStyle(OopsButton())
+                            Spacer()
+                        }
+                        .padding(.top, 6)
                     }
+                    .padding(.horizontal, 80)
+                    .padding(.top, 24)
+                    .padding(.bottom, 60)
                 }
-                .frame(width: min(1100, geo.size.width * 0.86),
-                       height: min(760, geo.size.height * 0.8))
-                .oopsWindow()
-                .frame(maxWidth: .infinity, maxHeight: .infinity) // centre within the window
             }
+            .frame(width: 920, height: 530)
+            .oopsWindow()
 
             if confirm {
                 OopsDialog(
