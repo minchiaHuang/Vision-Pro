@@ -25,7 +25,14 @@ enum ParametricWorldBuilder {
         guard let model = try? await Entity(named: params.archetype.usdzName) else {
             return nil
         }
+        return assemble(model: model, params: params)
+    }
 
+    /// Synchronous assembly of an already-loaded `model` into the parametric world
+    /// (container + framing + lights + orbs). Split out of `build` so it is testable with
+    /// a synthetic model — no bundled USDZ required.
+    @MainActor
+    static func assemble(model: Entity, params: WorldParams) -> ParametricWorldBuild {
         let container = Entity()
         container.addChild(model)
 

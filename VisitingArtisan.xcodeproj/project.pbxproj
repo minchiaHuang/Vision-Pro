@@ -80,6 +80,7 @@
 		BB0000010000000000000013 /* StubURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000114 /* StubURLProtocol.swift */; };
 		BB0000010000000000000014 /* NetworkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000115 /* NetworkServiceTests.swift */; };
 		BB0000010000000000000017 /* SplatLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000116 /* SplatLibraryTests.swift */; };
+		BB0000010000000000000018 /* ParametricWorldBuilderRealityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -155,6 +156,7 @@
 		BB0000010000000000000114 /* StubURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StubURLProtocol.swift; sourceTree = "<group>"; };
 		BB0000010000000000000115 /* NetworkServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkServiceTests.swift; sourceTree = "<group>"; };
 		BB0000010000000000000116 /* SplatLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatLibraryTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParametricWorldBuilderRealityTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -239,6 +241,7 @@
 				BB0000010000000000000114 /* StubURLProtocol.swift */,
 				BB0000010000000000000115 /* NetworkServiceTests.swift */,
 				BB0000010000000000000116 /* SplatLibraryTests.swift */,
+				BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -564,6 +567,7 @@
 				BB0000010000000000000013 /* StubURLProtocol.swift in Sources */,
 				BB0000010000000000000014 /* NetworkServiceTests.swift in Sources */,
 				BB0000010000000000000017 /* SplatLibraryTests.swift in Sources */,
+				BB0000010000000000000018 /* ParametricWorldBuilderRealityTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
