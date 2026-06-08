@@ -39,17 +39,23 @@ enum DevFeature: String, Identifiable, CaseIterable {
 
     /// Features that embed their own `NavigationStack` provide their own back
     /// chrome, so the container hides its floating back button to avoid stacking
-    /// two back affordances. visionOS has no splat navigation, so it keeps the
-    /// floating button there.
+    /// two back affordances. The oops flow surfaces its own in-card back button,
+    /// so it also opts out of the floating "Back to menu" chevron on every platform.
     var providesOwnNavigation: Bool {
-        #if os(visionOS)
-        return false
-        #else
         switch self {
-        case .splat: return true
-        default:     return false
+        case .oops:
+            return true
+        case .splat:
+            // splat embeds its own NavigationStack on iPad; visionOS has no splat
+            // navigation, so it keeps the floating button there.
+            #if os(visionOS)
+            return false
+            #else
+            return true
+            #endif
+        case .voice:
+            return false
         }
-        #endif
     }
 }
 

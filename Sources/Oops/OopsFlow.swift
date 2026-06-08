@@ -40,13 +40,6 @@ struct OopsFlowView: View {
     @State private var safety = [false, false, false]
     @State private var privacy = [false, false, false]
 
-    private func restart() {
-        answers = OopsAnswers()
-        safety = [false, false, false]
-        privacy = [false, false, false]
-        withAnimation(.easeInOut(duration: 0.5)) { screen = .opening }
-    }
-
     private func go(_ s: OopsScreen) {
         withAnimation(.easeInOut(duration: 0.5)) { screen = s }
     }
@@ -61,24 +54,6 @@ struct OopsFlowView: View {
                 ZoomableContent {
                     screenView(screen)
                 }
-
-                // Restart pill — bottom-left chrome, kept outside the zoom so it stays
-                // a fixed size (matches the prototype chrome).
-                VStack {
-                    Spacer()
-                    HStack {
-                        Button(action: restart) {
-                            Label("Restart", systemImage: "arrow.counterclockwise")
-                                .font(.system(size: 13))
-                                .foregroundStyle(.white.opacity(0.7))
-                                .padding(.horizontal, 16).padding(.vertical, 9)
-                                .background(.ultraThinMaterial, in: Capsule())
-                        }
-                        .buttonStyle(.plain)
-                        Spacer()
-                    }
-                }
-                .padding(20)
             }
         }
         .preferredColorScheme(.dark)
