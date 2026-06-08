@@ -43,6 +43,11 @@ final class AppState {
     /// never talk over each other. Created on entering the gallery; cleared on exit.
     var museumConversation: ConversationService?
 
+    /// Quiz speech-to-text bridge — shared between the Quiz screen and the floating
+    /// `quiz-voice-orb` window so the orb can write a spoken answer into the question the user is
+    /// currently on. Front-end only; copied into the flow's `OopsAnswers` as the user answers.
+    let quizVoice = QuizVoiceSession()
+
     /// Hidden continuous scores (the bottom layer of research direction 6) and the world
     /// parameters they map to (direction 7). Computed and stored from Phase 3 on; the
     /// display layer consumes `worldParams` from Phase 2 on.
@@ -131,6 +136,7 @@ final class AppState {
         museumStory = nil
         museumAnswers = nil
         museumConversation = nil
+        quizVoice.reset()
         phase = .splash
     }
 }

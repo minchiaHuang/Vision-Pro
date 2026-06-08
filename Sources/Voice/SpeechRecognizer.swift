@@ -20,6 +20,11 @@ final class SpeechRecognizer {
     private(set) var transcript = ""
     private(set) var isListening = false
 
+    /// Diagnostics (for the dev status readout): whether the recognizer is currently usable, and
+    /// whether on-device recognition is supported on this platform/build.
+    var isAvailable: Bool { recognizer?.isAvailable ?? false }
+    var onDeviceSupported: Bool { recognizer?.supportsOnDeviceRecognition ?? false }
+
     enum STTError: Error { case unauthorized, unavailable }
 
     /// Requests speech-recognition + microphone authorization. Returns true only
@@ -45,9 +50,14 @@ final class SpeechRecognizer {
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
+        // Force on-device recognition on real hardware (lower latency, better privacy). In the
+        // Simulator the on-device model is unreliable / silent, so fall back to server-based
+        // recognition (requires network) — otherwise live audio never produces a transcript.
+        #if !targetEnvironment(simulator)
         if recognizer.supportsOnDeviceRecognition {
             request.requiresOnDeviceRecognition = true
         }
+        #endif
         self.request = request
 
         let input = audioEngine.inputNode

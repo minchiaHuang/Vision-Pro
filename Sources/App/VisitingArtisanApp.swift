@@ -138,6 +138,17 @@ struct VisitingArtisanApp: App {
             }
             return WindowPlacement()
         }
+
+        // visionOS only: floating speech-to-text orb shown beside the Quiz screen so the user can
+        // speak their answers instead of typing. Pure on-device STT (no AI voice). Opened while the
+        // Oops flow is on the `.quiz` screen; writes into the shared `AppState.quizVoice`.
+        Window("Answer by Voice", id: "quiz-voice-orb") {
+            QuizVoiceOrbView()
+                .environment(appState)
+        }
+        .defaultSize(width: 290, height: 460)   // TEMP larger to fit the dev status readout
+        .windowResizability(.contentSize)
+        .restorationBehavior(.disabled)
         #endif
     }
 }
