@@ -140,6 +140,8 @@ private func currentExtendedGamepad() -> GCExtendedGamepad? {
 final class MuseumNarrationDirector {
     private let frameXZ: [SIMD2<Float>]
     private let narrations: [String]
+    private let tones: [String]
+    private let decisionPrompt: String
     private weak var convo: ConversationService?
     private let radius: Float
     private var fired: Set<Int> = []
@@ -148,17 +150,24 @@ final class MuseumNarrationDirector {
          convo: ConversationService?, radius: Float = 2.5) {
         self.frameXZ = framePositions.map { SIMD2($0.x, $0.z) }
         self.narrations = story.nodes.map(\.narration)
+        self.tones = story.nodes.map(\.tone)
+        self.decisionPrompt = story.decision_prompt
         self.convo = convo
         self.radius = radius
     }
 
-    /// Called each locomotion frame with the player's scene-space position.
+    /// Called each locomotion frame with the player's scene-space position. The warm Elixir beat
+    /// closes with the decision prompt — the museum's final question, handed back to the visitor.
     func tick(playerPosition: SIMD3<Float>) {
         let p = SIMD2(playerPosition.x, playerPosition.z)
         guard let i = Self.frameToTrigger(playerXZ: p, frameXZ: frameXZ, fired: fired, radius: radius),
               i < narrations.count else { return }
         fired.insert(i)
-        convo?.narrate(narrations[i])
+        var line = narrations[i]
+        if tones[i] == "warm", !decisionPrompt.isEmpty {
+            line += " " + decisionPrompt
+        }
+        convo?.narrate(line)
     }
 
     /// Pure: the nearest not-yet-fired frame within `radius`, or nil. Kept free of RealityKit so
