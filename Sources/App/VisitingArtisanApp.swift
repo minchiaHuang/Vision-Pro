@@ -121,6 +121,34 @@ struct VisitingArtisanApp: App {
             }
             return WindowPlacement()
         }
+
+        // visionOS only: the Future Museum's floating Curator voice — shown while the museum
+        // gallery ImmersiveSpace is open. Drives the shared `AppState.museumConversation`
+        // (push-to-talk), placed trailing the gallery controls panel.
+        Window("Museum Guide", id: "museum-voice-orb") {
+            MuseumVoiceOrbView()
+                .environment(appState)
+        }
+        .defaultSize(width: 200, height: 420)
+        .windowResizability(.contentSize)
+        .restorationBehavior(.disabled)
+        .defaultWindowPlacement { _, context in
+            if let controls = context.windows.first(where: { $0.id == "oops-gallery-controls" }) {
+                return WindowPlacement(.trailing(controls))
+            }
+            return WindowPlacement()
+        }
+
+        // visionOS only: floating speech-to-text orb shown beside the Quiz screen so the user can
+        // speak their answers instead of typing. Pure on-device STT (no AI voice). Opened while the
+        // Oops flow is on the `.quiz` screen; writes into the shared `AppState.quizVoice`.
+        Window("Answer by Voice", id: "quiz-voice-orb") {
+            QuizVoiceOrbView()
+                .environment(appState)
+        }
+        .defaultSize(width: 120, height: 270)
+        .windowResizability(.contentSize)
+        .restorationBehavior(.disabled)
         #endif
     }
 }

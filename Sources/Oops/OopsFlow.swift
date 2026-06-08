@@ -42,6 +42,7 @@ struct OopsFlowView: View {
 
     private func restart() {
         answers = OopsAnswers()
+        appState.quizVoice.reset()
         safety = [false, false, false]
         privacy = [false, false, false]
         withAnimation(.easeInOut(duration: 0.5)) { screen = .opening }
@@ -91,7 +92,21 @@ struct OopsFlowView: View {
                 appState.oopsResumeScreen = nil
             }
         }
+        // The voice orb is a separate window; fold the speech it recognizes into the flow's
+        // answers so dictation and typing share one set of answers (dictation replaces the field).
+        .onChange(of: appState.quizVoice.text) { _, dict in
+            for (id, value) in dict { answers.quizText[id] = value }
+        }
         #if os(visionOS)
+        // Show the floating speech-to-text orb only while on the Quiz screen.
+        .onChange(of: screen) { _, s in
+            if s == .quiz {
+                openWindow(id: "quiz-voice-orb")
+            } else {
+                dismissWindow(id: "quiz-voice-orb")
+                appState.quizVoice.activeQuestionID = nil
+            }
+        }
         // Let the cover background go clear so the transparent `OopsPassthrough`
         // reveals the window glass / real room rather than an opaque default backing.
         .presentationBackground(.clear)
@@ -137,11 +152,19 @@ struct OopsFlowView: View {
     ///   at the reflection screen.
     /// - iPad: loads gallery worldParams and shows the in-cover `WorldView` (ParametricWorldView).
     private func enterWorld() {
+        // When a Curator story exists (the museum flow, not "visit old world"), stand up the one
+        // shared voice now so both the orb and the in-gallery proximity narrator use it.
+        if let story = appState.museumStory {
+            let convo = ConversationService()
+            convo.configureCurator(story: story, answers: appState.museumAnswers ?? MuseumAnswers())
+            appState.museumConversation = convo
+        }
         #if os(visionOS)
         Task {
             appState.loadGalleryWorld()
             if case .opened = await openImmersiveSpace(id: "world") {
                 openWindow(id: "oops-gallery-controls")
+                if appState.museumConversation != nil { openWindow(id: "museum-voice-orb") }
                 dismissWindow(id: "dev-menu")
             }
         }

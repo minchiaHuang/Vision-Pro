@@ -44,6 +44,16 @@ final class AppState {
     /// generator's `nodes` and re-textures each wall as its painting lands.
     var museumGenerator = MuseumGenerator()
 
+    /// The single Curator voice for an open museum gallery — shared by the floating voice orb
+    /// (push-to-talk) and the in-gallery proximity narrator, so both use one audio session and
+    /// never talk over each other. Created on entering the gallery; cleared on exit.
+    var museumConversation: ConversationService?
+
+    /// Quiz speech-to-text bridge — shared between the Quiz screen and the floating
+    /// `quiz-voice-orb` window so the orb can write a spoken answer into the question the user is
+    /// currently on. Front-end only; copied into the flow's `OopsAnswers` as the user answers.
+    let quizVoice = QuizVoiceSession()
+
     /// Hidden continuous scores (the bottom layer of research direction 6) and the world
     /// parameters they map to (direction 7). Computed and stored from Phase 3 on; the
     /// display layer consumes `worldParams` from Phase 2 on.
@@ -135,6 +145,8 @@ final class AppState {
         // called from MainActor UI, but the call must be expressed on the actor). Cancels any
         // in-flight Stage B paint task so a stale run can't keep painting after a restart.
         Task { @MainActor in museumGenerator.reset() }
+        museumConversation = nil
+        quizVoice.reset()
         phase = .splash
     }
 }

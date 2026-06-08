@@ -17,6 +17,8 @@ struct ImmersiveWorldView: View {
     /// Streams the Future Museum paintings onto the gallery walls as Stage B finishes each one
     /// (the user enters the moment the story is ready, before any image has landed).
     @State private var wallStreamer = GalleryWallStreamer()
+    /// Gentle looping background music for the duration of the immersive gallery visit.
+    @State private var music = MuseumMusicPlayer()
 
     var body: some View {
         // Observe each painting's arrival: reading every node's `image` here ties this view's
@@ -42,7 +44,21 @@ struct ImmersiveWorldView: View {
                 let root = Entity()
                 root.addChild(build.container)
                 content.add(root)
-                locomotor.start(root: root, span: build.span, content: content)
+                // Future Museum: narrate each beat as the walker approaches its wall frame.
+                // Same ordered `galleryFrames` list as the wall images, so frame i == beat i.
+                if let story = appState.museumStory {
+                    let frames = Array(ParametricWorldBuilder.galleryFrames(build.container)
+                        .prefix(story.nodes.count))
+                    let positions = frames.map { $0.position(relativeTo: root) }
+                    let director = MuseumNarrationDirector(framePositions: positions,
+                                                           story: story,
+                                                           convo: appState.museumConversation)
+                    locomotor.start(root: root, span: build.span, content: content) { player in
+                        director.tick(playerPosition: player)
+                    }
+                } else {
+                    locomotor.start(root: root, span: build.span, content: content)
+                }
                 // Hand the world root to the streamer and paint whatever has already landed;
                 // the `update:` closure below picks up the rest as they arrive.
                 wallStreamer.root = root
@@ -60,6 +76,8 @@ struct ImmersiveWorldView: View {
             // path (the streamer has no root there).
             wallStreamer.applyIfNeeded(generator: appState.museumGenerator)
         }
+        .onAppear { music.start() }
+        .onDisappear { music.stop() }
     }
 
     /// Prefers a runtime panorama (e.g. World Labs) when present, else the bundled asset.
@@ -105,8 +123,12 @@ final class ParametricLocomotor {
     private weak var root: Entity?
     private var subscription: EventSubscription?
 
-    func start(root: Entity, span: Float, content: RealityViewContent) {
+    private var onPlayerMove: ((SIMD3<Float>) -> Void)?
+
+    func start(root: Entity, span: Float, content: RealityViewContent,
+               onPlayerMove: ((SIMD3<Float>) -> Void)? = nil) {
         self.root = root
+        self.onPlayerMove = onPlayerMove
         // User already stands inside the floor-aligned world, so start at the origin
         // (no back-off, unlike the splat path). Speed scales with scene size.
         self.loco = SplatLocomotion(position: .zero, span: span)
@@ -114,7 +136,11 @@ final class ParametricLocomotor {
             guard let self, let root = self.root else { return }
             let gamepad = SplatSpikeDebug.ignoreGamepad ? nil : currentExtendedGamepad()
             self.loco.tick(deltaTime: Float(event.deltaTime), gamepad: gamepad)
-            root.transform = Transform(matrix: self.loco.playerTransform().inverse)
+            let player = self.loco.playerTransform()
+            root.transform = Transform(matrix: player.inverse)
+            // Report the player's scene-space position (root-local) for proximity narration.
+            let t = player.columns.3
+            self.onPlayerMove?(SIMD3(t.x, t.y, t.z))
         }
     }
 }
@@ -147,6 +173,59 @@ final class GalleryWallStreamer {
         appliedSignature = signature
         let textures = ParametricWorldBuilder.texturesFrom(generator.orderedGalleryImages())
         ParametricWorldBuilder.applyGalleryPhotos(root, textures: textures)
+    }
+}
+
+/// Speaks each beat's narration once, when the walker first comes within `radius` metres of that
+/// beat's wall frame. Frame order == beat order (the same `ParametricWorldBuilder.galleryFrames`
+/// list drives the wall images), so frame *i* narrates `story.nodes[i]`. Narration is spoken
+/// through the shared `ConversationService`, so it shares the audio session with push-to-talk.
+@MainActor
+final class MuseumNarrationDirector {
+    private let frameXZ: [SIMD2<Float>]
+    private let narrations: [String]
+    private let tones: [String]
+    private let decisionPrompt: String
+    private weak var convo: ConversationService?
+    private let radius: Float
+    private var fired: Set<Int> = []
+
+    init(framePositions: [SIMD3<Float>], story: MuseumStory,
+         convo: ConversationService?, radius: Float = 2.5) {
+        self.frameXZ = framePositions.map { SIMD2($0.x, $0.z) }
+        self.narrations = story.nodes.map(\.narration)
+        self.tones = story.nodes.map(\.tone)
+        self.decisionPrompt = story.decision_prompt
+        self.convo = convo
+        self.radius = radius
+    }
+
+    /// Called each locomotion frame with the player's scene-space position. The warm Elixir beat
+    /// closes with the decision prompt — the museum's final question, handed back to the visitor.
+    func tick(playerPosition: SIMD3<Float>) {
+        let p = SIMD2(playerPosition.x, playerPosition.z)
+        guard let i = Self.frameToTrigger(playerXZ: p, frameXZ: frameXZ, fired: fired, radius: radius),
+              i < narrations.count else { return }
+        fired.insert(i)
+        var line = narrations[i]
+        if tones[i] == "warm", !decisionPrompt.isEmpty {
+            line += " " + decisionPrompt
+        }
+        convo?.narrate(line)
+    }
+
+    /// Pure: the nearest not-yet-fired frame within `radius`, or nil. Kept free of RealityKit so
+    /// the trigger rule is testable in isolation.
+    static func frameToTrigger(playerXZ: SIMD2<Float>, frameXZ: [SIMD2<Float>],
+                               fired: Set<Int>, radius: Float) -> Int? {
+        let r2 = radius * radius
+        func d2(_ i: Int) -> Float {
+            let dx = playerXZ.x - frameXZ[i].x, dy = playerXZ.y - frameXZ[i].y
+            return dx * dx + dy * dy
+        }
+        return frameXZ.indices
+            .filter { !fired.contains($0) && d2($0) <= r2 }
+            .min { d2($0) < d2($1) }
     }
 }
 #endif

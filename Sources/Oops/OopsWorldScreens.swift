@@ -241,7 +241,7 @@ struct OopsGalleryControls: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Text("Richards Art Gallery")
+            Text(appState.museumStory == nil ? "Richards Art Gallery" : "Your Future Museum")
                 .font(.headline)
             Text("Walk to explore · Use gamepad or arrows to move")
                 .font(.caption)
@@ -257,12 +257,26 @@ struct OopsGalleryControls: View {
                     .foregroundStyle(.secondary)
             }
             SplatMovePad()
+
+            // The closing question, handed back to the visitor at the exit (Future Museum only).
+            if let decision = appState.museumStory?.decision_prompt, !decision.isEmpty {
+                Divider()
+                Text("The decision")
+                    .font(.caption.weight(.semibold))
+                    .tracking(1)
+                    .foregroundStyle(.secondary)
+                Text(decision)
+                    .font(.footnote)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             Button("Leave gallery", action: performExit)
                 .buttonStyle(.borderedProminent)
                 .disabled(isExiting)
         }
         .padding(24)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: 360)
     }
 
     private func performExit() {
@@ -270,12 +284,16 @@ struct OopsGalleryControls: View {
         isExiting = true
         Task {
             await dismissImmersiveSpace()
+            // Tear down the shared Curator voice and its floating orb window.
+            appState.museumConversation?.stop()
+            appState.museumConversation = nil
             appState.worldParams = nil
             // Return to the Oops reflection screen (same pattern as OopsWorldControls).
             appState.oopsResumeScreen = .reflection
             appState.devActiveFeature = .oops
             openWindow(id: "dev-menu")
             dismissWindow(id: "oops-gallery-controls")
+            dismissWindow(id: "museum-voice-orb")
         }
     }
 }
