@@ -103,17 +103,27 @@ struct OopsButton: ButtonStyle {
     var minWidth: CGFloat = 250
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 22, weight: .medium))
+            // VisualEyes `.gbtn`: Roboto 500 / 31px → ~24pt in this window, light tracking.
+            .font(.system(size: 24, weight: .medium))
+            .tracking(0.2)
             .foregroundStyle(.white)
             .frame(minWidth: minWidth)
             .frame(height: 64)
-            .padding(.horizontal, 30)
+            .padding(.horizontal, 36)
+            // `.gbtn` fill: a white→gray glass sheen (rgba(255,255,255,.42) → rgba(120,120,120,.42))
+            // layered over the system blur, rather than a flat tint.
+            .background(
+                LinearGradient(
+                    colors: ghost
+                        ? [Color.white.opacity(0.12), Color(white: 0.47).opacity(0.16)]
+                        : [Color.white.opacity(0.42), Color(white: 0.47).opacity(0.42)],
+                    startPoint: UnitPoint(x: 0.02, y: 0.0),
+                    endPoint:   UnitPoint(x: 0.98, y: 1.0)))
             .background(.ultraThinMaterial)
-            .background(Color.white.opacity(ghost ? 0.08 : 0.18))
             .clipShape(Capsule())
-            .overlay(Capsule().strokeBorder(.white.opacity(ghost ? 0.25 : 0.30), lineWidth: 1))
-            .shadow(color: .black.opacity(0.25), radius: 18, y: 6)
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .overlay(Capsule().strokeBorder(.white.opacity(ghost ? 0.25 : 0.45), lineWidth: 1))
+            .shadow(color: .black.opacity(0.22), radius: 18, y: 6)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeOut(duration: 0.16), value: configuration.isPressed)
     }
 }
@@ -309,55 +319,59 @@ struct CheckStatement: View {
     let onToggle: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 18) {
-            Button(action: onToggle) {
-                toggle
-                    // Nudge down so the toggle aligns with the heading's first line.
-                    .padding(.top, 2)
-            }
-            .buttonStyle(.plain)
+        HStack(alignment: .top, spacing: 22) {
+            toggle
+                // Nudge down so the toggle aligns with the heading's first line.
+                .padding(.top, 2)
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 9) {
                 Text(head)
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(OopsGlass.label1)
                 Text(text)
-                    .font(.system(size: 16, weight: .regular))
-                    .foregroundStyle(OopsGlass.label2)
+                    .font(.system(size: 17, weight: .regular))
+                    // Body copy reads bright on the frosted card (HTML `.row-body` ≈ white 0.96).
+                    .foregroundStyle(.white.opacity(0.92))
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
+        // The whole row is the tap target — not just the small pill — so every
+        // statement toggles reliably (pinch/tap can be imprecise on a tiny pill).
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onToggle)
         .animation(.easeInOut(duration: 0.2), value: checked)
     }
 
-    /// Figma "Checkbox" component (I…;49:1747): a 36×30 capsule with a 1.92px white border
-    /// and the frosted glass gradient, holding a circular knob. OFF = glass + knob left;
-    /// ON = systemBlue track + knob right.
+    /// "Checkbox" pill from VisualEyes Screens.html (`.pill.check`): a 36×30 glass pill.
+    /// OFF = frosted glass gradient, empty. ON = bright white fill with a dark checkmark
+    /// and a soft outer glow.
     private var toggle: some View {
-        let trackW: CGFloat = 40
-        let trackH: CGFloat = 26
-        let knob: CGFloat = 19
-        let inset: CGFloat = 3.5
-        return ZStack {
+        ZStack {
             Capsule()
                 .fill(
-                    LinearGradient(
-                        colors: checked
-                            ? [OopsGlass.systemBlue, OopsGlass.systemBlue.opacity(0.82)]
-                            : [Color.white.opacity(0.37), Color(white: 0.45, opacity: 0.42)],
-                        startPoint: UnitPoint(x: 0.10, y: 0.05),
-                        endPoint:   UnitPoint(x: 0.90, y: 0.95)))
-                .overlay(Capsule().strokeBorder(.white.opacity(checked ? 0.6 : 0.85), lineWidth: 2))
-            Circle()
-                .fill(.white)
-                .frame(width: knob, height: knob)
-                .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
-                .offset(x: checked ? (trackW / 2 - knob / 2 - inset)
-                                   : -(trackW / 2 - knob / 2 - inset))
+                    checked
+                        ? LinearGradient(
+                            colors: [Color.white.opacity(0.95),
+                                     Color(red: 0.92, green: 0.92, blue: 0.94).opacity(0.90)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing)
+                        : LinearGradient(
+                            colors: [Color.white.opacity(0.42),
+                                     Color(white: 0.47, opacity: 0.42)],
+                            startPoint: UnitPoint(x: 0.10, y: 0.05),
+                            endPoint:   UnitPoint(x: 0.90, y: 0.95)))
+                .overlay(Capsule().strokeBorder(.white.opacity(checked ? 0.0 : 0.55), lineWidth: 1.5))
+                .shadow(color: checked ? Color.white.opacity(0.55) : .black.opacity(0.18),
+                        radius: checked ? 7 : 4, y: checked ? 0 : 1)
+            Image(systemName: "checkmark")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Color(red: 0.165, green: 0.165, blue: 0.180))
+                .opacity(checked ? 1 : 0)
+                .scaleEffect(checked ? 1 : 0.6)
         }
-        .frame(width: trackW, height: trackH)
+        .frame(width: 36, height: 30)
+        .animation(.easeInOut(duration: 0.2), value: checked)
     }
 }
 

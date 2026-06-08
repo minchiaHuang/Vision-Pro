@@ -142,45 +142,45 @@ struct DeclarationScreen: View {
         ZStack {
             OopsPassthrough(dim: true)
 
-            ZStack {
-                // 1 — Content (title + subtitle + statements), pinned to the top
-                VStack(alignment: .leading, spacing: 26) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(title).oopsTitle(34)
+            // Figma node 46:1124 stacks the screen vertically: a frosted content card
+            // (back button → title → subtitle → statements) with the CTA pill BELOW it.
+            // A VStack — not an overlay — keeps the button from ever overlapping the
+            // statements, no matter how tall the copy runs.
+            VStack(spacing: 34) {
+                // 1 — Content (back button → title → subtitle → statements), sitting
+                // directly on the single frosted window — no nested second-layer panel.
+                VStack(alignment: .leading, spacing: 28) {
+                    // Back button — top-leading, above the title (Figma 289:2111)
+                    if let onBack {
+                        backButton(action: onBack)
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(title).oopsTitle(36)
                         Text(subtitle)
-                            .oopsSub(17)
+                            .oopsSub(18)
+                            .foregroundStyle(.white.opacity(0.92))
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    VStack(spacing: 22) {
+                    VStack(spacing: 26) {
                         ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
                             CheckStatement(head: item.head, text: item.text,
                                            checked: checks[i]) { checks[i].toggle() }
                         }
                     }
                 }
-                .padding(.horizontal, 80)
-                .padding(.top, 96)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                // 2 — Back button (top-leading) — IDENTICAL position to the quiz screen
-                if let onBack {
-                    backButton(action: onBack)
-                        .padding(.leading, 32)
-                        .padding(.top, 32)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
-
-                // 3 — CTA pill (bottom-centre)
+                // 2 — CTA pill, centred BELOW the content (Figma 289:2130) — never overlaps
                 Button(cta, action: onCta)
                     .buttonStyle(OopsButton())
                     .disabled(!canContinue)
                     .opacity(canContinue ? 1 : 0.4)
                     .animation(.easeInOut(duration: 0.2), value: canContinue)
-                    .padding(.bottom, 38)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
-            .frame(width: 1000, height: 600)
+            .frame(width: 960)
+            .padding(52)
             .oopsWindow()
 
             VStack { Spacer(); PageDots().padding(.bottom, 18) }
