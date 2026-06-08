@@ -65,7 +65,7 @@ enum OopsContent {
               options: [],
               placeholder: "Share as much details as you can. The more context you give, the better the outcome"),
         .init(id: "q6",
-              label: "What are you least willing to give up for it?",
+              label: "Lastly, what are you least willing to give up for it?",
               options: [],
               placeholder: "Share as much details as you can. The more context you give, the better the outcome"),
     ]
