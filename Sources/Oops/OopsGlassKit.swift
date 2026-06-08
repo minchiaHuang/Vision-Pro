@@ -101,19 +101,42 @@ extension View {
 struct OopsButton: ButtonStyle {
     var ghost: Bool = false
     var minWidth: CGFloat = 250
+    /// When set, the pill is laid out at this exact size (capsule included) instead of
+    /// sizing to its label + horizontal padding. Used to keep the primary CTAs a uniform
+    /// 302×75 across the Home / Safety / Privacy screens.
+    var fixedWidth: CGFloat? = nil
+    var fixedHeight: CGFloat? = nil
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 22, weight: .medium))
+        let label = configuration.label
+            // VisualEyes `.gbtn`: Roboto 500 / 31px → ~24pt in this window, light tracking.
+            .font(.system(size: 24, weight: .medium))
+            .tracking(0.2)
             .foregroundStyle(.white)
-            .frame(minWidth: minWidth)
-            .frame(height: 64)
-            .padding(.horizontal, 30)
+
+        return Group {
+            if let fixedWidth {
+                label.frame(width: fixedWidth, height: fixedHeight ?? 64)
+            } else {
+                label
+                    .frame(minWidth: minWidth)
+                    .frame(height: fixedHeight ?? 64)
+                    .padding(.horizontal, 36)
+            }
+        }
+            // `.gbtn` fill: a white→gray glass sheen (rgba(255,255,255,.42) → rgba(120,120,120,.42))
+            // layered over the system blur, rather than a flat tint.
+            .background(
+                LinearGradient(
+                    colors: ghost
+                        ? [Color.white.opacity(0.12), Color(white: 0.47).opacity(0.16)]
+                        : [Color.white.opacity(0.42), Color(white: 0.47).opacity(0.42)],
+                    startPoint: UnitPoint(x: 0.02, y: 0.0),
+                    endPoint:   UnitPoint(x: 0.98, y: 1.0)))
             .background(.ultraThinMaterial)
-            .background(Color.white.opacity(ghost ? 0.08 : 0.18))
             .clipShape(Capsule())
-            .overlay(Capsule().strokeBorder(.white.opacity(ghost ? 0.25 : 0.30), lineWidth: 1))
-            .shadow(color: .black.opacity(0.25), radius: 18, y: 6)
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .overlay(Capsule().strokeBorder(.white.opacity(ghost ? 0.25 : 0.45), lineWidth: 1))
+            .shadow(color: .black.opacity(0.22), radius: 18, y: 6)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeOut(duration: 0.16), value: configuration.isPressed)
     }
 }
@@ -300,7 +323,8 @@ struct PageDots: View {
 
 // MARK: - Checkbox statement
 
-/// `.statement` — square checkbox + heading + body, used on the declaration screens.
+/// `.statement` — capsule toggle + heading + body, used on the declaration screens
+/// (Safety Declaration / Privacy Preferences — Figma nodes 46:1124 / 288:1907).
 struct CheckStatement: View {
     let head: String
     let text: String
@@ -308,35 +332,63 @@ struct CheckStatement: View {
     let onToggle: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 20) {
-            Button(action: onToggle) {
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(checked ? OopsGlass.systemBlue : Color.white.opacity(0.12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .strokeBorder(.white.opacity(checked ? 0 : 0.5), lineWidth: 1.5))
-                    .overlay(
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundStyle(.white)
-                            .opacity(checked ? 1 : 0)
-                            .scaleEffect(checked ? 1 : 0.6))
-                    .frame(width: 32, height: 32)
-            }
-            .buttonStyle(.plain)
+        HStack(alignment: .top, spacing: 22) {
+            toggle
+                // Nudge down so the toggle aligns with the heading's first line.
+                .padding(.top, 2)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 9) {
                 Text(head)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(OopsGlass.label1)
                 Text(text)
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(OopsGlass.label2)
+                    .font(.system(size: 17, weight: .regular))
+                    // Body copy reads bright on the frosted card (HTML `.row-body` ≈ white 0.96).
+                    .foregroundStyle(.white.opacity(0.92))
+                    .lineSpacing(2)
+                    // Reserve 3 lines (the longest body) for every row so each statement
+                    // occupies an identical slot — bullet headings line up across the
+                    // Safety and Privacy screens and both frames end up the same height.
+                    .lineLimit(3, reservesSpace: true)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
-        .animation(.easeInOut(duration: 0.18), value: checked)
+        // The whole row is the tap target — not just the small pill — so every
+        // statement toggles reliably (pinch/tap can be imprecise on a tiny pill).
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onToggle)
+        .animation(.easeInOut(duration: 0.2), value: checked)
+    }
+
+    /// "Checkbox" pill from VisualEyes Screens.html (`.pill.check`): a 36×30 glass pill.
+    /// OFF = frosted glass gradient, empty. ON = bright white fill with a dark checkmark
+    /// and a soft outer glow.
+    private var toggle: some View {
+        ZStack {
+            Capsule()
+                .fill(
+                    checked
+                        ? LinearGradient(
+                            colors: [Color.white.opacity(0.95),
+                                     Color(red: 0.92, green: 0.92, blue: 0.94).opacity(0.90)],
+                            startPoint: .topLeading, endPoint: .bottomTrailing)
+                        : LinearGradient(
+                            colors: [Color.white.opacity(0.42),
+                                     Color(white: 0.47, opacity: 0.42)],
+                            startPoint: UnitPoint(x: 0.10, y: 0.05),
+                            endPoint:   UnitPoint(x: 0.90, y: 0.95)))
+                .overlay(Capsule().strokeBorder(.white.opacity(checked ? 0.0 : 0.55), lineWidth: 1.5))
+                .shadow(color: checked ? Color.white.opacity(0.55) : .black.opacity(0.18),
+                        radius: checked ? 7 : 4, y: checked ? 0 : 1)
+            Image(systemName: "checkmark")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Color(red: 0.165, green: 0.165, blue: 0.180))
+                .opacity(checked ? 1 : 0)
+                .scaleEffect(checked ? 1 : 0.6)
+        }
+        .frame(width: 36, height: 30)
+        .animation(.easeInOut(duration: 0.2), value: checked)
     }
 }
 

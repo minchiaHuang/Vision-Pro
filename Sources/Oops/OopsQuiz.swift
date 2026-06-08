@@ -30,7 +30,16 @@ struct QuizScreen: View {
     // in the 1392px card → ~80pt margins each side at ×0.66). Keeping one constant means
     // the "Quiz" title, question label and nav all share the same left edge.
     private let sideInset: CGFloat = 80
-    private let contentWidth: CGFloat = 760   // 920 − 2×80
+
+    // Preferred card size — matches the Safety / Privacy Declaration card's outer glass
+    // footprint. That card sizes its content to 960pt then adds 52pt padding on every
+    // side, so its frosted window is 960 + 52·2 = 1064pt wide (~760 tall). We match that
+    // 1064pt here so the Quiz frame width follows the Declaration frame width exactly. At
+    // runtime the card is capped to the available viewport (see `body`) so the frame never
+    // clips on shorter screens, exactly like the content-sized Declaration card always fits.
+    private let maxCardWidth: CGFloat = 1064
+    private let maxCardHeight: CGFloat = 760
+    private let outerMargin: CGFloat = 20
 
     private var questions: [OopsContent.Question] { OopsContent.questions }
     private var current: OopsContent.Question { questions[currentIndex] }
@@ -47,50 +56,54 @@ struct QuizScreen: View {
     }
 
     var body: some View {
-        ZStack {
-            OopsPassthrough(dim: true)
+        // Size the card to the Privacy-matched 960×760, but never larger than the space
+        // actually available — so the frame fits perfectly (no clipping) on any viewport,
+        // just like the content-sized Privacy Preferences card.
+        GeometryReader { geo in
+            let cardW = min(maxCardWidth, geo.size.width  - outerMargin * 2)
+            let cardH = min(maxCardHeight, geo.size.height - outerMargin * 2)
+            let contentW = cardW - sideInset * 2
 
-            // The glass card — every element is an overlay layer pinned to its own edge,
-            // so nothing reflows when the question content changes height.
             ZStack {
-                // 1 — Question block (vertically centred)
-                questionContent
-                    .frame(width: contentWidth, alignment: .leading)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                OopsPassthrough(dim: true)
 
-                // 2 — Q1 "Quiz" header (pinned below the back button)
-                if isFirst {
-                    quizHeader
-                        .frame(width: contentWidth, alignment: .leading)
-                        .padding(.leading, sideInset)
-                        .padding(.top, 88)
+                // The glass card — every element is an overlay layer pinned to its own edge,
+                // so nothing reflows when the question content changes height.
+                ZStack {
+                    // 1 — Question block (vertically centred)
+                    questionContent
+                        .frame(width: contentW, alignment: .leading)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+
+                    // 2 — Q1 "Quiz" header (pinned below the back button)
+                    if isFirst {
+                        quizHeader
+                            .frame(width: contentW, alignment: .leading)
+                            .padding(.leading, sideInset)
+                            .padding(.top, 88)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    }
+
+                    // 3 — Back button (pinned top-leading — IDENTICAL on every screen)
+                    backButton
+                        .padding(.leading, 32)
+                        .padding(.top, 32)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
+                .frame(width: cardW, height: cardH)
+                .oopsWindow()
 
-                // 3 — Back button (pinned top-leading — IDENTICAL on every screen)
-                backButton
-                    .padding(.leading, 32)
-                    .padding(.top, 32)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-
-                // 4 — Bottom navigation (pinned to the card's bottom edge)
-                navigationRow
-                    .frame(width: contentWidth)
-                    .padding(.bottom, 34)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                if confirm {
+                    OopsDialog(
+                        title: "Are you sure?",
+                        message: "Your progress will be lost and you will need to re-enter all answers.",
+                        confirmTitle: "Yes",
+                        onConfirm: { confirm = false; onBack() },
+                        onCancel:  { confirm = false })
+                    .transition(.opacity)
+                }
             }
-            .frame(width: 920, height: 530)
-            .oopsWindow()
-
-            if confirm {
-                OopsDialog(
-                    title: "Are you sure?",
-                    message: "Your progress will be lost and you will need to re-enter all answers.",
-                    confirmTitle: "Yes",
-                    onConfirm: { confirm = false; onBack() },
-                    onCancel:  { confirm = false })
-                .transition(.opacity)
-            }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
         .animation(.easeInOut(duration: 0.3), value: confirm)
         // Tell the floating voice orb which question to dictate into — nil on the age pills (the
@@ -108,12 +121,12 @@ struct QuizScreen: View {
     private var quizHeader: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Quiz")
-                // Figma: Roboto Bold 36px
-                .font(.system(size: 28, weight: .bold))
+                // Matches the Privacy Preferences title — oopsTitle(36).
+                .font(.system(size: 36, weight: .bold))
                 .foregroundStyle(.white)
             Text("Take a few minutes to answer these questions. Your answers will shape the world that's built for you")
-                // Figma: Roboto Regular 25px
-                .font(.system(size: 17, weight: .regular))
+                // Matches the Privacy Preferences subtitle — oopsSub(18).
+                .font(.system(size: 18, weight: .regular))
                 .foregroundStyle(.white.opacity(0.72))
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
@@ -148,18 +161,25 @@ struct QuizScreen: View {
     @ViewBuilder
     private var questionContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Figma: Roboto Regular 26px → 18pt; identical treatment on all 6 screens.
+            // Matches the pointer/statement title on the Privacy & Safety screens
+            // (CheckStatement head — size 20, bold); identical treatment on all 6 screens.
             Text("Qn \(currentIndex + 1): \(current.label)")
-                .font(.system(size: 18, weight: .regular))
+                .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
 
             if current.isTextInput {
-                freeTextArea
+                // Same question→answer gap as Q1 (VStack spacing 12 + 14 = 26pt).
+                freeTextArea.padding(.top, 14)
             } else {
                 // Extra gap to match Figma gap-[40px] between the question and the pills.
                 pillRow.padding(.top, 14)
             }
+
+            // Nav button (Next / Generate) sits directly below the answer with the SAME
+            // gap as question→answer (VStack spacing 12 + 14 = 26pt), on every screen.
+            navigationRow
+                .padding(.top, 14)
         }
         .id(currentIndex)
         .transition(.asymmetric(
@@ -183,17 +203,18 @@ struct QuizScreen: View {
         }
     }
 
-    /// Figma pill: 250×75 px → 165×50 pt; Capsule; white border 2.314px → 1.5pt;
-    /// gradient linear(167°, white.37 → grey.42); ultraThinMaterial; drop-shadow 18%.
+    /// Figma pill: 250×75 px → 165×50 pt, scaled up 10% → 181.5×55 pt; Capsule;
+    /// white border 2.314px → 1.5pt; gradient linear(167°, white.37 → grey.42);
+    /// ultraThinMaterial; drop-shadow 18%.
     private func pillButton(_ text: String, selected: Bool,
                             action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(text)
-                // Figma: Roboto Medium 20px
-                .font(.system(size: 14, weight: .medium))
+                // Matches the subheader font size (18) for quiz design consistency.
+                .font(.system(size: 18, weight: .medium))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
-                .frame(width: 165, height: 50)
+                .frame(width: 181.5, height: 55)
                 .background(
                     LinearGradient(
                         colors: [Color.white.opacity(0.37), Color(white: 0.45, opacity: 0.42)],
@@ -262,36 +283,21 @@ struct QuizScreen: View {
     @ViewBuilder
     private var navigationRow: some View {
         if isLast {
-            // Q6: "Generate my world" pill — horizontally centred (Figma: 270×75 → 178×50).
-            Button(action: onFinish) {
-                Text("Generate my world")
-                    // Figma: Roboto Medium 25px
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(.white)
-                    .frame(width: 178, height: 50)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.37), Color(white: 0.45, opacity: 0.42)],
-                            startPoint: UnitPoint(x: 0.08, y: 0.05),
-                            endPoint:   UnitPoint(x: 0.95, y: 0.95)
-                        )
-                    )
-                    .background(.ultraThinMaterial)
-                    .clipShape(Capsule())
-                    .overlay(Capsule().strokeBorder(.white.opacity(0.8), lineWidth: 1.5))
-                    .shadow(color: .black.opacity(0.18), radius: 12, y: 1)
-            }
-            .buttonStyle(.plain)
-            .disabled(!canAdvance)
-            .opacity(canAdvance ? 1 : 0.38)
-            .frame(maxWidth: .infinity, alignment: .center)
+            // Q6: "Generate my world" — the same primary CTA pill used on the Safety
+            // Declaration & Privacy Preferences screens (OopsButton 302×75), centred.
+            Button("Generate my world", action: onFinish)
+                .buttonStyle(OopsButton(fixedWidth: 302, fixedHeight: 75))
+                .disabled(!canAdvance)
+                .opacity(canAdvance ? 1 : 0.4)
+                .animation(.easeInOut(duration: 0.2), value: canAdvance)
+                .frame(maxWidth: .infinity, alignment: .center)
         } else {
             // Q1–Q5: "Next >" — Figma Inter Bold 20px; trailing-aligned.
             Button {
                 withAnimation(.easeInOut(duration: 0.28)) { currentIndex += 1 }
             } label: {
                 Text("Next >")
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(size: 19, weight: .bold))
                     .foregroundStyle(canAdvance ? .white : .white.opacity(0.28))
             }
             .buttonStyle(.plain)

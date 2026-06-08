@@ -40,14 +40,6 @@ struct OopsFlowView: View {
     @State private var safety = [false, false, false]
     @State private var privacy = [false, false, false]
 
-    private func restart() {
-        answers = OopsAnswers()
-        appState.quizVoice.reset()
-        safety = [false, false, false]
-        privacy = [false, false, false]
-        withAnimation(.easeInOut(duration: 0.5)) { screen = .opening }
-    }
-
     private func go(_ s: OopsScreen) {
         withAnimation(.easeInOut(duration: 0.5)) { screen = s }
     }
@@ -62,24 +54,6 @@ struct OopsFlowView: View {
                 ZoomableContent {
                     screenView(screen)
                 }
-
-                // Restart pill — bottom-left chrome, kept outside the zoom so it stays
-                // a fixed size (matches the prototype chrome).
-                VStack {
-                    Spacer()
-                    HStack {
-                        Button(action: restart) {
-                            Label("Restart", systemImage: "arrow.counterclockwise")
-                                .font(.system(size: 13))
-                                .foregroundStyle(.white.opacity(0.7))
-                                .padding(.horizontal, 16).padding(.vertical, 9)
-                                .background(.ultraThinMaterial, in: Capsule())
-                        }
-                        .buttonStyle(.plain)
-                        Spacer()
-                    }
-                }
-                .padding(20)
             }
         }
         .preferredColorScheme(.dark)
@@ -125,13 +99,15 @@ struct OopsFlowView: View {
         case .safety:
             DeclarationScreen(
                 label: "03 Safety Declaration", title: "Safety Declaration",
+                subtitle: OopsContent.declarationIntro,
                 items: OopsContent.safety, cta: "I agree & continue",
-                checks: $safety, onCta: { go(.privacy) })
+                checks: $safety, onCta: { go(.privacy) }, onBack: { go(.home) })
         case .privacy:
             DeclarationScreen(
                 label: "04 Privacy Preferences", title: "Privacy Preferences",
+                subtitle: OopsContent.privacyIntro,
                 items: OopsContent.privacy, cta: "Start",
-                checks: $privacy, requireAll: false, onCta: { go(.quiz) })
+                checks: $privacy, requireAll: false, onCta: { go(.quiz) }, onBack: { go(.safety) })
         case .quiz:
             QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
         case .generating:

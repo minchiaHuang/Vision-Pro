@@ -12,20 +12,20 @@ enum OopsContent {
 
     static let safety: [Statement] = [
         .init(head: "Your Consent & Data",
-              text: "Your quiz answers are used only to match you to a personalised world — they are processed in real time and never stored, shared, or used beyond this session. Camera and motion access are used solely to let you move through your world and are never recorded."),
+              text: "Your quiz answers personalise your world in real time and are never stored or shared. Camera and motion data is used solely for movement and is never recorded."),
         .init(head: "Emotional Safety",
-              text: "What you're about to experience is a reflective simulation based on your values and aspirations, not a forecast of your future or a judgement of who you are. If anything brings up difficult emotions, you are welcome to pause or exit at any time."),
+              text: "This is a reflective simulation based on your values — not a judgement of who you are. If anything feels difficult, pause or exit at any time."),
         .init(head: "Physical Safety",
-              text: "Some users may experience dizziness or nausea during immersive experiences. Please ensure you have clear space around you before you begin, and if you feel any discomfort at any point, exit the experience immediately."),
+              text: "Some users may feel dizzy or nauseous. Ensure you have clear space around you, and exit immediately if you feel any discomfort."),
     ]
 
     static let privacy: [Statement] = [
         .init(head: "Quiz Responses",
-              text: "Your answers are used in real time to match you to a personalised world. They are never stored after your session ends."),
+              text: "Your answers can be saved to personalise your experience across future sessions. If you'd prefer not, they'll be used in real time only and discarded when your session ends."),
         .init(head: "Device Motion",
-              text: "Gyroscope and accelerometer data lets you look around and walk through your world. This data stays on your device and is never transmitted."),
-        .init(head: "Images Access",
-              text: "Used for AR movement and spatial awareness within your world. No images or video are captured or stored at any point."),
+              text: "Gyroscope and accelerometer data can be saved to improve how you move through your world over time. If you'd rather not, it stays on your device and is never transmitted."),
+        .init(head: "Image Access",
+              text: "Camera data can be saved to refine your AR experience in future sessions. If you decline, it's used solely for live spatial awareness and no images or video are ever captured or stored."),
     ]
 
     /// One quiz question. `options` non-empty → pill selection; empty → free-text textarea.
@@ -83,4 +83,7 @@ enum OopsContent {
     ]
 
     static let declarationIntro = "Before you step in, here are a few things we want you to know, so you can feel safe, comfortable, and fully present in your experience."
+
+    /// Privacy Preferences subtitle (Figma node 49:2173) — distinct from the Safety intro.
+    static let privacyIntro = "Select what you are comfortable sharing with us."
 }
