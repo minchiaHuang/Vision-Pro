@@ -21,13 +21,25 @@ enum ParametricWorldBuilder {
     /// (each caller shows its own failure state). Saturation (axis 4) is applied by the caller
     /// — iOS via a SwiftUI overlay; visionOS via `applySaturation(_:saturation:)` (below).
     @MainActor
-    static func build(params: WorldParams) async -> ParametricWorldBuild? {
+    static func build(params: WorldParams,
+                      galleryPhotos: [UIImage] = []) async -> ParametricWorldBuild? {
         guard let model = try? await Entity(named: params.archetype.usdzName) else {
             return nil
         }
 
         let container = Entity()
         container.addChild(model)
+
+        // Gallery only: swap the baked artwork on the wall frames. Prefer AI-generated photos
+        // (the Hero's-Journey series) when supplied; otherwise fall back to the bundled beach
+        // placeholders. The frames bind their image to `emissiveColor` (diffuse is black), so
+        // `applyGalleryPhotos` reuses each mesh's UVs to keep correct on-wall placement.
+        if params.archetype == .artGallery {
+            let photos = galleryPhotos.isEmpty
+                ? await loadGalleryPhotoTextures()
+                : texturesFrom(galleryPhotos)
+            applyGalleryPhotos(model, textures: photos)
+        }
 
         let bounds = model.visualBounds(relativeTo: nil)
         let span = max(bounds.extents.x, max(bounds.extents.y, bounds.extents.z))
@@ -72,6 +84,76 @@ enum ParametricWorldBuilder {
             guard var model = entity.model else { return }
             model.materials = model.materials.map { desaturate($0, amount: amount) }
             entity.model = model
+        }
+    }
+
+    // MARK: - Gallery frame photos
+
+    /// Converts in-memory images (the AI-generated Hero's-Journey series) into textures, in the
+    /// same order. Images that can't produce a `CGImage`/`TextureResource` are skipped.
+    @MainActor
+    static func texturesFrom(_ images: [UIImage]) -> [TextureResource] {
+        images.compactMap { image in
+            guard let cg = image.cgImage else { return nil }
+            return try? TextureResource(image: cg, options: .init(semantic: .color))
+        }
+    }
+
+    /// Loads every bundled `beach*` image (jpg/jpeg/png) as a texture, sorted by filename
+    /// (beach 2, beach 4, beach 7, …) so the photo-to-frame assignment is stable. Enumerating
+    /// the bundle — rather than hard-coding names — means whatever beach files are dropped in
+    /// are picked up automatically. Skips any that fail to load.
+    @MainActor
+    static func loadGalleryPhotoTextures() async -> [TextureResource] {
+        var urls: [URL] = []
+        for ext in ["jpg", "jpeg", "png"] {
+            let found = Bundle.main.urls(forResourcesWithExtension: ext, subdirectory: nil) ?? []
+            urls += found.filter {
+                $0.deletingPathExtension().lastPathComponent.lowercased().hasPrefix("beach")
+            }
+        }
+        urls.sort { $0.lastPathComponent < $1.lastPathComponent }
+
+        var textures: [TextureResource] = []
+        for url in urls {
+            if let tex = try? await TextureResource(contentsOf: url,
+                                                    options: .init(semantic: .color)) {
+                textures.append(tex)
+            }
+        }
+        return textures
+    }
+
+    /// Replaces every wall-frame mesh's material with an `UnlitMaterial` showing a beach photo,
+    /// cycling through `textures`. The whole gallery is unlit-baked (each material feeds its
+    /// texture into emissiveColor over a black diffuse), so an UnlitMaterial reproduces the flat,
+    /// evenly-lit look and renders the photo reliably — mutating the PBR emissive texture in place
+    /// instead rendered flat white. Reusing each mesh's existing UVs keeps the photo on the wall
+    /// with correct placement, orientation, perspective, and scale.
+    ///
+    /// Frames are identified by mesh name containing "bake" (the baked artworks — note asset
+    /// typos: "manual"/"manuel"/"manua"), excluding the corridor door and the butterfly wings.
+    /// Walls, floor, plant, curtains, dream-catchers, etc. have no "bake" in their mesh names.
+    @MainActor
+    static func applyGalleryPhotos(_ root: Entity, textures: [TextureResource]) {
+        guard !textures.isEmpty else { return }
+
+        var frames: [ModelEntity] = []
+        forEachModelEntity(root) { entity in
+            let name = entity.name.lowercased()
+            guard name.contains("bake") else { return }
+            if name.contains("door") || name.contains("butterfly") { return }
+            frames.append(entity)
+        }
+        frames.sort { $0.name < $1.name }
+
+        for (index, frame) in frames.enumerated() {
+            guard var model = frame.model else { continue }
+            let texture = textures[index % textures.count]
+            var unlit = UnlitMaterial()
+            unlit.color = .init(tint: .white, texture: .init(texture))
+            model.materials = Array(repeating: unlit, count: model.materials.count)
+            frame.model = model
         }
     }
 

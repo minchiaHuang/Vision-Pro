@@ -41,6 +41,7 @@ enum WorldCatalog {
         case .openNature:   return byId("open_nature")
         case .cozyCommunal: return byId("calm_communal")
         case .solitaryPath: return byId("quiet_solitary")
+        case .artGallery:   return fallback   // gallery uses its own Oops copy, not a World object
         }
     }
 

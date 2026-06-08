@@ -1,212 +1,299 @@
 import SwiftUI
-import AVFAudio
 
-/// 05 · Quiz — a scrollable glass window of 6 reflective questions, a back button that
-/// raises the "Are you sure?" dialog, and a Finish CTA. Answers are front-end only.
+/// 05 · Quiz — 6 questions, one per screen, paginated (Figma "Quiz Iterations").
+///
+/// Layout is built from **independent overlay layers** pinned to the fixed 920×530 glass
+/// card, NOT a single flowing stack. This guarantees the back button (and the bottom nav)
+/// land in the *exact same spot on every screen* — Q1 through Q6 — regardless of whether
+/// the screen shows the tall "Quiz" header, a pill row, or a textarea:
+///
+///   • Back button   — top-leading, identical on all 6 screens
+///   • Quiz header    — Q1 only, pinned below the back button ("Quiz" title + subtitle)
+///   • Question block — question label + pills (Q1) or textarea (Q2–Q6), vertically centred
+///   • Bottom nav     — "Next >" (Q1–Q5) trailing, or "Generate my world" (Q6) centred
+///
+/// Dimensions are proportional to the Figma card (1392×807 px) at ×0.66 scale.
+///
+/// Back on Q1 raises the "Are you sure?" exit dialog; back on Q2–Q6 returns to the previous
+/// question. The forward control is disabled until the current question has an answer.
 struct QuizScreen: View {
     @Binding var answers: OopsAnswers
     let onFinish: () -> Void
     let onBack: () -> Void
 
+    @State private var currentIndex = 0
     @State private var confirm = false
-    @State private var dictation = QuizDictation()
+
+    // Shared horizontal inset for header / question / nav (Figma centres a 1153px column
+    // in the 1392px card → ~80pt margins each side at ×0.66). Keeping one constant means
+    // the "Quiz" title, question label and nav all share the same left edge.
+    private let sideInset: CGFloat = 80
+    private let contentWidth: CGFloat = 760   // 920 − 2×80
+
+    private var questions: [OopsContent.Question] { OopsContent.questions }
+    private var current: OopsContent.Question { questions[currentIndex] }
+    private var isFirst: Bool { currentIndex == 0 }
+    private var isLast:  Bool { currentIndex == questions.count - 1 }
+
+    private var canAdvance: Bool {
+        if current.isTextInput {
+            let txt = answers.quizText[current.id] ?? ""
+            return !txt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        } else {
+            return answers.quiz[current.id] != nil
+        }
+    }
 
     var body: some View {
         ZStack {
             OopsPassthrough(dim: true)
 
-            VStack(spacing: 0) {
-                header
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 44) {
-                        ForEach(OopsContent.questions) { q in
-                            questionView(q)
-                        }
-                        HStack {
-                            Spacer()
-                            Button("Finish", action: onFinish).buttonStyle(OopsButton())
-                            Spacer()
-                        }
-                        .padding(.top, 6)
-                    }
-                    .padding(.horizontal, 80)
-                    .padding(.top, 24)
-                    .padding(.bottom, 60)
+            // The glass card — every element is an overlay layer pinned to its own edge,
+            // so nothing reflows when the question content changes height.
+            ZStack {
+                // 1 — Question block (vertically centred)
+                questionContent
+                    .frame(width: contentWidth, alignment: .leading)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+
+                // 2 — Q1 "Quiz" header (pinned below the back button)
+                if isFirst {
+                    quizHeader
+                        .frame(width: contentWidth, alignment: .leading)
+                        .padding(.leading, sideInset)
+                        .padding(.top, 88)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
+
+                // 3 — Back button (pinned top-leading — IDENTICAL on every screen)
+                backButton
+                    .padding(.leading, 32)
+                    .padding(.top, 32)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
+                // 4 — Bottom navigation (pinned to the card's bottom edge)
+                navigationRow
+                    .frame(width: contentWidth)
+                    .padding(.bottom, 34)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
-            .frame(maxWidth: 1180, maxHeight: 820)
+            .frame(width: 920, height: 530)
             .oopsWindow()
-            .padding(.horizontal, 40)
-            .padding(.vertical, 50)
 
             if confirm {
                 OopsDialog(
                     title: "Are you sure?",
-                    message: "Your progress will be lost forever and you'll need to reenter all your answers if you start over.",
+                    message: "Your progress will be lost and you will need to re-enter all answers.",
                     confirmTitle: "Yes",
                     onConfirm: { confirm = false; onBack() },
-                    onCancel: { confirm = false })
+                    onCancel:  { confirm = false })
                 .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: confirm)
-        // Live dictation streams into Q1 while the mic is active.
-        .onChange(of: dictation.transcript) { _, newValue in
-            if dictation.isListening { answers.q1 = newValue }
-        }
-        .onDisappear { dictation.stop() }
     }
 
-    private var header: some View {
-        ZStack(alignment: .topLeading) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Quiz").oopsTitle(34)
-                Text("Take a few minutes to reflect. Your answers will shape the world that's built for you.")
-                    .oopsSub(20)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.leading, 80)
-            .padding(.trailing, 70)
-            .padding(.top, 56)
+    // MARK: - Q1 Quiz header
 
-            Button { confirm = true } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 52, height: 52)
-                    .background(.white.opacity(0.14), in: Circle())
-            }
-            .buttonStyle(.plain)
-            .padding(.leading, 28)
-            .padding(.top, 44)
+    /// "Quiz" bold title + descriptive subtitle — only visible on Q1. Shares the `sideInset`
+    /// left edge with the question label below it.
+    private var quizHeader: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Quiz")
+                // Figma: Roboto Bold 36px
+                .font(.system(size: 28, weight: .bold))
+                .foregroundStyle(.white)
+            Text("Take a few minutes to answer these questions. Your answers will shape the world that's built for you")
+                // Figma: Roboto Regular 25px
+                .font(.system(size: 17, weight: .regular))
+                .foregroundStyle(.white.opacity(0.72))
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
+
+    // MARK: - Back button
+
+    /// Figma: 60×60 px circle, rgba(255,255,255,0.2) bg + backdrop blur → 40×40 pt.
+    /// Lives in its own overlay layer so it never moves between screens.
+    private var backButton: some View {
+        Button {
+            if isFirst {
+                confirm = true
+            } else {
+                withAnimation(.easeInOut(duration: 0.28)) { currentIndex -= 1 }
+            }
+        } label: {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 40, height: 40)
+                .background(.white.opacity(0.20), in: Circle())
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Question content
 
     @ViewBuilder
-    private func questionView(_ q: OopsContent.Question) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(q.label)
-                .font(.system(size: 24, weight: .regular))
-                .foregroundStyle(OopsGlass.label1)
+    private var questionContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Figma: Roboto Regular 26px → 18pt; identical treatment on all 6 screens.
+            Text("Qn \(currentIndex + 1): \(current.label)")
+                .font(.system(size: 18, weight: .regular))
+                .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
 
-            switch q.kind {
-            case .text:
-                VStack(alignment: .leading, spacing: 8) {
-                    ZStack(alignment: .trailing) {
-                        OopsField(text: bindingFor(q.id), placeholder: q.placeholder, multiline: false)
-                        if q.hasMic {
-                            Button { Task { await dictation.toggle() } } label: {
-                                Image(systemName: dictation.isListening ? "mic.fill" : "mic")
-                                    .font(.system(size: 26))
-                                    .foregroundStyle(dictation.isListening
-                                                     ? Color(red: 1.0, green: 0.36, blue: 0.36)
-                                                     : OopsGlass.label2)
-                                    .frame(width: 44, height: 44)
-                                    .contentShape(Circle())
-                            }
-                            .buttonStyle(.plain)
-                            .padding(.trailing, 18)
-                            .accessibilityLabel(dictation.isListening ? "Stop dictation" : "Dictate answer")
-                        }
+            if current.isTextInput {
+                freeTextArea
+            } else {
+                // Extra gap to match Figma gap-[40px] between the question and the pills.
+                pillRow.padding(.top, 14)
+            }
+        }
+        .id(currentIndex)
+        .transition(.asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal:   .move(edge: .leading).combined(with: .opacity)
+        ))
+        .animation(.easeInOut(duration: 0.28), value: currentIndex)
+    }
+
+    // MARK: - Pill row (Q1 — 4 options, fixed-width, left-packed)
+
+    private var pillRow: some View {
+        HStack(spacing: 20) {
+            ForEach(Array(current.options.enumerated()), id: \.offset) { idx, option in
+                pillButton(option, selected: answers.quiz[current.id] == idx) {
+                    withAnimation(.easeOut(duration: 0.18)) {
+                        answers.quiz[current.id] = idx
                     }
-                    if q.hasMic {
-                        if let err = dictation.error {
-                            Text(err)
-                                .font(.system(size: 15))
-                                .foregroundStyle(.yellow.opacity(0.9))
-                        } else if dictation.isListening {
-                            Text("Listening… tap the mic to stop")
-                                .font(.system(size: 15))
-                                .foregroundStyle(OopsGlass.label2)
-                        }
-                    }
-                }
-            case .area:
-                OopsField(text: bindingFor(q.id), placeholder: q.placeholder, multiline: true)
-            case .slider:
-                VStack(spacing: 6) {
-                    Slider(value: Binding(
-                        get: { Double(answers.q2) },
-                        set: { answers.q2 = Int($0.rounded()) }), in: 0...10, step: 1)
-                    .tint(.white)
-                    HStack {
-                        Text("0"); Spacer()
-                        Text("\(answers.q2)").fontWeight(.medium)
-                        Spacer(); Text("10")
-                    }
-                    .font(.system(size: 20))
-                    .foregroundStyle(.white)
                 }
             }
         }
     }
 
-    private func bindingFor(_ id: String) -> Binding<String> {
-        switch id {
-        case "q1": return $answers.q1
-        case "q3": return $answers.q3
-        case "q4": return $answers.q4
-        case "q5": return $answers.q5
-        case "q6": return $answers.q6
-        default:   return .constant("")
+    /// Figma pill: 250×75 px → 165×50 pt; Capsule; white border 2.314px → 1.5pt;
+    /// gradient linear(167°, white.37 → grey.42); ultraThinMaterial; drop-shadow 18%.
+    private func pillButton(_ text: String, selected: Bool,
+                            action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(text)
+                // Figma: Roboto Medium 20px
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+                .frame(width: 165, height: 50)
+                .background(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.37), Color(white: 0.45, opacity: 0.42)],
+                        startPoint: UnitPoint(x: 0.08, y: 0.04),
+                        endPoint:   UnitPoint(x: 0.95, y: 0.95)
+                    )
+                )
+                .background(.ultraThinMaterial)
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule().strokeBorder(
+                        .white.opacity(selected ? 1.0 : 0.8),
+                        lineWidth: selected ? 2.5 : 1.5
+                    )
+                )
+                .shadow(color: .black.opacity(0.18), radius: 12, y: 1)
+                .scaleEffect(selected ? 1.04 : 1.0)
+        }
+        .buttonStyle(.plain)
+        .animation(.easeOut(duration: 0.18), value: selected)
+    }
+
+    // MARK: - Free-text area (Q2–Q6)
+
+    /// Figma: h=360px → 238pt; cornerRadius=20.7px → 14pt; bg=rgba(0,0,0,0.20);
+    /// px=50px → 32pt; ~32px top spacer before the placeholder hint.
+    private var freeTextArea: some View {
+        let binding = Binding<String>(
+            get: { answers.quizText[current.id] ?? "" },
+            set: { answers.quizText[current.id] = $0 }
+        )
+        let isEmpty = (answers.quizText[current.id] ?? "").isEmpty
+
+        return ZStack(alignment: .topLeading) {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.black.opacity(0.20))
+
+            // Placeholder hint — grey, preceded by a 21pt top spacer that reproduces the
+            // 32px cursor gap Figma leaves before the hint text.
+            if isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    Color.clear.frame(height: 21)
+                    Text(current.placeholder)
+                        .font(.system(size: 17, weight: .regular))
+                        .foregroundStyle(.white.opacity(0.30))
+                        .padding(.horizontal, 32)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .allowsHitTesting(false)
+            }
+
+            TextField("", text: binding, axis: .vertical)
+                .font(.system(size: 18, weight: .regular))
+                .foregroundStyle(.white)
+                .tint(.white)
+                .lineLimit(5...9)
+                .padding(.horizontal, 32)
+                .padding(.top, 18)
+                .padding(.bottom, 16)
+        }
+        .frame(height: 238)
+    }
+
+    // MARK: - Bottom navigation
+
+    @ViewBuilder
+    private var navigationRow: some View {
+        if isLast {
+            // Q6: "Generate my world" pill — horizontally centred (Figma: 270×75 → 178×50).
+            Button(action: onFinish) {
+                Text("Generate my world")
+                    // Figma: Roboto Medium 25px
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(.white)
+                    .frame(width: 178, height: 50)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.37), Color(white: 0.45, opacity: 0.42)],
+                            startPoint: UnitPoint(x: 0.08, y: 0.05),
+                            endPoint:   UnitPoint(x: 0.95, y: 0.95)
+                        )
+                    )
+                    .background(.ultraThinMaterial)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().strokeBorder(.white.opacity(0.8), lineWidth: 1.5))
+                    .shadow(color: .black.opacity(0.18), radius: 12, y: 1)
+            }
+            .buttonStyle(.plain)
+            .disabled(!canAdvance)
+            .opacity(canAdvance ? 1 : 0.38)
+            .frame(maxWidth: .infinity, alignment: .center)
+        } else {
+            // Q1–Q5: "Next >" — Figma Inter Bold 20px; trailing-aligned.
+            Button {
+                withAnimation(.easeInOut(duration: 0.28)) { currentIndex += 1 }
+            } label: {
+                Text("Next >")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(canAdvance ? .white : .white.opacity(0.28))
+            }
+            .buttonStyle(.plain)
+            .disabled(!canAdvance)
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 }
 
-// MARK: - Dictation
-
-/// Push-to-talk dictation for the quiz, wrapping the shared `SpeechRecognizer`. Owns a
-/// record-capable audio session for the duration of a dictation turn (mirrors
-/// `ConversationService.activateRecordSession()`); the live `transcript` is streamed
-/// into the bound answer by the view.
-@MainActor
-@Observable
-final class QuizDictation {
-    private let stt = SpeechRecognizer()
-    var error: String?
-
-    var isListening: Bool { stt.isListening }
-    var transcript: String { stt.transcript }
-
-    /// Tap the mic: start dictating, or stop if already listening.
-    func toggle() async {
-        if stt.isListening { stop(); return }
-        error = nil
-        guard await stt.requestAuthorization() else {
-            error = "Microphone or speech permission is needed to dictate."
-            return
-        }
-        do {
-            try activateRecordSession()
-            try stt.start()
-        } catch {
-            self.error = "Could not start the microphone."
-        }
-    }
-
-    func stop() {
-        stt.stop()
-        deactivateSession()
-    }
-
-    private func activateRecordSession() throws {
-        #if !os(macOS)
-        let s = AVAudioSession.sharedInstance()
-        try s.setCategory(.playAndRecord, mode: .spokenAudio,
-                          options: [.duckOthers, .defaultToSpeaker, .allowBluetoothHFP])
-        try s.setActive(true)
-        #endif
-    }
-
-    private func deactivateSession() {
-        #if !os(macOS)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        #endif
-    }
-}
-
-// MARK: - Previews
+// MARK: - Preview
 
 #Preview("QuizScreen") {
     QuizScreen(answers: .constant(OopsAnswers()), onFinish: {}, onBack: {})

@@ -18,7 +18,8 @@ struct ImmersiveWorldView: View {
     var body: some View {
         RealityView { content in
             if let params = appState.worldParams,
-               let build = await ParametricWorldBuilder.build(params: params) {
+               let build = await ParametricWorldBuilder.build(params: params,
+                                                              galleryPhotos: appState.galleryImages) {
                 // Rest the model's floor at the origin and centre it horizontally so the user
                 // stands inside the world.
                 build.container.position = SIMD3(-build.bounds.center.x,
