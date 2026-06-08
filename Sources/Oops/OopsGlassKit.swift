@@ -101,15 +101,28 @@ extension View {
 struct OopsButton: ButtonStyle {
     var ghost: Bool = false
     var minWidth: CGFloat = 250
+    /// When set, the pill is laid out at this exact size (capsule included) instead of
+    /// sizing to its label + horizontal padding. Used to keep the primary CTAs a uniform
+    /// 302×75 across the Home / Safety / Privacy screens.
+    var fixedWidth: CGFloat? = nil
+    var fixedHeight: CGFloat? = nil
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
+        let label = configuration.label
             // VisualEyes `.gbtn`: Roboto 500 / 31px → ~24pt in this window, light tracking.
             .font(.system(size: 24, weight: .medium))
             .tracking(0.2)
             .foregroundStyle(.white)
-            .frame(minWidth: minWidth)
-            .frame(height: 64)
-            .padding(.horizontal, 36)
+
+        return Group {
+            if let fixedWidth {
+                label.frame(width: fixedWidth, height: fixedHeight ?? 64)
+            } else {
+                label
+                    .frame(minWidth: minWidth)
+                    .frame(height: fixedHeight ?? 64)
+                    .padding(.horizontal, 36)
+            }
+        }
             // `.gbtn` fill: a white→gray glass sheen (rgba(255,255,255,.42) → rgba(120,120,120,.42))
             // layered over the system blur, rather than a flat tint.
             .background(

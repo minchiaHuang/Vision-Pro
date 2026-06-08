@@ -62,9 +62,9 @@ struct HomeScreen: View {
                         Spacer()
                         HStack(spacing: 32) {
                             Button("Generate New", action: onGenerate)
-                                .buttonStyle(OopsButton())
+                                .buttonStyle(OopsButton(fixedWidth: 302, fixedHeight: 75))
                             Button("Visit Old World", action: onVisitOld)
-                                .buttonStyle(OopsButton())
+                                .buttonStyle(OopsButton(fixedWidth: 302, fixedHeight: 75))
                         }
                         .padding(.bottom, 54)
                     }
@@ -174,7 +174,7 @@ struct DeclarationScreen: View {
 
                 // 2 — CTA pill, centred BELOW the content (Figma 289:2130) — never overlaps
                 Button(cta, action: onCta)
-                    .buttonStyle(OopsButton())
+                    .buttonStyle(OopsButton(fixedWidth: 302, fixedHeight: 75))
                     .disabled(!canContinue)
                     .opacity(canContinue ? 1 : 0.4)
                     .animation(.easeInOut(duration: 0.2), value: canContinue)
