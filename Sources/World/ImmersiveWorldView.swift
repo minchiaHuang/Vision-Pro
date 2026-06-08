@@ -14,6 +14,8 @@ struct ImmersiveWorldView: View {
     @Environment(AppState.self) private var appState
     /// Retains the per-frame locomotion state + scene subscription across updates.
     @State private var locomotor = ParametricLocomotor()
+    /// Gentle looping background music for the duration of the immersive gallery visit.
+    @State private var music = MuseumMusicPlayer()
 
     var body: some View {
         RealityView { content in
@@ -59,6 +61,8 @@ struct ImmersiveWorldView: View {
                 content.add(sphere)
             }
         }
+        .onAppear { music.start() }
+        .onDisappear { music.stop() }
     }
 
     /// Prefers a runtime panorama (e.g. World Labs) when present, else the bundled asset.

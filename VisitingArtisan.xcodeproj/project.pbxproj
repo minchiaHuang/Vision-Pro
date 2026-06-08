@@ -59,6 +59,8 @@
 		AA0000010000000000000066 /* MuseumFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000166 /* MuseumFlowView.swift */; };
 		AA0000010000000000000050 /* WorldCameraRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000150 /* WorldCameraRig.swift */; };
 		AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */; };
+		AA00000100000000000000D3 /* museum_clair_de_lune.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */; };
+		AA0000010000000000000067 /* MuseumMusicPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000167 /* MuseumMusicPlayer.swift */; };
 		AA00000100000000000000B0 /* SplatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B0 /* SplatSession.swift */; };
 		AA00000100000000000000B1 /* SplatMeshRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B1 /* SplatMeshRenderer.swift */; };
 		AA00000100000000000000B2 /* SplatMeshShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B2 /* SplatMeshShaders.metal */; };
@@ -124,8 +126,10 @@
 		AA0000010000000000000164 /* MuseumGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumGalleryView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000165 /* MuseumQuestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumQuestionsView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000166 /* MuseumFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumFlowView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000167 /* MuseumMusicPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumMusicPlayer.swift; sourceTree = "<group>"; };
 		AA0000010000000000000150 /* WorldCameraRig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCameraRig.swift; sourceTree = "<group>"; };
 		AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = vibrant_loft_art_studio.spz; sourceTree = "<group>"; };
+		AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = museum_clair_de_lune.mp3; sourceTree = "<group>"; };
 		AA00000100000000000001B0 /* SplatSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSession.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B1 /* SplatMeshRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatMeshRenderer.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B2 /* SplatMeshShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SplatMeshShaders.metal; sourceTree = "<group>"; };
@@ -212,6 +216,7 @@
 				121651D52FD547C500C06C29 /* beach 7.jpg */,
 				121651D72FD547CB00C06C29 /* beach 2.jpeg */,
 				121651D92FD547D000C06C29 /* beach 4.jpg */,
+				AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */,
 			);
 			path = SpikeAssets;
 			sourceTree = "<group>";
@@ -331,6 +336,7 @@
 				AA0000010000000000000164 /* MuseumGalleryView.swift */,
 				AA0000010000000000000165 /* MuseumQuestionsView.swift */,
 				AA0000010000000000000166 /* MuseumFlowView.swift */,
+				AA0000010000000000000167 /* MuseumMusicPlayer.swift */,
 			);
 			path = Museum;
 			sourceTree = "<group>";
@@ -402,6 +408,7 @@
 			files = (
 				AA000001000000000000000C /* Assets.xcassets in Resources */,
 				AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */,
+				AA00000100000000000000D3 /* museum_clair_de_lune.mp3 in Resources */,
 				121651D62FD547C500C06C29 /* beach 7.jpg in Resources */,
 				121651D82FD547CB00C06C29 /* beach 2.jpeg in Resources */,
 				121651DA2FD547D000C06C29 /* beach 4.jpg in Resources */,
@@ -472,6 +479,7 @@
 				AA0000010000000000000064 /* MuseumGalleryView.swift in Sources */,
 				AA0000010000000000000065 /* MuseumQuestionsView.swift in Sources */,
 				AA0000010000000000000066 /* MuseumFlowView.swift in Sources */,
+				AA0000010000000000000067 /* MuseumMusicPlayer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
