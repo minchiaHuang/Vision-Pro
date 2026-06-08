@@ -32,6 +32,12 @@ final class AppState {
     /// beach placeholders. Set by `GeneratingScreen` before the user enters the gallery.
     var galleryImages: [UIImage] = []
 
+    /// Future Museum run: the Curator's 5-beat story and the answers it was built from.
+    /// Set by `GeneratingScreen` alongside `galleryImages`; consumed by the in-gallery voice
+    /// (per-beat narration + push-to-talk) and the closing decision moment.
+    var museumStory: MuseumStory?
+    var museumAnswers: MuseumAnswers?
+
     /// Hidden continuous scores (the bottom layer of research direction 6) and the world
     /// parameters they map to (direction 7). Computed and stored from Phase 3 on; the
     /// display layer consumes `worldParams` from Phase 2 on.
@@ -116,6 +122,9 @@ final class AppState {
         generatedPano = nil
         generatedSplatURL = nil
         generatedWorldId = nil
+        galleryImages = []
+        museumStory = nil
+        museumAnswers = nil
         phase = .splash
     }
 }

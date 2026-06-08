@@ -57,6 +57,25 @@ final class MuseumGenerator {
         phase = .ready
     }
 
+    /// Beat-ordered images for the gallery walls — a fixed slot per beat, so frame *i* always
+    /// shows beat *i*. A beat whose image failed (or hasn't landed) keeps its slot with a
+    /// neutral placeholder, so the image-on-wall ↔ per-beat-narration mapping never shifts.
+    func orderedGalleryImages() -> [UIImage] {
+        nodes.map { gen in
+            if let data = gen.image, let ui = UIImage(data: data) { return ui }
+            return Self.placeholderImage
+        }
+    }
+
+    /// A plain dark panel shown when a beat's image is missing (failed / not yet generated).
+    private static let placeholderImage: UIImage = {
+        let size = CGSize(width: 1024, height: 1024)
+        return UIGraphicsImageRenderer(size: size).image { ctx in
+            UIColor(white: 0.12, alpha: 1).setFill()
+            ctx.fill(CGRect(origin: .zero, size: size))
+        }
+    }()
+
     func reset() {
         phase = .idle
         story = nil
