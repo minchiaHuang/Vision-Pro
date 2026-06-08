@@ -6,8 +6,10 @@ import SwiftUI
 /// advances to the preview. Generated images are stored on `AppState` for the gallery to show.
 struct GeneratingScreen: View {
     @Environment(AppState.self) private var appState
-    /// The user's "ideal self" goal that drives the generated series.
     let goal: String
+    let currentSelf: String
+    let obstacle: String
+    let wontGiveUp: String
     let onDone: () -> Void
 
     @State private var statusText = "Reading your answer…"
@@ -24,7 +26,7 @@ struct GeneratingScreen: View {
                     .oopsSub(20)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 620)
-                    .id(statusText)                  // re-identity each stage so it crossfades
+                    .id(statusText)
                     .transition(.opacity)
             }
             .animation(.easeInOut(duration: 0.5), value: statusText)
@@ -32,28 +34,34 @@ struct GeneratingScreen: View {
         .task { await runGeneration() }
     }
 
-    /// Generates the 5-image journey from `goal`, stores it on `AppState`, then advances. On
-    /// failure (or missing key) the result is empty and the gallery falls back to its bundled
-    /// placeholders — the flow always completes so the user is never trapped.
     private func runGeneration() async {
-        let images = await OpenAIImageService.generateJourney(goal: goal) { done, total in
-            statusText = done >= total
-                ? "Adding the finishing touches…"
-                : "Painting scene \(done + 1) of \(total)…"
-        }
+        let images = await OpenAIImageService.generateJourney(
+            goal: goal,
+            currentSelf: currentSelf,
+            obstacle: obstacle,
+            wontGiveUp: wontGiveUp,
+            onProgress: { done, total in
+                statusText = done >= total
+                    ? "Adding the finishing touches…"
+                    : "Painting scene \(done + 1) of \(total)…"
+            }
+        )
         appState.galleryImages = images
         onDone()
     }
 }
 
-// MARK: - Previews
-
 #Preview("Generating") {
-    GeneratingScreen(goal: "I want to be a world class ballerina", onDone: {})
-        .environment(AppState())
-        .preferredColorScheme(.dark)
+    GeneratingScreen(
+        goal: "I want to be a world class ballerina",
+        currentSelf: "",
+        obstacle: "",
+        wontGiveUp: "",
+        onDone: {}
+    )
+    .environment(AppState())
+    .preferredColorScheme(.dark)
 }
-
 // MARK: - 09 · World (hosts the existing 3D world)
 
 /// iPad: "Enter Now" enters the Richards Art Gallery as a first-person USDZ world

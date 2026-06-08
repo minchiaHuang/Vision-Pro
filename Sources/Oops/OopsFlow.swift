@@ -120,10 +120,14 @@ struct OopsFlowView: View {
         case .quiz:
             QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
         case .generating:
-            // Q2 free-text answer drives the Hero's Journey prompt; fall back to a generic goal
-            // if the user somehow skipped it (should not happen — Next is disabled when empty).
             let goal = answers.goal.isEmpty ? "build a meaningful future" : answers.goal
-            GeneratingScreen(goal: goal) { enterWorld() }
+            GeneratingScreen(
+                goal: goal,
+                currentSelf: answers.quizText["q4"] ?? "",
+                obstacle: answers.quizText["q5"] ?? "",
+                wontGiveUp: answers.quizText["q6"] ?? "",
+                onDone: { enterWorld() }
+            )
         case .world:
             EmptyView()
         case .reflection:

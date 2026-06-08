@@ -1,25 +1,15 @@
 import RealityKit
 import UIKit
 
-/// Assembles the parametric USDZ world (model + lights + companion orbs) shared by both
-/// platforms. iOS (`ParametricWorldView`) adds a `PerspectiveCamera` + `WorldCameraRig` on top;
-/// visionOS (`ImmersiveWorldView`) positions the container relative to the origin and relies on
-/// head tracking. All scene contents are parented under a single `container` entity so the
-/// caller can place the whole world with one transform.
 struct ParametricWorldBuild {
-    let container: Entity   // model + lights + orbs, all parented here
+    let container: Entity
     let bounds: BoundingBox
     let span: Float
     let eye: SIMD3<Float>
 }
 
 enum ParametricWorldBuilder {
-    /// Loads the archetype USDZ and tunes it from `params`:
-    ///   - axis 4: three DirectionalLights with intensity + colour temperature
-    ///   - axis 1: ambient companion orbs (social density)
-    /// Returns the assembled container plus framing info, or `nil` if the USDZ fails to load
-    /// (each caller shows its own failure state). Saturation (axis 4) is applied by the caller
-    /// — iOS via a SwiftUI overlay; visionOS via `applySaturation(_:saturation:)` (below).
+
     @MainActor
     static func build(params: WorldParams,
                       galleryPhotos: [UIImage] = []) async -> ParametricWorldBuild? {
@@ -30,10 +20,6 @@ enum ParametricWorldBuilder {
         let container = Entity()
         container.addChild(model)
 
-        // Gallery only: swap the baked artwork on the wall frames. Prefer AI-generated photos
-        // (the Hero's-Journey series) when supplied; otherwise fall back to the bundled beach
-        // placeholders. The frames bind their image to `emissiveColor` (diffuse is black), so
-        // `applyGalleryPhotos` reuses each mesh's UVs to keep correct on-wall placement.
         if params.archetype == .artGallery {
             let photos = galleryPhotos.isEmpty
                 ? await loadGalleryPhotoTextures()
@@ -47,7 +33,6 @@ enum ParametricWorldBuilder {
                                bounds.center.y + bounds.extents.y * 0.15,
                                bounds.center.z)
 
-        // axis 4: three directional lights with intensity + colour temperature.
         let warmth = colorFromKelvin(params.colorTemperature)
         for (dir, mult): (SIMD3<Float>, Float) in [
             ([1, 1, 1], 1.0), ([-1, 0.6, -0.6], 0.55), ([0, 0.4, 1], 0.35)
@@ -59,7 +44,6 @@ enum ParametricWorldBuilder {
             container.addChild(light)
         }
 
-        // axis 1: companion orbs placed on the floor perimeter.
         for orb in companionOrbs(count: params.socialDensity, bounds: bounds, span: span) {
             container.addChild(orb)
         }
@@ -67,18 +51,9 @@ enum ParametricWorldBuilder {
         return ParametricWorldBuild(container: container, bounds: bounds, span: span, eye: eye)
     }
 
-    /// axis 4 saturation for the visionOS immersive path. There is no full-screen
-    /// post-process / `.blendMode(.saturation)` overlay inside an immersive `RealityView`
-    /// (iOS uses one), so we bake the effect into the loaded model's materials: each
-    /// material tint is lerped toward its luminance grey by `1 - saturation`, matching the
-    /// iOS overlay mapping (saturation 1.1 → full colour, 0.5 → ~50% desaturated).
-    ///
-    /// Limitation: a tint multiply cannot desaturate *textured* surfaces, so heavily
-    /// textured archetypes desaturate less than the iOS filter. A faithful match would need
-    /// a `ShaderGraphMaterial` swap feeding the original textures — deferred.
     @MainActor
     static func applySaturation(_ root: Entity, saturation: Double) {
-        let amount = Float(max(0, min(1, 1 - saturation)))   // 0 = full colour … 1 = grey
+        let amount = Float(max(0, min(1, 1 - saturation)))
         guard amount > 0.001 else { return }
         forEachModelEntity(root) { entity in
             guard var model = entity.model else { return }
@@ -89,8 +64,6 @@ enum ParametricWorldBuilder {
 
     // MARK: - Gallery frame photos
 
-    /// Converts in-memory images (the AI-generated Hero's-Journey series) into textures, in the
-    /// same order. Images that can't produce a `CGImage`/`TextureResource` are skipped.
     @MainActor
     static func texturesFrom(_ images: [UIImage]) -> [TextureResource] {
         images.compactMap { image in
@@ -99,10 +72,6 @@ enum ParametricWorldBuilder {
         }
     }
 
-    /// Loads every bundled `beach*` image (jpg/jpeg/png) as a texture, sorted by filename
-    /// (beach 2, beach 4, beach 7, …) so the photo-to-frame assignment is stable. Enumerating
-    /// the bundle — rather than hard-coding names — means whatever beach files are dropped in
-    /// are picked up automatically. Skips any that fail to load.
     @MainActor
     static func loadGalleryPhotoTextures() async -> [TextureResource] {
         var urls: [URL] = []
@@ -124,16 +93,6 @@ enum ParametricWorldBuilder {
         return textures
     }
 
-    /// Replaces every wall-frame mesh's material with an `UnlitMaterial` showing a beach photo,
-    /// cycling through `textures`. The whole gallery is unlit-baked (each material feeds its
-    /// texture into emissiveColor over a black diffuse), so an UnlitMaterial reproduces the flat,
-    /// evenly-lit look and renders the photo reliably — mutating the PBR emissive texture in place
-    /// instead rendered flat white. Reusing each mesh's existing UVs keeps the photo on the wall
-    /// with correct placement, orientation, perspective, and scale.
-    ///
-    /// Frames are identified by mesh name containing "bake" (the baked artworks — note asset
-    /// typos: "manual"/"manuel"/"manua"), excluding the corridor door and the butterfly wings.
-    /// Walls, floor, plant, curtains, dream-catchers, etc. have no "bake" in their mesh names.
     @MainActor
     static func applyGalleryPhotos(_ root: Entity, textures: [TextureResource]) {
         guard !textures.isEmpty else { return }
@@ -147,26 +106,31 @@ enum ParametricWorldBuilder {
         }
         frames.sort { $0.name < $1.name }
 
+        #if DEBUG
+        print("[Gallery] Found \(frames.count) frames:")
+        frames.enumerated().forEach { print("  \($0.offset): \($0.element.name)") }
+        #endif
+
         for (index, frame) in frames.enumerated() {
-            guard var model = frame.model else { continue }
-            let texture = textures[index % textures.count]
-            var unlit = UnlitMaterial()
-            unlit.color = .init(tint: .white, texture: .init(texture))
-            model.materials = Array(repeating: unlit, count: model.materials.count)
-            frame.model = model
+            if index < textures.count {
+                guard var model = frame.model else { continue }
+                let texture = textures[index]
+                var unlit = UnlitMaterial()
+                unlit.color = .init(tint: .white, texture: .init(texture))
+                model.materials = Array(repeating: unlit, count: model.materials.count)
+                frame.model = model
+            } else {
+                frame.isEnabled = false
+            }
         }
     }
 
-    /// Depth-first walk applying `body` to every `ModelEntity` under `entity` (inclusive).
     @MainActor
     private static func forEachModelEntity(_ entity: Entity, _ body: (ModelEntity) -> Void) {
         if let model = entity as? ModelEntity { body(model) }
         for child in entity.children { forEachModelEntity(child, body) }
     }
 
-    /// Lerps a material's tint toward its perceptual grey by `amount` (0…1). Handles the
-    /// material types the parametric world produces — `PhysicallyBasedMaterial` (loaded USDZ)
-    /// and `UnlitMaterial` (companion orbs); others pass through unchanged.
     private static func desaturate(_ material: RealityKit.Material, amount: Float) -> RealityKit.Material {
         if var m = material as? PhysicallyBasedMaterial {
             m.baseColor.tint = greyed(m.baseColor.tint, amount: amount)
@@ -179,7 +143,6 @@ enum ParametricWorldBuilder {
         return material
     }
 
-    /// Blends `color` toward its Rec. 709 luminance grey by `amount`, preserving alpha.
     private static func greyed(_ color: UIColor, amount: Float) -> UIColor {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 1
         if !color.getRed(&r, green: &g, blue: &b, alpha: &a) {
@@ -194,8 +157,6 @@ enum ParametricWorldBuilder {
                        alpha: a)
     }
 
-    /// 3-keyframe linear interpolation of Kelvin → UIColor.
-    /// 3500 K = amber warm, 5500 K = neutral white, 7000 K = cool blue-white.
     static func colorFromKelvin(_ kelvin: Float) -> UIColor {
         if kelvin <= 5500 {
             let t = CGFloat((kelvin - 3500) / (5500 - 3500))
@@ -206,8 +167,6 @@ enum ParametricWorldBuilder {
         }
     }
 
-    /// Returns evenly-spaced glow-orb ModelEntities on the scene's floor perimeter.
-    /// `count == 0` returns empty (no companions). Used for axis 1 social density.
     @MainActor
     static func companionOrbs(count: Int, bounds: BoundingBox, span: Float) -> [ModelEntity] {
         guard count > 0 else { return [] }
