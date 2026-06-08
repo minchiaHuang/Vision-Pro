@@ -138,7 +138,15 @@ struct DeclarationScreen: View {
         requireAll ? checks.allSatisfy { $0 } : true
     }
 
+    // Frame height follows the Quiz card: a fixed height, capped to the available
+    // viewport (mirrors QuizScreen.maxCardHeight / outerMargin) so the Safety,
+    // Privacy and Quiz frames are all the same height.
+    private let maxCardHeight: CGFloat = 760
+    private let outerMargin: CGFloat = 20
+
     var body: some View {
+      GeometryReader { geo in
+        let cardHeight = min(maxCardHeight, geo.size.height - outerMargin * 2)
         ZStack {
             OopsPassthrough(dim: true)
 
@@ -185,10 +193,14 @@ struct DeclarationScreen: View {
             }
             .frame(width: 960)
             .padding(52)
+            // Fixed card height matching the Quiz frame (content stays vertically centred).
+            .frame(height: cardHeight)
             .oopsWindow()
 
             VStack { Spacer(); PageDots().padding(.bottom, 18) }
         }
+        .frame(width: geo.size.width, height: geo.size.height)
+      }
     }
 
     /// Circular glass back button (Figma: 60×60 px → 44×44 pt), matching the quiz screen.
