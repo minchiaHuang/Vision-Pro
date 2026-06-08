@@ -114,14 +114,25 @@ private struct WorldWindow<Overlay: View>: View {
 
 // MARK: - 03 / 04 · Declaration (Safety & Privacy)
 
+/// 03 / 04 · Safety Declaration & Privacy Preferences (Figma nodes 46:1124 / 49:2173).
+///
+/// One frosted glass card, built from edge-pinned overlay layers (same pattern as the quiz):
+///   • Back button   — top-leading circular glass control
+///   • Content       — title + subtitle + the three circular-toggle statements
+///   • CTA           — "I agree & continue" / "Start" pill, pinned bottom-centre
+///
+/// `requireAll` gates the CTA: Safety needs all three toggles ON; Privacy is optional (Start
+/// is always enabled).
 struct DeclarationScreen: View {
     let label: String
     let title: String
+    let subtitle: String
     let items: [OopsContent.Statement]
     let cta: String
     @Binding var checks: [Bool]
     var requireAll: Bool = true   // true = all toggles required; false = no selection required
     let onCta: () -> Void
+    var onBack: (() -> Void)? = nil
 
     private var canContinue: Bool {
         requireAll ? checks.allSatisfy { $0 } : true
@@ -131,15 +142,15 @@ struct DeclarationScreen: View {
         ZStack {
             OopsPassthrough(dim: true)
 
-            VStack(spacing: 30) {
-                VStack(spacing: 30) {
+            ZStack {
+                // 1 — Content (title + subtitle + statements), pinned to the top
+                VStack(alignment: .leading, spacing: 26) {
                     VStack(alignment: .leading, spacing: 10) {
                         Text(title).oopsTitle(34)
-                        Text(OopsContent.declarationIntro)
-                            .oopsSub(20)
+                        Text(subtitle)
+                            .oopsSub(17)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
 
                     VStack(spacing: 22) {
                         ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
@@ -148,22 +159,46 @@ struct DeclarationScreen: View {
                         }
                     }
                 }
-                .padding(.vertical, 46)
-                .padding(.horizontal, 56)
-                .frame(maxWidth: 900)
-                .oopsCard()
+                .padding(.horizontal, 80)
+                .padding(.top, 96)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
+                // 2 — Back button (top-leading) — IDENTICAL position to the quiz screen
+                if let onBack {
+                    backButton(action: onBack)
+                        .padding(.leading, 32)
+                        .padding(.top, 32)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+
+                // 3 — CTA pill (bottom-centre)
                 Button(cta, action: onCta)
                     .buttonStyle(OopsButton())
                     .disabled(!canContinue)
                     .opacity(canContinue ? 1 : 0.4)
                     .animation(.easeInOut(duration: 0.2), value: canContinue)
+                    .padding(.bottom, 38)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
             }
-            .padding(.horizontal, 40)
-            .padding(.vertical, 60)
+            .frame(width: 1000, height: 600)
+            .oopsWindow()
 
             VStack { Spacer(); PageDots().padding(.bottom, 18) }
         }
+    }
+
+    /// Circular glass back button (Figma: 60×60 px → 44×44 pt), matching the quiz screen.
+    private func backButton(action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 44, height: 44)
+                .background(.white.opacity(0.20), in: Circle())
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 }
 

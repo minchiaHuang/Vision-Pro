@@ -300,7 +300,8 @@ struct PageDots: View {
 
 // MARK: - Checkbox statement
 
-/// `.statement` — square checkbox + heading + body, used on the declaration screens.
+/// `.statement` — circular toggle + heading + body, used on the declaration screens
+/// (Safety Declaration / Privacy Preferences — Figma nodes 46:1124 / 49:2173).
 struct CheckStatement: View {
     let head: String
     let text: String
@@ -308,30 +309,32 @@ struct CheckStatement: View {
     let onToggle: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 20) {
+        HStack(alignment: .top, spacing: 18) {
             Button(action: onToggle) {
-                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .fill(checked ? OopsGlass.systemBlue : Color.white.opacity(0.12))
+                Circle()
+                    .fill(checked ? OopsGlass.systemBlue : Color.white.opacity(0.14))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .strokeBorder(.white.opacity(checked ? 0 : 0.5), lineWidth: 1.5))
+                        Circle().strokeBorder(.white.opacity(checked ? 0 : 0.55), lineWidth: 1.5))
                     .overlay(
                         Image(systemName: "checkmark")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(.white)
                             .opacity(checked ? 1 : 0)
                             .scaleEffect(checked ? 1 : 0.6))
-                    .frame(width: 32, height: 32)
+                    .frame(width: 26, height: 26)
+                    // Nudge down so the toggle sits centred on the heading's cap height.
+                    .padding(.top, 2)
             }
             .buttonStyle(.plain)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 5) {
                 Text(head)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(OopsGlass.label1)
                 Text(text)
-                    .font(.system(size: 17, weight: .medium))
+                    .font(.system(size: 15, weight: .regular))
                     .foregroundStyle(OopsGlass.label2)
+                    .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)

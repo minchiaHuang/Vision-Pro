@@ -110,13 +110,15 @@ struct OopsFlowView: View {
         case .safety:
             DeclarationScreen(
                 label: "03 Safety Declaration", title: "Safety Declaration",
+                subtitle: OopsContent.declarationIntro,
                 items: OopsContent.safety, cta: "I agree & continue",
-                checks: $safety, onCta: { go(.privacy) })
+                checks: $safety, onCta: { go(.privacy) }, onBack: { go(.home) })
         case .privacy:
             DeclarationScreen(
                 label: "04 Privacy Preferences", title: "Privacy Preferences",
+                subtitle: OopsContent.privacyIntro,
                 items: OopsContent.privacy, cta: "Start",
-                checks: $privacy, requireAll: false, onCta: { go(.quiz) })
+                checks: $privacy, requireAll: false, onCta: { go(.quiz) }, onBack: { go(.safety) })
         case .quiz:
             QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
         case .generating:

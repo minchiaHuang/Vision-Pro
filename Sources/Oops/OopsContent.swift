@@ -21,11 +21,11 @@ enum OopsContent {
 
     static let privacy: [Statement] = [
         .init(head: "Quiz Responses",
-              text: "Your answers are used in real time to match you to a personalised world. They are never stored after your session ends."),
+              text: "Your answers can be saved to personalise your experience across future sessions. If you'd prefer not, they'll be used in real time only and discarded when your session ends."),
         .init(head: "Device Motion",
-              text: "Gyroscope and accelerometer data lets you look around and walk through your world. This data stays on your device and is never transmitted."),
-        .init(head: "Images Access",
-              text: "Used for AR movement and spatial awareness within your world. No images or video are captured or stored at any point."),
+              text: "Gyroscope and accelerometer data can be saved to improve how you move through your world over time. If you'd rather not, it stays on your device and is never transmitted."),
+        .init(head: "Image Access",
+              text: "Camera data can be saved to refine your AR experience in future sessions. If you decline, it's used solely for live spatial awareness and no images or video are ever captured or stored."),
     ]
 
     /// One quiz question. `options` non-empty → pill selection; empty → free-text textarea.
@@ -83,4 +83,7 @@ enum OopsContent {
     ]
 
     static let declarationIntro = "Before you step in, here are a few things we want you to know, so you can feel safe, comfortable, and fully present in your experience."
+
+    /// Privacy Preferences subtitle (Figma node 49:2173) — distinct from the Safety intro.
+    static let privacyIntro = "Select what you are comfortable sharing with us."
 }
