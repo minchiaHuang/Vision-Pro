@@ -7,6 +7,7 @@ import SwiftUI
 
 /// One testable feature reachable from the dev menu.
 enum DevFeature: String, Identifiable, CaseIterable {
+    case museum
     case oops
     case voice
     case splat
@@ -15,6 +16,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
 
     var title: String {
         switch self {
+        case .museum: return "Future Museum"
         case .oops:  return "Oops Flow"
         case .voice: return "Voice — Speech Test"
         case .splat: return "Splat — 6DoF Walkthrough"
@@ -23,6 +25,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
 
     var subtitle: String {
         switch self {
+        case .museum: return "Type who you want to become · GPT writes 5 life beats + images"
         case .oops:  return "visionOS glass · onboarding → quiz → world"
         case .voice: return "Tap the orb to talk · ASR / LLM / TTS"
         case .splat: return "Generate or open a World Labs splat"
@@ -31,6 +34,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
 
     var systemImage: String {
         switch self {
+        case .museum: return "building.columns"
         case .oops:  return "rectangle.stack.badge.play"
         case .voice: return "waveform"
         case .splat: return "point.3.connected.trianglepath.dotted"
@@ -167,6 +171,9 @@ private struct DevFeatureContainer: View {
     @ViewBuilder
     private var content: some View {
         switch feature {
+        case .museum:
+            // Future Museum — typed answers → GPT (Stage A story + Stage B images) → gallery.
+            MuseumFlowView()
         case .oops:
             // The visionOS glass prototype flow (own coordinator + screen state).
             OopsFlowView()

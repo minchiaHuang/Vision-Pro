@@ -21,10 +21,23 @@ enum ParametricWorldBuilder {
     /// (each caller shows its own failure state). Saturation (axis 4) is applied by the caller
     /// — iOS via a SwiftUI overlay; visionOS via `applySaturation(_:saturation:)` (below).
     @MainActor
-    static func build(params: WorldParams) async -> ParametricWorldBuild? {
+    static func build(params: WorldParams,
+                      galleryPhotos: [UIImage] = []) async -> ParametricWorldBuild? {
         guard let model = try? await Entity(named: params.archetype.usdzName) else {
             return nil
         }
+
+        // Gallery only: swap the baked artwork on the wall frames. Prefer AI-generated photos
+        // (the Hero's-Journey series) when supplied; otherwise fall back to the bundled beach
+        // placeholders. The frames bind their image to `emissiveColor` (diffuse is black), so
+        // `applyGalleryPhotos` reuses each mesh's UVs to keep correct on-wall placement.
+        if params.archetype == .artGallery {
+            let photos = galleryPhotos.isEmpty
+                ? await loadGalleryPhotoTextures()
+                : texturesFrom(galleryPhotos)
+            applyGalleryPhotos(model, textures: photos)
+        }
+
         return assemble(model: model, params: params)
     }
 
@@ -79,6 +92,101 @@ enum ParametricWorldBuilder {
             guard var model = entity.model else { return }
             model.materials = model.materials.map { desaturate($0, amount: amount) }
             entity.model = model
+        }
+    }
+
+    // MARK: - Gallery frame photos
+
+    /// Converts in-memory images (the AI-generated Hero's-Journey series) into textures, in the
+    /// same order. Images that can't produce a `CGImage`/`TextureResource` are skipped.
+    ///
+    /// Each image is flipped vertically first: the gallery frames display the photo through an
+    /// `UnlitMaterial.color` texture, which samples the V axis from the opposite origin to the
+    /// USDZ's original PBR `emissiveColor` binding — so an un-flipped image renders upside down.
+    @MainActor
+    static func texturesFrom(_ images: [UIImage]) -> [TextureResource] {
+        images.compactMap { image in
+            guard let cg = flippedVertically(image) else { return nil }
+            return try? TextureResource(image: cg, options: .init(semantic: .color))
+        }
+    }
+
+    /// Returns `image` flipped top-to-bottom as a `CGImage`. Drawing through a renderer also
+    /// normalises any `imageOrientation` metadata, so the result is a plain, upright bitmap once
+    /// the texture's V-axis sampling is accounted for (see `texturesFrom`).
+    @MainActor
+    private static func flippedVertically(_ image: UIImage) -> CGImage? {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+        let flipped = renderer.image { ctx in
+            let cg = ctx.cgContext
+            cg.translateBy(x: 0, y: image.size.height)
+            cg.scaleBy(x: 1, y: -1)
+            image.draw(in: CGRect(origin: .zero, size: image.size))
+        }
+        return flipped.cgImage
+    }
+
+    /// Loads every bundled `beach*` image (jpg/jpeg/png) as a texture, sorted by filename
+    /// (beach 2, beach 4, beach 7, …) so the photo-to-frame assignment is stable. Enumerating
+    /// the bundle — rather than hard-coding names — means whatever beach files are dropped in
+    /// are picked up automatically. Skips any that fail to load. Routed through `texturesFrom`
+    /// so the bundled placeholders get the same vertical flip as the AI-generated photos.
+    @MainActor
+    static func loadGalleryPhotoTextures() async -> [TextureResource] {
+        var urls: [URL] = []
+        for ext in ["jpg", "jpeg", "png"] {
+            let found = Bundle.main.urls(forResourcesWithExtension: ext, subdirectory: nil) ?? []
+            urls += found.filter {
+                $0.deletingPathExtension().lastPathComponent.lowercased().hasPrefix("beach")
+            }
+        }
+        urls.sort { $0.lastPathComponent < $1.lastPathComponent }
+
+        let images = urls.compactMap { UIImage(contentsOfFile: $0.path) }
+        return texturesFrom(images)
+    }
+
+    /// Replaces every wall-frame mesh's material with an `UnlitMaterial` showing a beach photo,
+    /// cycling through `textures`. The whole gallery is unlit-baked (each material feeds its
+    /// texture into emissiveColor over a black diffuse), so an UnlitMaterial reproduces the flat,
+    /// evenly-lit look and renders the photo reliably — mutating the PBR emissive texture in place
+    /// instead rendered flat white. Reusing each mesh's existing UVs keeps the photo on the wall
+    /// with correct placement, orientation, perspective, and scale.
+    ///
+    /// Frames are identified by mesh name containing "bake" (the baked artworks — note asset
+    /// typos: "manual"/"manuel"/"manua"), excluding the corridor door and the butterfly wings.
+    /// Walls, floor, plant, curtains, dream-catchers, etc. have no "bake" in their mesh names.
+    /// The gallery's picture-frame meshes (mesh name contains "bake", excluding the corridor
+    /// door and the butterfly wings), in a stable name-sorted order. Shared by photo assignment
+    /// and proximity narration so the image on a wall and the voice that describes it always
+    /// refer to the same beat index.
+    @MainActor
+    static func galleryFrames(_ root: Entity) -> [ModelEntity] {
+        var frames: [ModelEntity] = []
+        forEachModelEntity(root) { entity in
+            let name = entity.name.lowercased()
+            guard name.contains("bake") else { return }
+            if name.contains("door") || name.contains("butterfly") { return }
+            frames.append(entity)
+        }
+        frames.sort { $0.name < $1.name }
+        return frames
+    }
+
+    @MainActor
+    static func applyGalleryPhotos(_ root: Entity, textures: [TextureResource]) {
+        guard !textures.isEmpty else { return }
+
+        let frames = galleryFrames(root)
+        for (index, frame) in frames.enumerated() {
+            guard var model = frame.model else { continue }
+            let texture = textures[index % textures.count]
+            var unlit = UnlitMaterial()
+            unlit.color = .init(tint: .white, texture: .init(texture))
+            model.materials = Array(repeating: unlit, count: model.materials.count)
+            frame.model = model
         }
     }
 

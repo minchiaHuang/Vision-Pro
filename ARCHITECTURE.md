@@ -1,25 +1,30 @@
-# Architecture — Visiting Artisan
+# Architecture — Visual Eyes (Future Museum)
 
 > System architecture & data flow. For product reasoning see [PRD.md](PRD.md).
+> (Supersedes the v0.1 "360° skybox" architecture.)
 
 ---
 
 ## 1. High-level
 
-A single Xcode project with two targets (iOS/iPadOS + visionOS) sharing one core logic layer.
-Only the **display layer** differs per platform.
+A single Xcode project sharing one core logic layer. The **generation pipeline** (answers →
+story → images) is pure networking + models; only the **display layer** (how the museum is
+walked) and the **voice layer** differ by platform.
 
 ```
-┌─ Shared core (pure Swift + SwiftUI, no platform deps) ──────┐
-│  Models · QuizData · PromptBuilder · WorldCatalog · AppState │
-└──────────────────────────────────────────────────────────────┘
+┌─ Shared core (Swift, no platform deps) ────────────────────────────────┐
+│  Museum models · CuratorService · ImageGenerationService · AppState     │
+└──────────────────────────────────────────────────────────────────────────┘
                     │ display layer splits per platform
-   iOS/iPadOS  →  Immersive360View   (drag/gyro to look around a sphere)
-   visionOS    →  ImmersiveWorldView (true immersive ImmersiveSpace)
+   iOS/iPadOS  →  ParametricWorldView   (first-person camera rig in the USDZ)
+   visionOS    →  ImmersiveWorldView    (true immersion; head = camera + locomotion)
+                    │ voice layer (both platforms)
+                  ConversationService    (per-beat narration + push-to-talk Curator)
 ```
 
-**Why this split:** quiz UI + logic are 100% shared; only *how the world is shown* is
-platform-specific. So the entire flow can be validated on iPad before any Vision Pro hardware.
+**Why this split:** the questions, the Curator pipeline, and the story/voice grounding are 100%
+shared; only *how the museum is walked* is platform-specific. The whole flow can be validated on
+iPad before any Vision Pro hardware.
 
 ---
 
@@ -27,112 +32,126 @@ platform-specific. So the entire flow can be validated on iPad before any Vision
 
 | Layer | Files | Responsibility |
 |---|---|---|
-| **Model** | `Models.swift` | `Dimension`, `QuizQuestion`, `QuizOption`, `QuizResult`, `World` |
-| **Data** | `QuizData.swift`, `WorldCatalog.swift` | Quiz questions; pre-baked worlds + lookup |
-| **Logic** | `PromptBuilder.swift` | `QuizResult` → text prompt (display now, Skybox API later) |
-| **State** | `AppState.swift` | `@Observable` flow state machine (phase, result, world) |
-| **Entry/Nav** | `VisitingArtisanApp.swift`, `RootView.swift` | App entry, phase-based view switching |
-| **Views** | `QuizView.swift`, `WorldView.swift`, `RootView.swift` | Splash, quiz, loading, world |
-| **Display** | `Immersive360View.swift` (iOS), `ImmersiveWorldView.swift` (visionOS) | 360° sphere rendering |
-| **Voice (v4 · 6a)** | `NarrationService.swift`, `NarrationComposer.swift` | On-device TTS entry narration: composes a welcome from `AxisScores` and speaks it via `AVSpeechSynthesizer` when `.world` appears. No mic, no network, no permissions |
-| **Voice (v4 · 6b)** | `ConversationService.swift` (planned) | Mic → STT → cloud LLM → TTS conversation loop; runs during `.world` phase. Reuses `NarrationService` as its TTS stage |
+| **Museum models** | `Sources/Museum/MuseumModels.swift` | `MuseumAnswers`, `MuseumNode`, `MuseumStory`, `GeneratedNode` |
+| **Stage A (Curator)** | `Sources/Museum/CuratorService.swift`, `MuseumPrompt.swift` | answers → `MuseumStory` (OpenAI Responses, `gpt-5.5`, strict `json_schema`); system prompt + dancer few-shot + schema |
+| **Stage B (painter)** | `Sources/Museum/ImageGenerationService.swift` | each beat's `image_prompt` → image `Data` (OpenAI Images, `gpt-image-2`) |
+| **Pipeline driver** | `Sources/Museum/MuseumGalleryView.swift` (`MuseumGenerator`) | runs Stage A then Stage B in parallel; phases `idle → writing → painting → ready` |
+| **Flow** | `Sources/Museum/MuseumFlowView.swift`, `MuseumQuestionsView.swift` | questions → generating → enter museum |
+| **State** | `Sources/App/AppState.swift` | `@Observable` flow state; holds `museumStory`, `museumAnswers`, `galleryImages`, `worldParams` |
+| **Display** | `Sources/World/ParametricWorldBuilder.swift`, `ImmersiveWorldView.swift`, `WorldView.swift` | load the Richards Gallery USDZ, hang the images, light it, walk it |
+| **Voice** | `Sources/Voice/ConversationService.swift`, `SpeechRecognizer.swift`, `NarrationService.swift`, `Azure/ElevenLabs/Speech` voices | STT → Claude → TTS; per-beat narration + push-to-talk |
+| **Proximity narration** | `Sources/Museum/MuseumNarrationDirector.swift` *(phase 2)* | fires `nodes[i].narration` when the walker enters frame *i*'s radius |
+| **Entry/Nav** | `Sources/App/VisitingArtisanApp.swift`, `DevMenu/DevMenuView.swift` | app entry; Dev Menu launcher (Future Museum / Oops / Voice / Splat) |
 
 ---
 
-## 3. State machine
-
-`AppState.phase` drives `RootView`:
+## 3. The two-stage pipeline
 
 ```
-.splash ──Begin──▶ .quiz ──(answer last Q)──▶ .loading ──(~2s)──▶ .world
-                                                                     │
-                                                            "Start over"
-                                                                     ▼
-                                                                 .splash
-```
-
-`AppState` (in `AppState.swift`) holds:
-- `result: QuizResult` — accumulates one tag per dimension
-- `world: World?` — resolved after quiz
-- `finishQuiz()` — runs the loading delay, then `WorldCatalog.resolve(from:)`
-
----
-
-## 4. Data flow (end-to-end)
-
-```
-User taps options
-   │  AppState.answer(dimension, tag)
+MuseumAnswers
+   │  CuratorService.generate()              ← Stage A (blocking)
+   │    POST /v1/responses · gpt-5.5 · text.format json_schema (strict)
    ▼
-QuizResult { emotional, cultural, physical }
-   │
-   ├─▶ PromptBuilder.prompt(from:)  → text prompt
-   │        e.g. "An immersive 360 environment that feels calm and serene,
-   │              warm communal space..., still water..."
-   │        (v1: display only; v2: sent to Skybox AI API)
-   │
-   └─▶ WorldCatalog.resolve(from:) → World   ← v1 lookup table
-                                              ← v2 replaced by SkyboxService (live gen)
+MuseumStory { persona, cold_style, warm_style, decision_prompt, nodes:[5] }
+   │  MuseumGenerator maps each node → GeneratedNode, then:
+   │  withTaskGroup { ImageGenerationService.image(forPrompt:) }   ← Stage B (parallel)
    ▼
-World { imageName / imageURL }
-   │  display layer
-   ├─ iOS:     Immersive360View    — equirectangular texture on inward sphere, camera at center
-   └─ visionOS: ImmersiveWorldView — same sphere inside ImmersiveSpace, head = camera
+each GeneratedNode.image = Data   (a failed beat keeps its slot, marked .failed)
 ```
 
----
-
-## 5. 360° rendering (both platforms)
-
-The same idea on iOS and visionOS:
-
-1. Generate a large sphere mesh (radius 1000).
-2. Flip normals inward (`scale.x = -1`) so the texture shows on the **inside**.
-3. Apply the equirectangular (2:1) 360° image as an `UnlitMaterial` texture.
-4. Put the camera at the sphere center → looking out = surrounded by the environment.
-
-- **iOS/iPadOS:** `RealityView` + `DragGesture` rotates the sphere (look around).
-- **visionOS:** `ImmersiveSpace` + `RealityView`; the user's head is the camera (6DOF look, no walking in v1).
-
-If the image asset is missing, both fall back to a grey sphere — so the flow always runs.
+- The strict JSON schema guarantees Stage A's `output_text` decodes straight into `MuseumStory`
+  — no fragile parsing. A few-shot dancer turn teaches tone + the symbolic, text-free imagery.
+- Stage B prompts are self-contained (each begins with the run's locked style string), so the
+  five images stay visually consistent and there is no second LLM dependency.
+- `MuseumGenerator.orderedGalleryImages()` flattens the nodes to a **fixed 5-slot, beat-ordered**
+  `[UIImage]` (placeholder for any failed beat) — the invariant the display + narration rely on.
 
 ---
 
-## 6. Extension points
+## 4. Display — hanging the images & walking the museum
 
-| Future | Where it plugs in | Note |
-|---|---|---|
-| **v2 live generation** | new `SkyboxService`, replaces `WorldCatalog.resolve` in `AppState.finishQuiz()` | `World.imageURL` already exists for remote images |
-| **v4 · 6a entry narration** | `NarrationService` (TTS) + `NarrationComposer` (text), triggered in `iOSWorldView.task` | done — on-device `AVSpeechSynthesizer`, no deps/keys/permissions; mascot = reused `OrbView` |
-| **v4 · 6b AI voice companion** | `ConversationService` + `SpeechRecognizer`, wired into `iOSWorldView` (iOS) AND `VisionWorldPanel` (visionOS); reuses `NarrationService` for TTS | done (spike) — push-to-talk on the mascot: `SFSpeechRecognizer` STT → Claude Messages API over URLSession (Haiku 4.5, grounded in `AxisScores`) → TTS. Needs mic/speech permission + local `Secrets.anthropicAPIKey`. visionOS orb lives on the control panel; a floating orb *inside* the immersive space (`ImmersiveWorldView` RealityKit attachment + gesture) is future work. Deepen into a reflection mentor later |
-| **v5 AI-generated walkable worlds** | new display pipeline (splat/mesh) replacing the sphere | World Labs Marble; significant display-layer change |
-| **More quiz questions** | append to `QuizData.questions` | UI auto-adapts (progress dots, one-per-screen) |
-| **New worlds** | add to `WorldCatalog.all` + Assets | update `resolve()` mapping |
+The Richards Gallery USDZ is loaded by `ParametricWorldBuilder.build(params:galleryPhotos:)`:
+
+1. Load the archetype USDZ (`WorldArchetype.artGallery`).
+2. **Hang the photos:** `applyGalleryPhotos` finds every wall-frame mesh whose name contains
+   `bake` (excluding the door and butterfly), sorts them into a stable order, and replaces each
+   frame's material with an `UnlitMaterial` showing image *i*. Reusing each mesh's existing UVs
+   keeps the photo correctly placed on the wall. **Beat order = frame order** (the same ordered
+   list also drives proximity narration, so image-on-wall and voice-on-wall always agree).
+3. Add directional lights; the gallery uses neutral params so its baked lighting reads correctly.
+
+- **visionOS** (`ImmersiveWorldView`): the world is parented under a root the `ParametricLocomotor`
+  moves each frame (player walks → world shifts opposite); head tracking adds local 6DoF.
+- **iOS/iPadOS** (`ParametricWorldView`): a `PerspectiveCamera` + `WorldCameraRig` walks the same
+  scene by gesture.
+
+---
+
+## 5. Voice — one authority, two modes
+
+`ConversationService` owns the audio session for the whole visit so recording and playback never
+clobber each other. It is configured once per visit with the Curator persona:
+
+```
+configureCurator(story:answers:)  → documentary-Curator system prompt grounded in
+                                     persona + the 5 beats + fear/sacrifice/worthIt + decision_prompt
+```
+
+- **Narration (one-way):** `MuseumNarrationDirector` ticks from the locomotion update; when the
+  walker first enters frame *i*'s radius it calls `convo.narrate(nodes[i].narration)`. A pure
+  `frameToTrigger(playerXZ:frameXZ:fired:radius:)` makes the trigger logic unit-testable.
+- **Conversation (push-to-talk):** the floating orb taps into `beginListening()` /
+  `finishListeningAndReply()` → STT → Claude → TTS. Replies are 2–3 spoken sentences, grounded in
+  this exhibition, handing the choice back.
+- **TTS routing:** cloud voice (Azure ▸ ElevenLabs) when a key is present, else on-device
+  `AVSpeechSynthesizer`. A cloud failure falls back to AVSpeech via an `onFailure` hook and trips
+  a per-session circuit breaker — the guide is never silent.
+
+Both modes go through the **same** `ConversationService` instance, so narration and conversation
+share the audio session and interrupt cleanly rather than overlapping.
+
+---
+
+## 6. State machine & windows
+
+`AppState` is `@Observable`. The Future Museum runs as its own coordinator (`MuseumFlowView`),
+not the legacy `AppState.phase` machine:
+
+```
+.questions ──Build──▶ .generating ──(story+images ready)──▶ enterMuseum()
+                                                              │ visionOS: openImmersiveSpace("world")
+                                                              │           + museum-gallery-controls window
+                                                              │           + museum-voice-orb window
+                                                              └ iPad:    in-cover ParametricWorldView
+```
+
+visionOS uses separate `Window`s for the floating controls (locomotion + the closing decision +
+Leave) and the voice orb, because a full-immersion `ImmersiveSpace` can't host SwiftUI controls
+inside it. Each is a single `Window` with `restorationBehavior(.disabled)` so re-entry can't stack
+stale panels.
 
 ---
 
 ## 7. Conventions
 
 - Platform-specific files are guarded with `#if os(visionOS)` / `#if !os(visionOS)`.
-- Core logic has zero UIKit/RealityKit dependency → testable & shared.
-- API keys never committed (see `.gitignore`); v2 keys go in an untracked `Secrets.swift`.
+- Core logic (models, pipeline, prompt builders, the proximity trigger) has zero RealityKit/UIKit
+  dependency → testable & shared (Swift Testing).
+- API keys never committed: `Sources/Core/Secrets.swift` ships with empty placeholders; real keys
+  stay unstaged (see [SETUP.md](SETUP.md)).
 
 ---
 
-## 8. Oops flow (visionOS glass front-end)
+## 8. Earlier flows kept in the repo (labelled legacy)
 
-A second, self-contained flow under `Sources/Oops/`, reachable from the Dev Menu as
-**"Oops Flow"** (`DevFeature.oops`). It is a faithful SwiftUI port of the dark glass
-visionOS prototype: Opening → Home → Safety → Privacy → Quiz (6 reflective questions) →
-Generating → Preview → World → Exit. Its own coordinator (`OopsFlowView`) holds the
-screen + answer state; it does **not** use `AppState.phase`.
+These are prior explorations behind their own Dev Menu entries — kept, not the current spine
+(see PRD §9):
 
-**Known limitation — answers do not drive the world yet.** The Oops Quiz captures its
-6 answers in memory (`OopsAnswers`) but they are **not** mapped to `WorldParams`.
-"Enter Now" calls `AppState.loadDefaultWorld()` (neutral params) and shows the existing
-3D `WorldView`. Future work: map the free-text/slider answers → `WorldParams` (a small
-heuristic or an LLM call), replacing the neutral default. The `Generating` screen is a
-timed placeholder whose `onDone()` contract is the natural seam for a real generation call.
-
-The Q1 mic is wired to the shared `SpeechRecognizer` (`QuizDictation` in `OopsQuiz.swift`)
-for live dictation; the sidebar chat/photos icons remain decorative.
+- **Oops glass flow** (`Sources/Oops/`): dark-glass visionOS prototype Opening → Home → Safety →
+  Privacy → Quiz → Generating → Gallery → Reflection, with an *inspiring*-toned Hero's-Journey
+  image gallery (`Sources/World/OpenAIImageService.swift`). The Museum is its *honest*-toned
+  successor and reuses the same wall-hanging mechanism.
+- **Splat spike** (`Sources/Spikes/`): World Labs Marble `.spz`, 6DoF walkable via
+  CompositorServices / MetalSplatter — the "heavy" walkable-world path.
+- **Parametric quiz/world** (`Sources/Quiz/`, `WorldMapper`): the 4+1-axis personality quiz →
+  `WorldParams`; the gallery archetype reuses its builder.

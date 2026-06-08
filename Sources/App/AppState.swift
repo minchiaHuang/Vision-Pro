@@ -27,6 +27,33 @@ final class AppState {
     var generatedSplatURL: URL?
     var generatedWorldId: String?
 
+    /// AI-generated Hero's-Journey series (current self → ideal self) shown in the art
+    /// gallery's wall frames. When non-empty, the gallery uses these instead of the bundled
+    /// beach placeholders. Set by `GeneratingScreen` before the user enters the gallery.
+    var galleryImages: [UIImage] = []
+
+    /// Future Museum run: the Curator's 5-beat story and the answers it was built from.
+    /// Set by `GeneratingScreen` alongside `galleryImages`; consumed by the in-gallery voice
+    /// (per-beat narration + push-to-talk) and the closing decision moment.
+    var museumStory: MuseumStory?
+    var museumAnswers: MuseumAnswers?
+
+    /// The Future Museum pipeline. Owned here (not by `GeneratingScreen`) so Stage B image
+    /// painting keeps running after the user enters the museum — entering tears down the
+    /// dev-menu window and `GeneratingScreen` with it. The immersive gallery observes this
+    /// generator's `nodes` and re-textures each wall as its painting lands.
+    var museumGenerator = MuseumGenerator()
+
+    /// The single Curator voice for an open museum gallery — shared by the floating voice orb
+    /// (push-to-talk) and the in-gallery proximity narrator, so both use one audio session and
+    /// never talk over each other. Created on entering the gallery; cleared on exit.
+    var museumConversation: ConversationService?
+
+    /// Quiz speech-to-text bridge — shared between the Quiz screen and the floating
+    /// `quiz-voice-orb` window so the orb can write a spoken answer into the question the user is
+    /// currently on. Front-end only; copied into the flow's `OopsAnswers` as the user answers.
+    let quizVoice = QuizVoiceSession()
+
     /// Hidden continuous scores (the bottom layer of research direction 6) and the world
     /// parameters they map to (direction 7). Computed and stored from Phase 3 on; the
     /// display layer consumes `worldParams` from Phase 2 on.
@@ -77,6 +104,24 @@ final class AppState {
         world = WorldCatalog.world(for: params.archetype)
     }
 
+    /// Loads the Richards Art Gallery USDZ as the Oops flow world. No narration/title
+    /// world object is needed — the Oops flow has its own copy. Social density = 0 keeps
+    /// companion orbs out of the gallery. Light params are neutral so the USDZ's own
+    /// baked lighting reads correctly without a heavy additive directional overlay.
+    func loadGalleryWorld() {
+        worldParams = WorldParams(
+            archetype: .artGallery,
+            lightIntensity: 300,
+            colorTemperature: 5500,
+            saturation: 1.0,
+            socialDensity: 0,
+            openness: 0.5,
+            biophilicDensity: 0.5,
+            focal: .ownPath
+        )
+        world = nil
+    }
+
     /// DEV ONLY — preload a neutral default world so the dev menu's "World" option
     /// can jump straight into `WorldView`, skipping the quiz.
     func loadDefaultWorldForTesting() {
@@ -93,6 +138,15 @@ final class AppState {
         generatedPano = nil
         generatedSplatURL = nil
         generatedWorldId = nil
+        galleryImages = []
+        museumStory = nil
+        museumAnswers = nil
+        // `MuseumGenerator` is `@MainActor`; hop on (this nonisolated `restart()` is only ever
+        // called from MainActor UI, but the call must be expressed on the actor). Cancels any
+        // in-flight Stage B paint task so a stale run can't keep painting after a restart.
+        Task { @MainActor in museumGenerator.reset() }
+        museumConversation = nil
+        quizVoice.reset()
         phase = .splash
     }
 }

@@ -70,8 +70,22 @@ final class ConversationService {
                                              params: params, hopeFreeText: hopeFreeText)
     }
 
+    /// Grounds the guide as the Future Museum's "Curator" — documentary tone, anchored in the
+    /// generated story + the visitor's own answers. Call once when the museum opens.
+    func configureCurator(story: MuseumStory, answers: MuseumAnswers) {
+        systemPrompt = Self.makeCuratorPrompt(story: story, answers: answers)
+    }
+
     /// Speaks the 6a entry narration through the shared TTS voice.
     func speakEntry(_ text: String) {
+        activatePlaybackSession()
+        routeSpeak(text)
+    }
+
+    /// Speaks a beat's narration through the shared voice (interrupting any current line). Used
+    /// by the in-museum proximity narrator so narration and push-to-talk share one audio session.
+    func narrate(_ text: String) {
+        stopSpeaking()
         activatePlaybackSession()
         routeSpeak(text)
     }
@@ -217,6 +231,31 @@ final class ConversationService {
         This world was shaped from how they answered a short reflection. The visitor \(leanings). The direction they said they're moving toward is \(hope).\(ownWords)
         The world looks and feels like: \(scene).
         Speak about THIS world and what it gently reflects in them. Strict tone rules: never say "should" or "must"; frame everything as a direction they are moving toward, never a flaw or a lack; invite rather than instruct. Keep every reply to 2-3 short spoken sentences — it will be read aloud. End with one gentle, open question that helps them notice what feels true. Never mention scores, axes, parameters, or that this is an app or a quiz.
+        """
+    }
+
+    // MARK: - Curator prompt (Future Museum)
+
+    /// Grounds the guide as the documentary "Curator" of the visitor's five-room future museum,
+    /// anchored in the generated story's beats + the visitor's own fear/sacrifice/worthIt and the
+    /// closing decision. Blank answer fields are simply omitted (worthIt is usually blank — the
+    /// Curator infers it).
+    private static func makeCuratorPrompt(story: MuseumStory, answers: MuseumAnswers) -> String {
+        let beats = story.nodes
+            .map { "- \($0.stage) (age \($0.age)): \($0.narration)" }
+            .joined(separator: "\n")
+        let visitorBits = [
+            answers.fear.isEmpty ? nil : "their fear is \"\(answers.fear)\"",
+            answers.sacrifice.isEmpty ? nil : "what they are least willing to give up is \"\(answers.sacrifice)\"",
+            answers.worthIt.isEmpty ? nil : "what would make it worth it is \"\(answers.worthIt)\""
+        ].compactMap { $0 }.joined(separator: ", ")
+        let visitorLine = visitorBits.isEmpty ? "" : "The visitor told you \(visitorBits). "
+        return """
+        You are "The Curator" of a five-room museum about one visitor's possible future as \(story.persona). You speak like a documentary narrator — short, plain, second-person, never motivational, never sentimental, no slogans, no exclamation marks. The exhibition shows that path honestly, mostly its cost.
+        The five rooms on the walls are:
+        \(beats)
+        \(visitorLine)The closing question at the exit is: "\(story.decision_prompt)"
+        When the visitor speaks to you, answer about THIS exhibition and what it asks of them. Keep every reply to 2-3 short spoken sentences — it is read aloud. Persuade neither toward nor away from the path; hand the choice back to them. Never mention that this is an app, a quiz, or AI.
         """
     }
 }

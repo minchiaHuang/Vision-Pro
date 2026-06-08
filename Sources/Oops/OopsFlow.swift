@@ -3,19 +3,20 @@ import SwiftUI
 /// The screens of the Oops prototype flow (mirrors the React `screen` state). After the
 /// user steps out of the 3D world they land on the `reflection` screen (5 questions).
 enum OopsScreen {
-    case opening, home, safety, privacy, quiz, generating, preview, world, reflection
+    case opening, home, safety, privacy, quiz, generating, world, reflection
 }
 
 /// Held-in-memory answers for the quiz + post-world reflection (front-end only — never
-/// scored or stored in this pass). String for text/area questions, Int 0...10 for the
-/// single slider; `r1`–`r5` hold the reflection free-text answers.
+/// scored or stored in this pass).
+/// - `quiz`: pill questions — maps question id → selected option index
+/// - `quizText`: free-text questions — maps question id → typed string
+/// - `r1`–`r5`: reflection free-text answers (post-world)
 struct OopsAnswers {
-    var q1 = "To find my passion"
-    var q3 = ""
-    var q4 = ""
-    var q5 = ""
-    var q6 = ""
-    var q2 = 6   // slider
+    var quiz: [String: Int] = [:]
+    var quizText: [String: String] = [:]
+    /// Q3 answer — "What's your ideal future like? Who do you want to become?" — drives the
+    /// Hero's Journey image generation goal string.
+    var goal: String { quizText["q3"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
     var r1 = ""
     var r2 = ""
     var r3 = ""
@@ -41,6 +42,7 @@ struct OopsFlowView: View {
 
     private func restart() {
         answers = OopsAnswers()
+        appState.quizVoice.reset()
         safety = [false, false, false]
         privacy = [false, false, false]
         withAnimation(.easeInOut(duration: 0.5)) { screen = .opening }
@@ -83,23 +85,28 @@ struct OopsFlowView: View {
         .preferredColorScheme(.dark)
         .statusBarHidden()
         .onAppear {
-            // Returning from the immersive splat world recreates this window; resume at
+            // Returning from the gallery world recreates this window; resume at
             // the requested screen (reflection) rather than restarting at .opening.
             if let resume = appState.oopsResumeScreen {
                 screen = resume
                 appState.oopsResumeScreen = nil
             }
-            #if os(visionOS)
-            // Pre-decode vibrant_loft in the background so the cache is ready by the
-            // time the user finishes the quiz and taps Enter World.
-            Task.detached(priority: .background) {
-                await SplatCache.warmIfNeeded(bundleResource: "vibrant_loft_art_studio",
-                                              withExtension: "spz",
-                                              flipUpsideDown: true)
-            }
-            #endif
+        }
+        // The voice orb is a separate window; fold the speech it recognizes into the flow's
+        // answers so dictation and typing share one set of answers (dictation replaces the field).
+        .onChange(of: appState.quizVoice.text) { _, dict in
+            for (id, value) in dict { answers.quizText[id] = value }
         }
         #if os(visionOS)
+        // Show the floating speech-to-text orb only while on the Quiz screen.
+        .onChange(of: screen) { _, s in
+            if s == .quiz {
+                openWindow(id: "quiz-voice-orb")
+            } else {
+                dismissWindow(id: "quiz-voice-orb")
+                appState.quizVoice.activeQuestionID = nil
+            }
+        }
         // Let the cover background go clear so the transparent `OopsPassthrough`
         // reveals the window glass / real room rather than an opaque default backing.
         .presentationBackground(.clear)
@@ -124,13 +131,13 @@ struct OopsFlowView: View {
             DeclarationScreen(
                 label: "04 Privacy Preferences", title: "Privacy Preferences",
                 items: OopsContent.privacy, cta: "Start",
-                checks: $privacy, onCta: { go(.quiz) })
+                checks: $privacy, requireAll: false, onCta: { go(.quiz) })
         case .quiz:
             QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
         case .generating:
-            GeneratingScreen { go(.preview) }
-        case .preview:
-            PreviewScreen(onEnter: { enterWorld() }, onRetry: { go(.quiz) })
+            // The finished quiz answers now drive the Curator pipeline (story + 5 images)
+            // inside GeneratingScreen; the result is stored on AppState before enterWorld().
+            GeneratingScreen(answers: answers) { enterWorld() }
         case .world:
             EmptyView()
         case .reflection:
@@ -138,27 +145,31 @@ struct OopsFlowView: View {
         }
     }
 
-    /// Enters the walkable 3D world.
-    /// - visionOS: opens the 6DoF Gaussian-splat immersive space directly (bundled
-    ///   "Vibrant Loft Art Studio"), then swaps the dev-menu window for the small
-    ///   `oops-world-controls` window so full immersion isn't cluttered by a floating
-    ///   panel. Leaving that window reopens the dev-menu at the reflection screen.
-    /// - iPad: prepares a neutral default world and shows the in-cover `WorldView`.
+    /// Enters the Richards Art Gallery.
+    /// - visionOS: sets worldParams to the gallery archetype, opens the shared RealityKit
+    ///   `world` ImmersiveSpace (head tracking + gamepad locomotion), and shows the small
+    ///   `oops-gallery-controls` floating panel. Leaving that panel reopens the dev-menu
+    ///   at the reflection screen.
+    /// - iPad: loads gallery worldParams and shows the in-cover `WorldView` (ParametricWorldView).
     private func enterWorld() {
+        // When a Curator story exists (the museum flow, not "visit old world"), stand up the one
+        // shared voice now so both the orb and the in-gallery proximity narrator use it.
+        if let story = appState.museumStory {
+            let convo = ConversationService()
+            convo.configureCurator(story: story, answers: appState.museumAnswers ?? MuseumAnswers())
+            appState.museumConversation = convo
+        }
         #if os(visionOS)
         Task {
-            guard let url = Bundle.main.url(forResource: "vibrant_loft_art_studio",
-                                            withExtension: "spz") else { return }
-            SplatManualInput.shared.reset()
-            if case .opened = await openImmersiveSpace(id: "splat",
-                                                       value: SplatEntry(url: url, flipUpsideDown: true)) {
-                openWindow(id: "oops-world-controls")
-                openWindow(id: "oops-voice-orb")
+            appState.loadGalleryWorld()
+            if case .opened = await openImmersiveSpace(id: "world") {
+                openWindow(id: "oops-gallery-controls")
+                if appState.museumConversation != nil { openWindow(id: "museum-voice-orb") }
                 dismissWindow(id: "dev-menu")
             }
         }
         #else
-        appState.loadDefaultWorld()
+        appState.loadGalleryWorld()
         go(.world)
         #endif
     }

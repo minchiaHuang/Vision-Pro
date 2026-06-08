@@ -1,39 +1,72 @@
 import Foundation
 
-/// API key stubs for experimental services.
+/// API keys for the app's cloud services.
 ///
-/// This file IS committed to the repo with empty placeholder values so that
-/// every clean clone builds out of the box. Do NOT replace these placeholders
-/// with real keys in a commit.
+/// SAFETY: this file is committed and contains **no key literals** — it only resolves
+/// keys at runtime from out-of-band sources that are kept out of git. A fresh clone
+/// builds with empty keys, and every service guards on `isEmpty` and degrades gracefully.
 ///
-/// For local development with real keys, either:
-///   1. Override the values locally and keep the change unstaged
-///      (`git update-index --skip-worktree Sources/Secrets.swift` if you
-///      want extra protection against accidental commits), or
-///   2. Move secrets to an out-of-band file (e.g. `APIKeys.plist`, env vars)
-///      and read them at runtime instead of hard-coding here.
+/// Provide a key in either of these places (checked in this order):
 ///
-/// Note: the WorldLabs entry point ("Experimental: World Labs" on the splash)
-/// is a spike and is not part of the main v2 product flow. With the empty
-/// key below, `WorldLabsService` reports "Missing API key" and stays inert —
-/// this is the expected behavior for a fresh clone.
+///   1. An Xcode **scheme environment variable** (best for development).
+///      Product ▸ Scheme ▸ Edit Scheme… ▸ Run ▸ Arguments ▸ Environment Variables,
+///      add e.g. `OPENAI_API_KEY = sk-…`, and leave "Shared" unchecked so it is stored
+///      in your *user* scheme (which git ignores). The key is then never written to a
+///      file or embedded in the built binary.
+///
+///   2. A bundled **`APIKeys.plist`** (a `[String: String]` dictionary). Copy
+///      `APIKeys.example.plist` to `APIKeys.plist`, fill in your key, and add the file
+///      to the app target. `APIKeys.plist` is gitignored, so it can't be committed.
+///      (Template placeholder values starting with `YOUR_` are ignored.)
+///
+/// NOTE: any key shipped inside a client app can be extracted from the binary. The two
+/// options above are fine for a prototype. For a public release, move calls behind a
+/// backend proxy so the key lives only on your server and never ships in the app.
 enum Secrets {
-    /// World Labs API key. Empty by default; replace locally only.
-    static let worldLabsAPIKey: String = ""
+    /// World Labs API key (experimental 3D/panorama generation).
+    static var worldLabsAPIKey: String { value(for: "WORLD_LABS_API_KEY") }
 
-    /// Anthropic API key for the Phase 6b voice conversation (Claude Messages API).
-    /// Empty by default; replace locally only. With an empty key, `ConversationService`
-    /// reports "Missing API key" and the conversation stays inert (TTS entry narration
-    /// still works, since 6a needs no key).
-    static let anthropicAPIKey: String = ""
+    /// Anthropic API key for the Claude Messages API (voice conversation, storyline text).
+    static var anthropicAPIKey: String { value(for: "ANTHROPIC_API_KEY") }
 
-    /// ElevenLabs API key for cloud TTS (Phase 6 voice). Empty by default; replace
-    /// locally only. With an empty key, the companion falls back to on-device
-    /// AVSpeech, so a fresh clone still builds and speaks offline.
-    static let elevenLabsAPIKey: String = ""
+    /// ElevenLabs API key for cloud TTS.
+    static var elevenLabsAPIKey: String { value(for: "ELEVEN_LABS_API_KEY") }
 
-    /// Azure Speech API key for cloud TTS (Phase 6 voice, region southeastasia).
-    /// Empty by default; replace locally only. With an empty key the companion
-    /// falls back to ElevenLabs (if set) or on-device AVSpeech.
-    static let azureSpeechKey: String = ""
+    /// Azure Speech API key for cloud TTS (region southeastasia).
+    static var azureSpeechKey: String { value(for: "AZURE_SPEECH_KEY") }
+
+    /// OpenAI API key for image generation (`gpt-image-1`) and/or GPT text.
+    static var openAIAPIKey: String { value(for: "OPENAI_API_KEY") }
+
+    // MARK: - Resolution
+
+    /// Resolves a key by name: scheme environment variable first, then `APIKeys.plist`.
+    /// Returns "" when neither holds a usable value, so callers' `isEmpty` guards keep the
+    /// related feature inert on a fresh clone.
+    private static func value(for name: String) -> String {
+        if let env = ProcessInfo.processInfo.environment[name], isUsable(env) {
+            return env.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if let fromPlist = plist[name], isUsable(fromPlist) {
+            return fromPlist.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return ""
+    }
+
+    /// A value is usable if it's non-blank and not a leftover template placeholder.
+    private static func isUsable(_ raw: String) -> Bool {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && !trimmed.hasPrefix("YOUR_")
+    }
+
+    /// Lazily-loaded contents of the optional, gitignored `APIKeys.plist`. Empty if the
+    /// file isn't bundled (the default for a fresh clone).
+    private static let plist: [String: String] = {
+        guard let url = Bundle.main.url(forResource: "APIKeys", withExtension: "plist"),
+              let data = try? Data(contentsOf: url),
+              let dict = try? PropertyListSerialization.propertyList(from: data, format: nil)
+                as? [String: String]
+        else { return [:] }
+        return dict
+    }()
 }

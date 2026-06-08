@@ -1,127 +1,101 @@
 import SwiftUI
 
+// MARK: - OopsAnswers → MuseumAnswers adapter
+
+extension MuseumAnswers {
+    /// Builds the Curator's typed inputs from the finished OopsFlow quiz answers.
+    /// Mapping (see `OopsContent.questions`): q1 age-range pill → `age` (lower bound),
+    /// q2 → `city`, q3 → `role` (the Call), q4 → `currentSelf`, q5 → `fear`, q6 → `sacrifice`.
+    /// `worthIt` is left blank — OopsFlow doesn't ask it, so the Curator infers it.
+    init(oops: OopsAnswers) {
+        func text(_ id: String) -> String {
+            (oops.quizText[id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        self.init()
+        role        = text("q3")
+        city        = text("q2")
+        currentSelf = text("q4")
+        fear        = text("q5")
+        sacrifice   = text("q6")
+        // q1 is a 4-way age-range pill; map its index to the lower bound of the range.
+        age = [0: 17, 1: 20, 2: 25, 3: 30][oops.quiz["q1"] ?? -1] ?? 22
+    }
+}
+
 // MARK: - Generating interstitial
 
-/// Spinner + "Building your world…" with staged hint copy, then advances to the preview.
+/// Spinner + "Building your world…" while the Hero's-Journey image series is generated, then
+/// advances to the preview. Generated images are stored on `AppState` for the gallery to show.
 struct GeneratingScreen: View {
+    @Environment(AppState.self) private var appState
+    /// The finished OopsFlow answers that drive the Curator pipeline (mapped to `MuseumAnswers`).
+    let answers: OopsAnswers
     let onDone: () -> Void
 
-    /// Staged copy shown while "generating". Each stage fades into the next.
-    private let stages = [
-        "Reading your answers…",
-        "Shaping the light and the space…",
-        "Adding the finishing touches…",
-    ]
-    @State private var stage = 0
+    /// Documentary-toned status, driven by the pipeline phase. Only Stage A (writing the story)
+    /// is shown here — the moment the story is ready we step inside and the paintings stream
+    /// onto the walls, so this screen no longer lingers through the slow image phase.
+    private var statusText: String {
+        switch appState.museumGenerator.phase {
+        case .idle, .writing: return "Writing the story of this future…"
+        case .painting:       return "Stepping inside…"
+        case .ready:          return "Stepping inside…"
+        case .failed:         return "Opening the doors…"
+        }
+    }
 
     var body: some View {
         ZStack {
             OopsPassthrough(dim: true)
             VStack(spacing: 38) {
                 OopsSpinner()
-                Text("Building your world…")
+                Text("Building your museum…")
                     .font(.system(size: 30, weight: .semibold))
                     .foregroundStyle(.white)
-                Text(stages[stage])
+                Text(statusText)
                     .oopsSub(20)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 620)
-                    .id(stage)                       // re-identity each stage so it crossfades
+                    .id(statusText)                  // re-identity each stage so it crossfades
                     .transition(.opacity)
             }
-            .animation(.easeInOut(duration: 0.5), value: stage)
+            .animation(.easeInOut(duration: 0.5), value: statusText)
         }
         .task { await runGeneration() }
     }
 
-    /// Placeholder generation step: cycles the staged copy, then advances. When a real
-    /// generation backend lands, replace the per-stage sleeps with the actual work —
-    /// the `onDone()` completion contract stays the same.
+    /// Runs **Stage A only** of the Curator pipeline (the story), then enters the museum
+    /// immediately. Stage B (the five paintings) keeps running in the background on the
+    /// AppState-owned `museumGenerator`, and the immersive gallery streams each painting onto
+    /// its wall as it lands. `galleryImages` is seeded with the beat-ordered placeholders so the
+    /// walls start neutral and "develop" in. On any failure the run degrades gracefully
+    /// (story fails → no narration + bundled placeholders) but the flow always completes, so the
+    /// user is never trapped.
     private func runGeneration() async {
-        for i in stages.indices {
-            withAnimation { stage = i }
-            try? await Task.sleep(for: .seconds(1.1))
-        }
+        let museumAnswers = MuseumAnswers(oops: answers)
+        appState.museumAnswers = museumAnswers
+        appState.museumGenerator.reset()                  // fresh run (clears any prior paint task)
+        await appState.museumGenerator.generateStory(museumAnswers)   // awaits Stage A only
+        appState.museumStory   = appState.museumGenerator.story
+        appState.galleryImages = appState.museumGenerator.orderedGalleryImages()
         onDone()
     }
 }
 
-// MARK: - 08 · Preview
-
-struct PreviewScreen: View {
-    let onEnter: () -> Void
-    let onRetry: () -> Void
-
-    var body: some View {
-        ZStack {
-            OopsPassthrough()
-
-            HStack(alignment: .top, spacing: 56) {
-                // left — image
-                VStack(alignment: .leading, spacing: 26) {
-                    Text("Preview of the World")
-                        .font(.system(size: 34, weight: .bold))
-                        .foregroundStyle(OopsGlass.label1)
-                    Image("oops_meadow")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 560, height: 520)
-                        .clipShape(RoundedRectangle(cornerRadius: 48, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 48, style: .continuous)
-                            .strokeBorder(.white.opacity(0.12), lineWidth: 1))
-                }
-
-                // right — copy
-                VStack(alignment: .leading, spacing: 24) {
-                    Text(OopsContent.previewTitle)
-                        .font(.system(size: 36, weight: .bold))
-                        .foregroundStyle(.white)
-                    Text(OopsContent.previewBody)
-                        .font(.system(size: 21, weight: .regular))
-                        .foregroundStyle(.white)
-                        .lineSpacing(6)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Button(action: onEnter) {
-                        HStack(spacing: 8) { Text("Enter Now"); Image(systemName: "arrow.right") }
-                    }
-                    .buttonStyle(OopsButton())
-                    .padding(.top, 8)
-                    Button("Not quite right, try another", action: onRetry)
-                        .font(.system(size: 20))
-                        .foregroundStyle(.white)
-                        .underline()
-                        .buttonStyle(.plain)
-                }
-                .frame(maxWidth: 480, alignment: .leading)
-            }
-            .padding(56)
-            .frame(maxWidth: 1180, maxHeight: 760)
-            .oopsCard(cornerRadius: 44)
-            .padding(.horizontal, 40)
-
-            VStack { Spacer(); PageDots().padding(.bottom, 18) }
-        }
-    }
-}
-
-// MARK: - Previews (Generating + PreviewScreen — no AppState dependency)
+// MARK: - Previews
 
 #Preview("Generating") {
-    GeneratingScreen(onDone: {})
-        .preferredColorScheme(.dark)
-}
-
-#Preview("PreviewScreen") {
-    PreviewScreen(onEnter: {}, onRetry: {})
+    GeneratingScreen(answers: OopsAnswers(quizText: ["q3": "a world-class ballerina"]), onDone: {})
+        .environment(AppState())
         .preferredColorScheme(.dark)
 }
 
 // MARK: - 09 · World (hosts the existing 3D world)
 
-/// iPad: "Enter Now" enters the existing 3D `WorldView` (parametric USDZ + voice
-/// companion). A glass close control overlays the top-left to leave to the reflection
-/// flow. (On visionOS the world is the fully-immersive 6DoF splat space, opened directly
-/// from `OopsFlowView.enterWorld` — this container is not used there.)
+/// iPad: "Enter Now" enters the Richards Art Gallery as a first-person USDZ world
+/// (ParametricWorldView). A glass close control overlays the top-left to leave to the
+/// reflection flow. (On visionOS the gallery opens as a fully-immersive RealityKit
+/// ImmersiveSpace via `OopsFlowView.enterWorld` — this container is not used there.)
 struct OopsWorldContainer: View {
     let onExit: () -> Void
 
@@ -248,6 +222,78 @@ struct OopsWorldControls: View {
             openWindow(id: "dev-menu")
             dismissWindow(id: "oops-world-controls")
             dismissWindow(id: "oops-voice-orb")
+        }
+    }
+}
+
+// MARK: - Gallery controls (visionOS floating panel)
+
+/// Floating control panel shown while the Richards Art Gallery ImmersiveSpace is open.
+/// Unlike `OopsWorldControls` (which tracks `SplatSession` loading phases), the gallery
+/// world is a standard RealityKit `Entity` load — no splat pipeline, no progress phases.
+/// This panel therefore shows only the movement pad and an exit button immediately.
+struct OopsGalleryControls: View {
+    @Environment(AppState.self) private var appState
+    @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
+    @State private var isExiting = false
+
+    var body: some View {
+        VStack(spacing: 14) {
+            Text(appState.museumStory == nil ? "Richards Art Gallery" : "Your Future Museum")
+                .font(.headline)
+            Text("Walk to explore · Use gamepad or arrows to move")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            // While Stage B is still painting, reassure the visitor that the (currently neutral)
+            // walls are filling in — the paintings stream on as each one lands.
+            if appState.museumGenerator.phase == .painting {
+                let landed = appState.museumGenerator.nodes.filter { $0.image != nil }.count
+                let total = appState.museumGenerator.nodes.count
+                Label("Paintings developing… \(landed)/\(total)", systemImage: "paintbrush.pointed")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            SplatMovePad()
+
+            // The closing question, handed back to the visitor at the exit (Future Museum only).
+            if let decision = appState.museumStory?.decision_prompt, !decision.isEmpty {
+                Divider()
+                Text("The decision")
+                    .font(.caption.weight(.semibold))
+                    .tracking(1)
+                    .foregroundStyle(.secondary)
+                Text(decision)
+                    .font(.footnote)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Button("Leave gallery", action: performExit)
+                .buttonStyle(.borderedProminent)
+                .disabled(isExiting)
+        }
+        .padding(24)
+        .frame(maxWidth: 360)
+    }
+
+    private func performExit() {
+        guard !isExiting else { return }
+        isExiting = true
+        Task {
+            await dismissImmersiveSpace()
+            // Tear down the shared Curator voice and its floating orb window.
+            appState.museumConversation?.stop()
+            appState.museumConversation = nil
+            appState.worldParams = nil
+            // Return to the Oops reflection screen (same pattern as OopsWorldControls).
+            appState.oopsResumeScreen = .reflection
+            appState.devActiveFeature = .oops
+            openWindow(id: "dev-menu")
+            dismissWindow(id: "oops-gallery-controls")
+            dismissWindow(id: "museum-voice-orb")
         }
     }
 }

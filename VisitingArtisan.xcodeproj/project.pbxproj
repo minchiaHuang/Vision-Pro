@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		121651D62FD547C500C06C29 /* beach 7.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 121651D52FD547C500C06C29 /* beach 7.jpg */; };
+		121651D82FD547CB00C06C29 /* beach 2.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 121651D72FD547CB00C06C29 /* beach 2.jpeg */; };
+		121651DA2FD547D000C06C29 /* beach 4.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 121651D92FD547D000C06C29 /* beach 4.jpg */; };
 		AA0000010000000000000001 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000101 /* AppState.swift */; };
 		AA0000010000000000000002 /* Immersive360View.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000102 /* Immersive360View.swift */; };
 		AA0000010000000000000003 /* ImmersiveWorldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000103 /* ImmersiveWorldView.swift */; };
@@ -40,18 +43,30 @@
 		AA0000010000000000000035 /* OopsWorldScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000135 /* OopsWorldScreens.swift */; };
 		AA0000010000000000000036 /* VoiceMascot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000136 /* VoiceMascot.swift */; };
 		AA0000010000000000000037 /* ParametricWorldBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000137 /* ParametricWorldBuilder.swift */; };
+		AA00000100000000000000D1 /* OpenAIImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D1 /* OpenAIImageService.swift */; };
 		AA0000010000000000000038 /* SplatLocomotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000138 /* SplatLocomotion.swift */; };
 		AA0000010000000000000039 /* SplatVisionRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000139 /* SplatVisionRenderer.swift */; };
 		AA000001000000000000003A /* OopsReflection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000013A /* OopsReflection.swift */; };
 		AA000001000000000000003B /* OopsVoiceOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000013B /* OopsVoiceOrb.swift */; };
+		AA0000010000000000000090 /* QuizVoiceSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000190 /* QuizVoiceSession.swift */; };
+		AA0000010000000000000091 /* QuizVoiceOrbView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000191 /* QuizVoiceOrbView.swift */; };
+		AA0000010000000000000060 /* MuseumModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000160 /* MuseumModels.swift */; };
+		AA0000010000000000000061 /* MuseumPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000161 /* MuseumPrompt.swift */; };
+		AA0000010000000000000062 /* CuratorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000162 /* CuratorService.swift */; };
+		AA0000010000000000000063 /* ImageGenerationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000163 /* ImageGenerationService.swift */; };
+		AA0000010000000000000064 /* MuseumGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000164 /* MuseumGalleryView.swift */; };
+		AA0000010000000000000065 /* MuseumQuestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000165 /* MuseumQuestionsView.swift */; };
+		AA0000010000000000000066 /* MuseumFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000166 /* MuseumFlowView.swift */; };
 		AA0000010000000000000050 /* WorldCameraRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000150 /* WorldCameraRig.swift */; };
 		AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */; };
+		AA00000100000000000000D3 /* museum_clair_de_lune.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */; };
+		AA0000010000000000000067 /* MuseumMusicPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000167 /* MuseumMusicPlayer.swift */; };
 		AA00000100000000000000B0 /* SplatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B0 /* SplatSession.swift */; };
-		AA0000010000000000000A01 /* SplatCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000A02 /* SplatCache.swift */; };
 		AA00000100000000000000B1 /* SplatMeshRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B1 /* SplatMeshRenderer.swift */; };
-		AA00000100000000000000B4 /* SplatHandGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B4 /* SplatHandGesture.swift */; };
 		AA00000100000000000000B2 /* SplatMeshShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B2 /* SplatMeshShaders.metal */; };
 		AA00000100000000000000B3 /* hummingbird_anim.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B3 /* hummingbird_anim.usdz */; };
+		AA00000100000000000000B4 /* SplatHandGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B4 /* SplatHandGesture.swift */; };
+		AA00000100000000000000C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz */; };
 		AA00000100000000000000F2 /* VoiceTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F2 /* VoiceTestView.swift */; };
 		AA00000100000000000000F3 /* DevMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F3 /* DevMenuView.swift */; };
 		AA00000100000000000000F4 /* SpeechVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F4 /* SpeechVoice.swift */; };
@@ -81,9 +96,13 @@
 		BB0000010000000000000014 /* NetworkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000115 /* NetworkServiceTests.swift */; };
 		BB0000010000000000000017 /* SplatLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000116 /* SplatLibraryTests.swift */; };
 		BB0000010000000000000018 /* ParametricWorldBuilderRealityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */; };
+		AA0000010000000000000A01 /* SplatCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000A02 /* SplatCache.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		121651D52FD547C500C06C29 /* beach 7.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "beach 7.jpg"; sourceTree = "<group>"; };
+		121651D72FD547CB00C06C29 /* beach 2.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "beach 2.jpeg"; sourceTree = "<group>"; };
+		121651D92FD547D000C06C29 /* beach 4.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "beach 4.jpg"; sourceTree = "<group>"; };
 		AA0000010000000000000101 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		AA0000010000000000000102 /* Immersive360View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Immersive360View.swift; sourceTree = "<group>"; };
 		AA0000010000000000000103 /* ImmersiveWorldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveWorldView.swift; sourceTree = "<group>"; };
@@ -117,18 +136,30 @@
 		AA0000010000000000000135 /* OopsWorldScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsWorldScreens.swift; sourceTree = "<group>"; };
 		AA0000010000000000000136 /* VoiceMascot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceMascot.swift; sourceTree = "<group>"; };
 		AA0000010000000000000137 /* ParametricWorldBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParametricWorldBuilder.swift; sourceTree = "<group>"; };
+		AA00000100000000000001D1 /* OpenAIImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIImageService.swift; sourceTree = "<group>"; };
 		AA0000010000000000000138 /* SplatLocomotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatLocomotion.swift; sourceTree = "<group>"; };
 		AA0000010000000000000139 /* SplatVisionRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatVisionRenderer.swift; sourceTree = "<group>"; };
 		AA000001000000000000013A /* OopsReflection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsReflection.swift; sourceTree = "<group>"; };
 		AA000001000000000000013B /* OopsVoiceOrb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsVoiceOrb.swift; sourceTree = "<group>"; };
+		AA0000010000000000000190 /* QuizVoiceSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizVoiceSession.swift; sourceTree = "<group>"; };
+		AA0000010000000000000191 /* QuizVoiceOrbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizVoiceOrbView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000160 /* MuseumModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumModels.swift; sourceTree = "<group>"; };
+		AA0000010000000000000161 /* MuseumPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumPrompt.swift; sourceTree = "<group>"; };
+		AA0000010000000000000162 /* CuratorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuratorService.swift; sourceTree = "<group>"; };
+		AA0000010000000000000163 /* ImageGenerationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageGenerationService.swift; sourceTree = "<group>"; };
+		AA0000010000000000000164 /* MuseumGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumGalleryView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000165 /* MuseumQuestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumQuestionsView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000166 /* MuseumFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumFlowView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000167 /* MuseumMusicPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumMusicPlayer.swift; sourceTree = "<group>"; };
 		AA0000010000000000000150 /* WorldCameraRig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCameraRig.swift; sourceTree = "<group>"; };
 		AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = vibrant_loft_art_studio.spz; sourceTree = "<group>"; };
+		AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = museum_clair_de_lune.mp3; sourceTree = "<group>"; };
 		AA00000100000000000001B0 /* SplatSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSession.swift; sourceTree = "<group>"; };
-		AA0000010000000000000A02 /* SplatCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatCache.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B1 /* SplatMeshRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatMeshRenderer.swift; sourceTree = "<group>"; };
-		AA00000100000000000001B4 /* SplatHandGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatHandGesture.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B2 /* SplatMeshShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SplatMeshShaders.metal; sourceTree = "<group>"; };
 		AA00000100000000000001B3 /* hummingbird_anim.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = hummingbird_anim.usdz; sourceTree = "<group>"; };
+		AA00000100000000000001B4 /* SplatHandGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatHandGesture.swift; sourceTree = "<group>"; };
+		AA00000100000000000001C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Richards_Art_Gallery_-_Audio_Tour.usdz"; sourceTree = "<group>"; };
 		AA00000100000000000001F2 /* VoiceTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceTestView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F3 /* DevMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevMenuView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F4 /* SpeechVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechVoice.swift; sourceTree = "<group>"; };
@@ -157,6 +188,7 @@
 		BB0000010000000000000115 /* NetworkServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkServiceTests.swift; sourceTree = "<group>"; };
 		BB0000010000000000000116 /* SplatLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatLibraryTests.swift; sourceTree = "<group>"; };
 		BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParametricWorldBuilderRealityTests.swift; sourceTree = "<group>"; };
+		AA0000010000000000000A02 /* SplatCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatCache.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -204,6 +236,7 @@
 				AA000001000000000000030C /* DevMenu */,
 				AA000001000000000000030D /* Core */,
 				AA000001000000000000030E /* Oops */,
+				AA000001000000000000030F /* Museum */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -266,6 +299,11 @@
 			children = (
 				AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */,
 				AA00000100000000000001B3 /* hummingbird_anim.usdz */,
+				AA00000100000000000001C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz */,
+				121651D52FD547C500C06C29 /* beach 7.jpg */,
+				121651D72FD547CB00C06C29 /* beach 2.jpeg */,
+				121651D92FD547D000C06C29 /* beach 4.jpg */,
+				AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */,
 			);
 			path = SpikeAssets;
 			sourceTree = "<group>";
@@ -294,6 +332,7 @@
 			children = (
 				AA000001000000000000010B /* WorldView.swift */,
 				AA0000010000000000000137 /* ParametricWorldBuilder.swift */,
+				AA00000100000000000001D1 /* OpenAIImageService.swift */,
 				AA000001000000000000010A /* WorldCatalog.swift */,
 				AA0000010000000000000105 /* PromptBuilder.swift */,
 				AA0000010000000000000102 /* Immersive360View.swift */,
@@ -368,8 +407,25 @@
 				AA0000010000000000000135 /* OopsWorldScreens.swift */,
 				AA000001000000000000013A /* OopsReflection.swift */,
 				AA000001000000000000013B /* OopsVoiceOrb.swift */,
+				AA0000010000000000000190 /* QuizVoiceSession.swift */,
+				AA0000010000000000000191 /* QuizVoiceOrbView.swift */,
 			);
 			path = Oops;
+			sourceTree = "<group>";
+		};
+		AA000001000000000000030F /* Museum */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000010000000000000160 /* MuseumModels.swift */,
+				AA0000010000000000000161 /* MuseumPrompt.swift */,
+				AA0000010000000000000162 /* CuratorService.swift */,
+				AA0000010000000000000163 /* ImageGenerationService.swift */,
+				AA0000010000000000000164 /* MuseumGalleryView.swift */,
+				AA0000010000000000000165 /* MuseumQuestionsView.swift */,
+				AA0000010000000000000166 /* MuseumFlowView.swift */,
+				AA0000010000000000000167 /* MuseumMusicPlayer.swift */,
+			);
+			path = Museum;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -483,7 +539,12 @@
 			files = (
 				AA000001000000000000000C /* Assets.xcassets in Resources */,
 				AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */,
+				AA00000100000000000000D3 /* museum_clair_de_lune.mp3 in Resources */,
+				121651D62FD547C500C06C29 /* beach 7.jpg in Resources */,
+				121651D82FD547CB00C06C29 /* beach 2.jpeg in Resources */,
+				121651DA2FD547D000C06C29 /* beach 4.jpg in Resources */,
 				AA00000100000000000000B3 /* hummingbird_anim.usdz in Resources */,
+				AA00000100000000000000C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -506,6 +567,7 @@
 				AA000001000000000000000A /* WorldCatalog.swift in Sources */,
 				AA000001000000000000000B /* WorldView.swift in Sources */,
 				AA0000010000000000000037 /* ParametricWorldBuilder.swift in Sources */,
+				AA00000100000000000000D1 /* OpenAIImageService.swift in Sources */,
 				AA000001000000000000000D /* Secrets.swift in Sources */,
 				AA000001000000000000000E /* WorldLabsService.swift in Sources */,
 				AA0000010000000000000010 /* MotionManager.swift in Sources */,
@@ -539,6 +601,16 @@
 				AA0000010000000000000035 /* OopsWorldScreens.swift in Sources */,
 				AA000001000000000000003A /* OopsReflection.swift in Sources */,
 				AA000001000000000000003B /* OopsVoiceOrb.swift in Sources */,
+				AA0000010000000000000090 /* QuizVoiceSession.swift in Sources */,
+				AA0000010000000000000091 /* QuizVoiceOrbView.swift in Sources */,
+				AA0000010000000000000060 /* MuseumModels.swift in Sources */,
+				AA0000010000000000000061 /* MuseumPrompt.swift in Sources */,
+				AA0000010000000000000062 /* CuratorService.swift in Sources */,
+				AA0000010000000000000063 /* ImageGenerationService.swift in Sources */,
+				AA0000010000000000000064 /* MuseumGalleryView.swift in Sources */,
+				AA0000010000000000000065 /* MuseumQuestionsView.swift in Sources */,
+				AA0000010000000000000066 /* MuseumFlowView.swift in Sources */,
+				AA0000010000000000000067 /* MuseumMusicPlayer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
