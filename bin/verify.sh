@@ -57,6 +57,29 @@ run_build() {
     fi
 }
 
+run_test() {
+    local label="$1"
+    local destination="$2"
+    local log_file="$LOG_DIR/${label// /_}.log"
+
+    printf "→ Testing %s ... " "$label"
+
+    if xcodebuild -project "$PROJECT" \
+        -scheme "$SCHEME" \
+        -destination "$destination" \
+        -configuration Debug \
+        CODE_SIGNING_ALLOWED=NO \
+        test > "$log_file" 2>&1; then
+        printf "✅ PASS\n"
+        PASS=$((PASS + 1))
+    else
+        printf "❌ FAIL\n"
+        echo "   log: $log_file"
+        FAIL=$((FAIL + 1))
+        FAILED_TARGETS+=("$label")
+    fi
+}
+
 echo "Visiting Artisan — clean-build verification"
 echo "==========================================="
 
@@ -64,6 +87,9 @@ run_build "iPad Pro 13-inch (M5) sim" \
     "platform=iOS Simulator,name=iPad Pro 13-inch (M5)"
 
 run_build "Apple Vision Pro sim" \
+    "platform=visionOS Simulator,name=Apple Vision Pro"
+
+run_test "Unit tests (Apple Vision Pro sim)" \
     "platform=visionOS Simulator,name=Apple Vision Pro"
 
 echo

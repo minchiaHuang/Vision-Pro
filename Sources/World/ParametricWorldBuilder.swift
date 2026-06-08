@@ -27,9 +27,6 @@ enum ParametricWorldBuilder {
             return nil
         }
 
-        let container = Entity()
-        container.addChild(model)
-
         // Gallery only: swap the baked artwork on the wall frames. Prefer AI-generated photos
         // (the Hero's-Journey series) when supplied; otherwise fall back to the bundled beach
         // placeholders. The frames bind their image to `emissiveColor` (diffuse is black), so
@@ -40,6 +37,17 @@ enum ParametricWorldBuilder {
                 : texturesFrom(galleryPhotos)
             applyGalleryPhotos(model, textures: photos)
         }
+
+        return assemble(model: model, params: params)
+    }
+
+    /// Synchronous assembly of an already-loaded `model` into the parametric world
+    /// (container + framing + lights + orbs). Split out of `build` so it is testable with
+    /// a synthetic model — no bundled USDZ required.
+    @MainActor
+    static func assemble(model: Entity, params: WorldParams) -> ParametricWorldBuild {
+        let container = Entity()
+        container.addChild(model)
 
         let bounds = model.visualBounds(relativeTo: nil)
         let span = max(bounds.extents.x, max(bounds.extents.y, bounds.extents.z))
@@ -205,7 +213,7 @@ enum ParametricWorldBuilder {
     }
 
     /// Blends `color` toward its Rec. 709 luminance grey by `amount`, preserving alpha.
-    private static func greyed(_ color: UIColor, amount: Float) -> UIColor {
+    static func greyed(_ color: UIColor, amount: Float) -> UIColor {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 1
         if !color.getRed(&r, green: &g, blue: &b, alpha: &a) {
             var w: CGFloat = 0
