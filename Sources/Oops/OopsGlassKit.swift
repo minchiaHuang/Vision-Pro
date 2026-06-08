@@ -362,33 +362,26 @@ struct CheckStatement: View {
     }
 
     /// "Checkbox" pill from VisualEyes Screens.html (`.pill.check`): a 36×30 glass pill.
-    /// OFF = frosted glass gradient, empty. ON = bright white fill with a dark checkmark
-    /// and a soft outer glow.
+    /// OFF = frosted glass gradient, empty. ON = bright white fill with a soft outer
+    /// glow (no checkmark — the filled pill alone signals the selected state).
     private var toggle: some View {
-        ZStack {
-            Capsule()
-                .fill(
-                    checked
-                        ? LinearGradient(
-                            colors: [Color.white.opacity(0.95),
-                                     Color(red: 0.92, green: 0.92, blue: 0.94).opacity(0.90)],
-                            startPoint: .topLeading, endPoint: .bottomTrailing)
-                        : LinearGradient(
-                            colors: [Color.white.opacity(0.42),
-                                     Color(white: 0.47, opacity: 0.42)],
-                            startPoint: UnitPoint(x: 0.10, y: 0.05),
-                            endPoint:   UnitPoint(x: 0.90, y: 0.95)))
-                .overlay(Capsule().strokeBorder(.white.opacity(checked ? 0.0 : 0.55), lineWidth: 1.5))
-                .shadow(color: checked ? Color.white.opacity(0.55) : .black.opacity(0.18),
-                        radius: checked ? 7 : 4, y: checked ? 0 : 1)
-            Image(systemName: "checkmark")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(Color(red: 0.165, green: 0.165, blue: 0.180))
-                .opacity(checked ? 1 : 0)
-                .scaleEffect(checked ? 1 : 0.6)
-        }
-        .frame(width: 36, height: 30)
-        .animation(.easeInOut(duration: 0.2), value: checked)
+        Capsule()
+            .fill(
+                checked
+                    ? LinearGradient(
+                        colors: [Color.white.opacity(0.95),
+                                 Color(red: 0.92, green: 0.92, blue: 0.94).opacity(0.90)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing)
+                    : LinearGradient(
+                        colors: [Color.white.opacity(0.42),
+                                 Color(white: 0.47, opacity: 0.42)],
+                        startPoint: UnitPoint(x: 0.10, y: 0.05),
+                        endPoint:   UnitPoint(x: 0.90, y: 0.95)))
+            .overlay(Capsule().strokeBorder(.white.opacity(checked ? 0.0 : 0.55), lineWidth: 1.5))
+            .shadow(color: checked ? Color.white.opacity(0.55) : .black.opacity(0.18),
+                    radius: checked ? 7 : 4, y: checked ? 0 : 1)
+            .frame(width: 36, height: 30)
+            .animation(.easeInOut(duration: 0.2), value: checked)
     }
 }
 
