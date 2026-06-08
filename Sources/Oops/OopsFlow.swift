@@ -120,10 +120,9 @@ struct OopsFlowView: View {
         case .quiz:
             QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
         case .generating:
-            // Q2 free-text answer drives the Hero's Journey prompt; fall back to a generic goal
-            // if the user somehow skipped it (should not happen — Next is disabled when empty).
-            let goal = answers.goal.isEmpty ? "build a meaningful future" : answers.goal
-            GeneratingScreen(goal: goal) { enterWorld() }
+            // The finished quiz answers now drive the Curator pipeline (story + 5 images)
+            // inside GeneratingScreen; the result is stored on AppState before enterWorld().
+            GeneratingScreen(answers: answers) { enterWorld() }
         case .world:
             EmptyView()
         case .reflection:

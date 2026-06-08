@@ -28,18 +28,28 @@ extension MuseumAnswers {
 /// advances to the preview. Generated images are stored on `AppState` for the gallery to show.
 struct GeneratingScreen: View {
     @Environment(AppState.self) private var appState
-    /// The user's "ideal self" goal that drives the generated series.
-    let goal: String
+    /// The finished OopsFlow answers that drive the Curator pipeline (mapped to `MuseumAnswers`).
+    let answers: OopsAnswers
     let onDone: () -> Void
 
-    @State private var statusText = "Reading your answer…"
+    @State private var generator = MuseumGenerator()
+
+    /// Documentary-toned status, driven by the pipeline phase.
+    private var statusText: String {
+        switch generator.phase {
+        case .idle, .writing: return "Writing the story of this future…"
+        case .painting:       return "Painting the rooms of your museum…"
+        case .ready:          return "Stepping inside…"
+        case .failed:         return "Opening the doors…"
+        }
+    }
 
     var body: some View {
         ZStack {
             OopsPassthrough(dim: true)
             VStack(spacing: 38) {
                 OopsSpinner()
-                Text("Building your world…")
+                Text("Building your museum…")
                     .font(.system(size: 30, weight: .semibold))
                     .foregroundStyle(.white)
                 Text(statusText)
@@ -54,16 +64,16 @@ struct GeneratingScreen: View {
         .task { await runGeneration() }
     }
 
-    /// Generates the 5-image journey from `goal`, stores it on `AppState`, then advances. On
-    /// failure (or missing key) the result is empty and the gallery falls back to its bundled
-    /// placeholders — the flow always completes so the user is never trapped.
+    /// Runs the two-stage Curator pipeline from the OopsFlow answers, stores the story +
+    /// beat-ordered images on `AppState`, then advances. On any failure the run degrades
+    /// gracefully (empty images → bundled placeholders; nil story → no narration) but the
+    /// flow always completes, so the user is never trapped.
     private func runGeneration() async {
-        let images = await OpenAIImageService.generateJourney(goal: goal) { done, total in
-            statusText = done >= total
-                ? "Adding the finishing touches…"
-                : "Painting scene \(done + 1) of \(total)…"
-        }
-        appState.galleryImages = images
+        let museumAnswers = MuseumAnswers(oops: answers)
+        await generator.run(museumAnswers)
+        appState.museumStory   = generator.story
+        appState.museumAnswers = museumAnswers
+        appState.galleryImages = generator.orderedGalleryImages()
         onDone()
     }
 }
@@ -71,7 +81,7 @@ struct GeneratingScreen: View {
 // MARK: - Previews
 
 #Preview("Generating") {
-    GeneratingScreen(goal: "I want to be a world class ballerina", onDone: {})
+    GeneratingScreen(answers: OopsAnswers(quizText: ["q3": "a world-class ballerina"]), onDone: {})
         .environment(AppState())
         .preferredColorScheme(.dark)
 }
