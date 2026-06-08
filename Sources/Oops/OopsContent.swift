@@ -82,9 +82,5 @@ enum OopsContent {
         "If there’s one thing you could change for this world we built for you, what would it be?",
     ]
 
-    // Preview screen copy.
-    static let previewTitle = "Quiet Meadow"
-    static let previewBody = "This is what you needed. Not loud, not busy. Just stillness that actually feels like relief. Somewhere between the grass and the golden sky, time slows down and the weight of everything lifts, just a little. This is the quiet you've been carrying around, waiting to find."
-
     static let declarationIntro = "Before you step in, here are a few things we want you to know, so you can feel safe, comfortable, and fully present in your experience."
 }

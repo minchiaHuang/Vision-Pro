@@ -3,7 +3,7 @@ import SwiftUI
 /// The screens of the Oops prototype flow (mirrors the React `screen` state). After the
 /// user steps out of the 3D world they land on the `reflection` screen (5 questions).
 enum OopsScreen {
-    case opening, home, safety, privacy, quiz, generating, preview, world, reflection
+    case opening, home, safety, privacy, quiz, generating, world, reflection
 }
 
 /// Held-in-memory answers for the quiz + post-world reflection (front-end only — never
@@ -115,9 +115,7 @@ struct OopsFlowView: View {
             QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
         case .generating:
             // TODO: wire `goal` from a free-text quiz answer once the dynamic quiz lands.
-            GeneratingScreen(goal: "I want to be a world class ballerina") { go(.preview) }
-        case .preview:
-            PreviewScreen(onEnter: { enterWorld() }, onRetry: { go(.quiz) })
+            GeneratingScreen(goal: "I want to be a world class ballerina") { enterWorld() }
         case .world:
             EmptyView()
         case .reflection:
