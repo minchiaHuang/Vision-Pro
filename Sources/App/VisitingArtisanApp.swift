@@ -146,7 +146,7 @@ struct VisitingArtisanApp: App {
             QuizVoiceOrbView()
                 .environment(appState)
         }
-        .defaultSize(width: 290, height: 460)   // TEMP larger to fit the dev status readout
+        .defaultSize(width: 120, height: 270)
         .windowResizability(.contentSize)
         .restorationBehavior(.disabled)
         #endif

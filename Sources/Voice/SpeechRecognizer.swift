@@ -20,11 +20,6 @@ final class SpeechRecognizer {
     private(set) var transcript = ""
     private(set) var isListening = false
 
-    /// Diagnostics (for the dev status readout): whether the recognizer is currently usable, and
-    /// whether on-device recognition is supported on this platform/build.
-    var isAvailable: Bool { recognizer?.isAvailable ?? false }
-    var onDeviceSupported: Bool { recognizer?.supportsOnDeviceRecognition ?? false }
-
     enum STTError: Error { case unauthorized, unavailable }
 
     /// Requests speech-recognition + microphone authorization. Returns true only
