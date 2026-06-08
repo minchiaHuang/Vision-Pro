@@ -29,11 +29,13 @@ struct QuizScreen: View {
     // the "Quiz" title, question label and nav all share the same left edge.
     private let sideInset: CGFloat = 80
 
-    // Preferred card size — matches the Privacy Preferences card's natural footprint
-    // (width 960, ~760 tall). At runtime the card is capped to the available viewport
-    // (see `body`) so the frame never clips on shorter screens, exactly like the
-    // content-sized Privacy card always fits.
-    private let maxCardWidth: CGFloat = 960
+    // Preferred card size — matches the Safety / Privacy Declaration card's outer glass
+    // footprint. That card sizes its content to 960pt then adds 52pt padding on every
+    // side, so its frosted window is 960 + 52·2 = 1064pt wide (~760 tall). We match that
+    // 1064pt here so the Quiz frame width follows the Declaration frame width exactly. At
+    // runtime the card is capped to the available viewport (see `body`) so the frame never
+    // clips on shorter screens, exactly like the content-sized Declaration card always fits.
+    private let maxCardWidth: CGFloat = 1064
     private let maxCardHeight: CGFloat = 760
     private let outerMargin: CGFloat = 20
 
