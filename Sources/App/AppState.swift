@@ -38,6 +38,11 @@ final class AppState {
     var museumStory: MuseumStory?
     var museumAnswers: MuseumAnswers?
 
+    /// The single Curator voice for an open museum gallery — shared by the floating voice orb
+    /// (push-to-talk) and the in-gallery proximity narrator, so both use one audio session and
+    /// never talk over each other. Created on entering the gallery; cleared on exit.
+    var museumConversation: ConversationService?
+
     /// Hidden continuous scores (the bottom layer of research direction 6) and the world
     /// parameters they map to (direction 7). Computed and stored from Phase 3 on; the
     /// display layer consumes `worldParams` from Phase 2 on.
@@ -125,6 +130,7 @@ final class AppState {
         galleryImages = []
         museumStory = nil
         museumAnswers = nil
+        museumConversation = nil
         phase = .splash
     }
 }

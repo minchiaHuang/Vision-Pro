@@ -121,6 +121,23 @@ struct VisitingArtisanApp: App {
             }
             return WindowPlacement()
         }
+
+        // visionOS only: the Future Museum's floating Curator voice — shown while the museum
+        // gallery ImmersiveSpace is open. Drives the shared `AppState.museumConversation`
+        // (push-to-talk), placed trailing the gallery controls panel.
+        Window("Museum Guide", id: "museum-voice-orb") {
+            MuseumVoiceOrbView()
+                .environment(appState)
+        }
+        .defaultSize(width: 200, height: 420)
+        .windowResizability(.contentSize)
+        .restorationBehavior(.disabled)
+        .defaultWindowPlacement { _, context in
+            if let controls = context.windows.first(where: { $0.id == "oops-gallery-controls" }) {
+                return WindowPlacement(.trailing(controls))
+            }
+            return WindowPlacement()
+        }
         #endif
     }
 }

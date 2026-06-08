@@ -137,11 +137,19 @@ struct OopsFlowView: View {
     ///   at the reflection screen.
     /// - iPad: loads gallery worldParams and shows the in-cover `WorldView` (ParametricWorldView).
     private func enterWorld() {
+        // When a Curator story exists (the museum flow, not "visit old world"), stand up the one
+        // shared voice now so both the orb and the in-gallery proximity narrator use it.
+        if let story = appState.museumStory {
+            let convo = ConversationService()
+            convo.configureCurator(story: story, answers: appState.museumAnswers ?? MuseumAnswers())
+            appState.museumConversation = convo
+        }
         #if os(visionOS)
         Task {
             appState.loadGalleryWorld()
             if case .opened = await openImmersiveSpace(id: "world") {
                 openWindow(id: "oops-gallery-controls")
+                if appState.museumConversation != nil { openWindow(id: "museum-voice-orb") }
                 dismissWindow(id: "dev-menu")
             }
         }
