@@ -28,46 +28,30 @@ enum OopsContent {
               text: "Used for AR movement and spatial awareness within your world. No images or video are captured or stored at any point."),
     ]
 
-    /// The 4 quiz questions. Each is single-select with four options.
+    /// One quiz question. `options` non-empty → pill selection; empty → free-text textarea.
     struct Question: Identifiable {
         let id: String
         let label: String
-        let options: [String]
+        let options: [String]   // empty means free-text input
+        var isTextInput: Bool { options.isEmpty }
     }
 
+    /// 4 questions (one per screen), matching the Figma "quiz variations" design.
+    /// Q1 is a pill-select (age); Q2–Q4 are free-text, with Q4 being the final step
+    /// that triggers world generation. Q2's answer feeds the Hero's Journey goal.
     static let questions: [Question] = [
         .init(id: "q1",
-              label: "When your schedule is completely empty, you feel:",
-              options: [
-                "Relief : finally, space to breathe",
-                "Restless : you need something to fill it",
-                "Peaceful : you settle into the quiet naturally",
-                "Uncomfortable : you need something to fill it",
-              ]),
+              label: "How old are you?",
+              options: ["17 - 20", "20-25", "25-30", "> 30"]),
         .init(id: "q2",
-              label: "Your mind at its natural state is closest to:",
-              options: [
-                "A still lake, occasional ripples",
-                "A busy street, always something moving",
-                "A quiet garden, slow and unhurried",
-                "A live wire, buzzing with thoughts",
-              ]),
+              label: "What's your ideal future like? Who do you want to become?",
+              options: []),
         .init(id: "q3",
-              label: "When something unexpected happens, your first instinct is...",
-              options: [
-                "Pause and recalibrate",
-                "React and keep moving",
-                "Take a breath and observe first",
-                "Jump straight into solving it",
-              ]),
+              label: "What is the biggest thing standing between you and your ideal self?",
+              options: []),
         .init(id: "q4",
-              label: "You feel most like yourself when ...",
-              options: [
-                "You have time to think before you speak",
-                "You are thinking out loud in the middle of things",
-                "Life has a gentle, predictable rhythm",
-                "there's something new that demands your attention",
-              ]),
+              label: "What are you least willing to give up for it?",
+              options: []),
     ]
 
     // Reflection copy (frames 17–21) — shown one question per screen after the user
