@@ -300,8 +300,8 @@ struct PageDots: View {
 
 // MARK: - Checkbox statement
 
-/// `.statement` — circular toggle + heading + body, used on the declaration screens
-/// (Safety Declaration / Privacy Preferences — Figma nodes 46:1124 / 49:2173).
+/// `.statement` — capsule toggle + heading + body, used on the declaration screens
+/// (Safety Declaration / Privacy Preferences — Figma nodes 46:1124 / 288:1907).
 struct CheckStatement: View {
     let head: String
     let text: String
@@ -311,35 +311,53 @@ struct CheckStatement: View {
     var body: some View {
         HStack(alignment: .top, spacing: 18) {
             Button(action: onToggle) {
-                Circle()
-                    .fill(checked ? OopsGlass.systemBlue : Color.white.opacity(0.14))
-                    .overlay(
-                        Circle().strokeBorder(.white.opacity(checked ? 0 : 0.55), lineWidth: 1.5))
-                    .overlay(
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(.white)
-                            .opacity(checked ? 1 : 0)
-                            .scaleEffect(checked ? 1 : 0.6))
-                    .frame(width: 26, height: 26)
-                    // Nudge down so the toggle sits centred on the heading's cap height.
+                toggle
+                    // Nudge down so the toggle aligns with the heading's first line.
                     .padding(.top, 2)
             }
             .buttonStyle(.plain)
 
-            VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(head)
                     .font(.system(size: 20, weight: .bold))
                     .foregroundStyle(OopsGlass.label1)
                 Text(text)
-                    .font(.system(size: 15, weight: .regular))
+                    .font(.system(size: 16, weight: .regular))
                     .foregroundStyle(OopsGlass.label2)
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
         }
-        .animation(.easeInOut(duration: 0.18), value: checked)
+        .animation(.easeInOut(duration: 0.2), value: checked)
+    }
+
+    /// Figma "Checkbox" component (I…;49:1747): a 36×30 capsule with a 1.92px white border
+    /// and the frosted glass gradient, holding a circular knob. OFF = glass + knob left;
+    /// ON = systemBlue track + knob right.
+    private var toggle: some View {
+        let trackW: CGFloat = 40
+        let trackH: CGFloat = 26
+        let knob: CGFloat = 19
+        let inset: CGFloat = 3.5
+        return ZStack {
+            Capsule()
+                .fill(
+                    LinearGradient(
+                        colors: checked
+                            ? [OopsGlass.systemBlue, OopsGlass.systemBlue.opacity(0.82)]
+                            : [Color.white.opacity(0.37), Color(white: 0.45, opacity: 0.42)],
+                        startPoint: UnitPoint(x: 0.10, y: 0.05),
+                        endPoint:   UnitPoint(x: 0.90, y: 0.95)))
+                .overlay(Capsule().strokeBorder(.white.opacity(checked ? 0.6 : 0.85), lineWidth: 2))
+            Circle()
+                .fill(.white)
+                .frame(width: knob, height: knob)
+                .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+                .offset(x: checked ? (trackW / 2 - knob / 2 - inset)
+                                   : -(trackW / 2 - knob / 2 - inset))
+        }
+        .frame(width: trackW, height: trackH)
     }
 }
 
