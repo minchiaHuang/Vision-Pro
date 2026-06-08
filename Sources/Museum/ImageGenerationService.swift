@@ -28,10 +28,14 @@ struct ImageGenerationService {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONEncoder().encode(payload)
 
-        let (data, response) = try await URLSession.shared.data(for: req)
-        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-            let snippet = String(data: data, encoding: .utf8)?.prefix(300) ?? ""
-            throw ImageError.http("HTTP \(http.statusCode): \(snippet)")
+        // Same shared retry path as the Curator: a transient 5xx / Cloudflare 520–524 or a
+        // network blip is retried with backoff (most images recover on a second try) rather
+        // than failing the card outright.
+        let data: Data
+        do {
+            data = try await MuseumHTTP.data(for: req)
+        } catch let failure as MuseumHTTP.Failure {
+            throw ImageError.http(failure.message)
         }
 
         // gpt-image-2 returns base64 PNG (no URL form).

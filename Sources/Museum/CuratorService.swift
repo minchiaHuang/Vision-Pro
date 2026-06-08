@@ -51,10 +51,14 @@ struct CuratorService {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: req)
-        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-            let snippet = String(data: data, encoding: .utf8)?.prefix(300) ?? ""
-            throw CuratorError.http("HTTP \(http.statusCode): \(snippet)")
+        // Transient OpenAI/Cloudflare errors (520–524) and network blips self-heal via the
+        // shared retry helper; only a permanent failure or exhausted retries reaches here,
+        // already carrying a UI-safe message (never a raw HTML error page).
+        let data: Data
+        do {
+            data = try await MuseumHTTP.data(for: req)
+        } catch let failure as MuseumHTTP.Failure {
+            throw CuratorError.http(failure.message)
         }
 
         // Responses API returns an `output` array; the JSON lives in the message item's
@@ -96,5 +100,65 @@ struct CuratorService {
         default:
             return "The Curator couldn't answer just now."
         }
+    }
+}
+
+/// Shared networking for the Museum's two OpenAI calls (Curator + image painter). Lives
+/// here (rather than its own file) because the Xcode project isn't a file-system-synchronized
+/// group — a new file would need manual `project.pbxproj` surgery — and both callers are in
+/// this same module.
+///
+/// Performs a request with bounded retries on *transient* failures: network blips and
+/// 5xx / Cloudflare edge errors (520–524, the wall-of-HTML the user hit) self-heal with
+/// exponential backoff instead of becoming a dead end. Permanent failures (4xx) throw at
+/// once. The thrown message is always UI-safe — a raw HTML error page is never surfaced.
+enum MuseumHTTP {
+
+    /// A non-2xx response or exhausted retries. `message` is already cleaned for display.
+    struct Failure: Error { let message: String }
+
+    /// Sends `req` up to `maxAttempts` times. Returns the 2xx body, else throws `Failure`.
+    static func data(for req: URLRequest, maxAttempts: Int = 3) async throws -> Data {
+        var lastMessage = "The service didn't respond. Please try again."
+        for attempt in 1...maxAttempts {
+            if attempt > 1 {
+                // Exponential backoff between tries: 1s, then 2s, …
+                try? await Task.sleep(for: .seconds(1 << (attempt - 2)))
+            }
+            do {
+                let (data, response) = try await URLSession.shared.data(for: req)
+                guard let http = response as? HTTPURLResponse else { return data }
+                if (200...299).contains(http.statusCode) { return data }
+                let message = friendly(status: http.statusCode, body: data)
+                if isTransient(http.statusCode) { lastMessage = message; continue }
+                throw Failure(message: message)           // permanent 4xx — stop now
+            } catch let urlError as URLError {
+                lastMessage = "Network problem — please check your connection and try again."
+                _ = urlError
+                continue                                  // network blip — retry
+            }
+        }
+        throw Failure(message: lastMessage)
+    }
+
+    /// 408/429 and any 5xx (covers Cloudflare 520–524) are worth a retry.
+    private static func isTransient(_ status: Int) -> Bool {
+        status == 408 || status == 429 || (500...599).contains(status)
+    }
+
+    /// A UI-safe one-liner. Cloudflare's 5xx pages are full HTML — never show them raw; for
+    /// those (and empty bodies) describe the status instead. JSON error bodies (the usual
+    /// 4xx shape) are short and useful, so a trimmed snippet passes through.
+    private static func friendly(status: Int, body: Data) -> String {
+        let raw = (String(data: body, encoding: .utf8) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let lower = raw.lowercased()
+        let looksHTML = raw.first == "<" || lower.contains("<!doctype") || lower.contains("<html")
+        if raw.isEmpty || looksHTML {
+            return status >= 500
+                ? "The service is busy right now (HTTP \(status)). Please try again in a moment."
+                : "Request failed (HTTP \(status))."
+        }
+        return "HTTP \(status): \(raw.prefix(200))"
     }
 }
