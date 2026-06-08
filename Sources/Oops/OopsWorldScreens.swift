@@ -1,5 +1,27 @@
 import SwiftUI
 
+// MARK: - OopsAnswers → MuseumAnswers adapter
+
+extension MuseumAnswers {
+    /// Builds the Curator's typed inputs from the finished OopsFlow quiz answers.
+    /// Mapping (see `OopsContent.questions`): q1 age-range pill → `age` (lower bound),
+    /// q2 → `city`, q3 → `role` (the Call), q4 → `currentSelf`, q5 → `fear`, q6 → `sacrifice`.
+    /// `worthIt` is left blank — OopsFlow doesn't ask it, so the Curator infers it.
+    init(oops: OopsAnswers) {
+        func text(_ id: String) -> String {
+            (oops.quizText[id] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        self.init()
+        role        = text("q3")
+        city        = text("q2")
+        currentSelf = text("q4")
+        fear        = text("q5")
+        sacrifice   = text("q6")
+        // q1 is a 4-way age-range pill; map its index to the lower bound of the range.
+        age = [0: 17, 1: 20, 2: 25, 3: 30][oops.quiz["q1"] ?? -1] ?? 22
+    }
+}
+
 // MARK: - Generating interstitial
 
 /// Spinner + "Building your world…" while the Hero's-Journey image series is generated, then

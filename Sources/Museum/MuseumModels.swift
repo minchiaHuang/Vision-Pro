@@ -16,6 +16,7 @@ struct MuseumAnswers {
     var role = ""        // Q1 — "Who do you want to become?" (required; the Call)
     var age = 22         // anchor — the Ordinary World's starting point
     var city = ""        // anchor — localizes the Elixir (e.g. Sydney Opera House)
+    var currentSelf = "" // anchor — who they are now (enriches the Ordinary World beat)
     var fear = ""        // Q2 — "What's been stopping you?" (the Refusal)
     var sacrifice = ""   // Q3 — "What are you least willing to give up?" (the Ordeal)
     var worthIt = ""     // Q4 — "What would make it worth it, even if you never make it?"
@@ -26,6 +27,7 @@ struct MuseumAnswers {
         role: \(role)
         age: \(age)
         city: \(city)
+        current_self: \(currentSelf)
         fear: \(fear)
         sacrifice: \(sacrifice)
         worth_it: \(worthIt)
