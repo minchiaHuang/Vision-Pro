@@ -3,6 +3,9 @@ import SwiftUI
 import RealityKit
 import UIKit
 import GameController
+import ARKit
+import QuartzCore
+import os
 
 /// visionOS: true immersion. Two paths, mirroring the iOS `iOSWorldView` priority:
 ///   - parametric USDZ walk-in world when `worldParams` is set (the production experience);
@@ -85,21 +88,67 @@ struct ImmersiveWorldView: View {
 /// still supplies local 6DoF on top. All on the main actor.
 @MainActor
 final class ParametricLocomotor {
+    /// On-screen / gamepad walking speed inside the parametric gallery, in metres/second.
+    /// A brisk walk — tune up for faster exploration, down for a calmer pace.
+    static let galleryWalkSpeed: Float = 8.0
+
     private var loco = SplatLocomotion()
     private weak var root: Entity?
     private var subscription: EventSubscription?
 
+    // Head tracking (for spawn eye-height + diagnostics), mirroring `SplatVisionRenderer`.
+    private let arSession = ARKitSession()
+    private let worldTracking = WorldTrackingProvider()
+
+    // TEMP diagnostics — FPS + head height. Remove once perf/eye-height are tuned.
+    private static let diag = Logger(subsystem: "VisitingArtisan", category: "GalleryDiag")
+    private var fpsAccum: Float = 0
+    private var fpsFrames = 0
+    private var lastDiagTime: TimeInterval = 0
+
     func start(root: Entity, span: Float, content: RealityViewContent) {
         self.root = root
+        Task { try? await arSession.run([worldTracking]) }
         // User already stands inside the floor-aligned world, so start at the origin
-        // (no back-off, unlike the splat path). Speed scales with scene size.
-        self.loco = SplatLocomotion(position: .zero, span: span)
+        // (no back-off, unlike the splat path).
+        //
+        // `SplatLocomotion` derives translation speed as `span · 0.6` m/s — tuned for the large
+        // 6DoF splat worlds, where the raw room-sized span (~10 m) gives ~6 m/s and a single hold
+        // of ↑ shoots the user out the back wall. We instead want a fixed, comfortable speed
+        // independent of room size, so feed a span of `targetWalkSpeed / 0.6` (placement still
+        // uses the real bounds). `Self.galleryWalkSpeed` is a brisk ~2.5 m/s — fast enough to
+        // explore without feeling sluggish, slow enough to stay controllable. Turn speed
+        // (`lookSpeed`) is constant, unaffected.
+        self.loco = SplatLocomotion(position: .zero, span: Self.galleryWalkSpeed / 0.6)
         subscription = content.subscribe(to: SceneEvents.Update.self) { [weak self] event in
             guard let self, let root = self.root else { return }
             let gamepad = SplatSpikeDebug.ignoreGamepad ? nil : currentExtendedGamepad()
-            self.loco.tick(deltaTime: Float(event.deltaTime), gamepad: gamepad)
+            // Feed the on-screen hold-to-move pad (`OopsGalleryControls.SplatMovePad` →
+            // `SplatManualInput`) alongside the gamepad, mirroring `SplatVisionRenderer`. The
+            // snapshot is inert when untouched, so it's safe to always pass — without it the
+            // gallery is unwalkable in the Simulator (no controller).
+            let manual = SplatManualInput.shared.snapshot()
+            self.loco.tick(deltaTime: Float(event.deltaTime), gamepad: gamepad, manual: manual)
             root.transform = Transform(matrix: self.loco.playerTransform().inverse)
+            self.logDiagnostics(deltaTime: Float(event.deltaTime))
         }
+    }
+
+    /// TEMP: averages FPS and samples the head height once per second. Confirms whether the
+    /// Simulator is frame-rate bound (4K textures) and where the device anchor actually sits
+    /// (to size the spawn eye-height fix). Remove after tuning.
+    private func logDiagnostics(deltaTime dt: Float) {
+        if dt > 0 { fpsAccum += 1 / dt; fpsFrames += 1 }
+        let now = CACurrentMediaTime()
+        guard now - lastDiagTime >= 0.5 else { return }
+        let fps = fpsFrames > 0 ? fpsAccum / Float(fpsFrames) : 0
+        let head = worldTracking.queryDeviceAnchor(atTimestamp: now)?
+            .originFromAnchorTransform.columns.3
+        func f(_ v: Float) -> String { String(format: "%.2f", v) }
+        let headStr = head.map { "(\(f($0.x)),\(f($0.y)),\(f($0.z)))" } ?? "nil"
+        let rootPos = root?.position(relativeTo: nil) ?? .zero
+        Self.diag.notice("GALLERY-DIAG fps=\(fps, privacy: .public) head=\(headStr, privacy: .public) root=(\(f(rootPos.x), privacy: .public),\(f(rootPos.y), privacy: .public),\(f(rootPos.z), privacy: .public))")
+        fpsAccum = 0; fpsFrames = 0; lastDiagTime = now
     }
 }
 

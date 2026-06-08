@@ -14,6 +14,12 @@ struct ParametricWorldBuild {
 }
 
 enum ParametricWorldBuilder {
+    /// Uniform scale applied to the gallery USDZ (see `build`). 1.0 = model's authored size
+    /// (~10 m room, 3 m ceiling). The headset eye sits at a fixed ~1.6 m, so the authored room
+    /// reads as cavernous ("everything too big"); shrinking the whole world makes the viewer feel
+    /// correctly present. 0.7 ≈ a 7 m room / 2.1 m ceiling. Tunable.
+    static let galleryWorldScale: Float = 0.7
+
     /// Loads the archetype USDZ and tunes it from `params`:
     ///   - axis 4: three DirectionalLights with intensity + colour temperature
     ///   - axis 1: ambient companion orbs (social density)
@@ -25,6 +31,16 @@ enum ParametricWorldBuilder {
                       galleryPhotos: [UIImage] = []) async -> ParametricWorldBuild? {
         guard let model = try? await Entity(named: params.archetype.usdzName) else {
             return nil
+        }
+
+        // Gallery scale. The Art_Gallery_E_2020 model is authored ~realistically (≈10 m-wide
+        // room, 3 m ceiling) but reads as oversized/cavernous in headset because its artworks are
+        // small (~0.6 m) and hung low, leaving tall blank walls. Shrink the whole world uniformly
+        // so the human feels correctly sized inside it. Tunable — raise toward 1.0 for a larger
+        // hall, lower for a more intimate room. Applied before bounds so floor-align, span and
+        // locomotion all stay consistent.
+        if params.archetype == .artGallery {
+            model.scale = SIMD3(repeating: galleryWorldScale)
         }
 
         let container = Entity()
@@ -41,7 +57,13 @@ enum ParametricWorldBuilder {
             applyGalleryPhotos(model, textures: photos)
         }
 
-        let bounds = model.visualBounds(relativeTo: nil)
+        // Placement bounds. For the gallery, exclude the far backdrop meshes (the city seen
+        // through the window: `outside`/`glass`/`window`) so the user is centred on the *room*,
+        // not pulled toward the window and sunk below the floor. The Art_Gallery_E_2020 model's
+        // backdrop otherwise pushes the z-centre back ~0.58 m and the floor down ~0.23 m.
+        let bounds = params.archetype == .artGallery
+            ? interiorBounds(of: model, excluding: ["outside", "glass", "window"])
+            : model.visualBounds(relativeTo: nil)
         let span = max(bounds.extents.x, max(bounds.extents.y, bounds.extents.z))
         let eye = SIMD3<Float>(bounds.center.x,
                                bounds.center.y + bounds.extents.y * 0.15,
@@ -147,9 +169,11 @@ enum ParametricWorldBuilder {
     /// instead rendered flat white. Reusing each mesh's existing UVs keeps the photo on the wall
     /// with correct placement, orientation, perspective, and scale.
     ///
-    /// Frames are identified by mesh name containing "bake" (the baked artworks — note asset
-    /// typos: "manual"/"manuel"/"manua"), excluding the corridor door and the butterfly wings.
-    /// Walls, floor, plant, curtains, dream-catchers, etc. have no "bake" in their mesh names.
+    /// Frames are identified by mesh name containing "painting" (the Art_Gallery_E_2020 model's
+    /// artwork meshes are named `paintings_01_0` … `paintings_08_0`). The `canvas` and `material`
+    /// meshes (`paintings_canvas_0`, `paintings_Material #93_0`) are the mounts, not the picture
+    /// surface, so they are excluded. Walls, floor, bench, lamps, etc. have no "painting" in
+    /// their names. Sorting by name maps `paintings_01…08` to beat order.
     @MainActor
     static func applyGalleryPhotos(_ root: Entity, textures: [TextureResource]) {
         guard !textures.isEmpty else { return }
@@ -157,8 +181,8 @@ enum ParametricWorldBuilder {
         var frames: [ModelEntity] = []
         forEachModelEntity(root) { entity in
             let name = entity.name.lowercased()
-            guard name.contains("bake") else { return }
-            if name.contains("door") || name.contains("butterfly") { return }
+            guard name.contains("painting") else { return }
+            if name.contains("canvas") || name.contains("material") { return }
             frames.append(entity)
         }
         frames.sort { $0.name < $1.name }
@@ -178,6 +202,22 @@ enum ParametricWorldBuilder {
     private static func forEachModelEntity(_ entity: Entity, _ body: (ModelEntity) -> Void) {
         if let model = entity as? ModelEntity { body(model) }
         for child in entity.children { forEachModelEntity(child, body) }
+    }
+
+    /// World-space bounds of `root`'s `ModelEntity`s whose name contains none of `tokens`
+    /// (case-insensitive). Lets the gallery be framed on its room geometry while ignoring the
+    /// distant backdrop (city plane / glass / window) that would otherwise skew the centre and
+    /// floor. Falls back to the full visual bounds if nothing qualifies.
+    @MainActor
+    static func interiorBounds(of root: Entity, excluding tokens: [String]) -> BoundingBox {
+        var box: BoundingBox?
+        forEachModelEntity(root) { entity in
+            let name = entity.name.lowercased()
+            if tokens.contains(where: { name.contains($0) }) { return }
+            let b = entity.visualBounds(relativeTo: nil)
+            box = box.map { $0.union(b) } ?? b
+        }
+        return box ?? root.visualBounds(relativeTo: nil)
     }
 
     /// Lerps a material's tint toward its perceptual grey by `amount` (0…1). Handles the
