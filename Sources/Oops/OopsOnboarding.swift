@@ -23,11 +23,7 @@ struct OpeningScreen: View {
                 .clipShape(RoundedRectangle(cornerRadius: OopsGlass.radiusWindow, style: .continuous))
 
             // VisualEyes monogram — centred over the preview (matches Figma node 285:1442).
-            Image("oops_logo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 165)
-                .shadow(color: .black.opacity(0.25), radius: 12, y: 4)
+            GlintLogo()
 
             VStack {
                 Spacer()
@@ -42,6 +38,76 @@ struct OpeningScreen: View {
         .onTapGesture(perform: onBegin)
         .onAppear {
             withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) { breathe = true }
+        }
+    }
+}
+
+// MARK: - VisualEyes monogram with a periodic specular "glint"
+
+/// The VisualEyes monogram with a soft light-sweep that travels diagonally across the
+/// glyph every few seconds. The base mark sits slightly dimmed; a brighter, glowing copy
+/// is revealed through a moving gradient band, so the glint reads clearly even though the
+/// logo is white. Honours Reduce Motion (renders a static mark instead).
+private struct GlintLogo: View {
+    var width: CGFloat = 165
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 0 → 1 drives the band from fully off the left edge to fully off the right.
+    @State private var sweep: CGFloat = 0
+    /// false → true plays the entrance: huge + diagonally spun → settled at final size.
+    @State private var entered = false
+
+    private var mark: some View {
+        Image("oops_logo").resizable().scaledToFit().frame(width: width)
+    }
+
+    var body: some View {
+        ZStack {
+            if reduceMotion {
+                mark
+            } else {
+                // Dimmed base mark.
+                mark.opacity(0.7)
+
+                // Bright, glowing copy revealed only where the moving band crosses.
+                mark
+                    .shadow(color: .white.opacity(0.95), radius: 11)
+                    .shadow(color: .white.opacity(0.6), radius: 4)
+                    .mask {
+                        GeometryReader { geo in
+                            let w = geo.size.width
+                            let band = w * 0.7
+                            // Travel a little over two logo-widths so the band is on-screen
+                            // for a good beat, then a short pause before the cycle repeats.
+                            let travel = w * 2.2 + band
+                            LinearGradient(
+                                stops: [
+                                    .init(color: .clear, location: 0.0),
+                                    .init(color: .white, location: 0.5),
+                                    .init(color: .clear, location: 1.0),
+                                ],
+                                startPoint: .leading, endPoint: .trailing)
+                                .frame(width: band, height: geo.size.height * 1.6)
+                                .rotationEffect(.degrees(18))
+                                .offset(x: -band + sweep * travel)
+                                .frame(width: w, height: geo.size.height)
+                        }
+                    }
+            }
+        }
+        .frame(width: width)
+        .shadow(color: .black.opacity(0.25), radius: 12, y: 4)
+        // Entrance: start huge and spun about a diagonal axis, then shrink + spin to rest.
+        .scaleEffect((reduceMotion || entered) ? 1 : 4)
+        .rotation3DEffect(.degrees((reduceMotion || entered) ? 0 : 540),
+                          axis: (x: 1, y: 1, z: 0))
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeOut(duration: 1.2)) { entered = true }
+            // Hold the glint until the entrance has settled, then loop it.
+            withAnimation(.easeInOut(duration: 1.8).delay(1.4).repeatForever(autoreverses: false)) {
+                sweep = 1
+            }
         }
     }
 }
@@ -97,11 +163,7 @@ private struct WorldWindow<Overlay: View>: View {
                            startPoint: .center, endPoint: .bottom)
             // VisualEyes monogram — centred over the world preview (Figma node 285:1442:
             // 233px wide in the 1392px card ≈ 16.7% → ~165pt here).
-            Image("oops_logo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 165)
-                .shadow(color: .black.opacity(0.25), radius: 12, y: 4)
+            GlintLogo()
             overlay
         }
         .clipShape(RoundedRectangle(cornerRadius: OopsGlass.radiusWindow, style: .continuous))
