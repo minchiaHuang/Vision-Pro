@@ -14,8 +14,9 @@ enum OopsScreen {
 struct OopsAnswers {
     var quiz: [String: Int] = [:]
     var quizText: [String: String] = [:]
-    /// Q2 answer — "What's your ideal future like?" — drives the Hero's Journey image generation.
-    var goal: String { quizText["q2"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
+    /// Q3 answer — "What's your ideal future like? Who do you want to become?" — drives the
+    /// Hero's Journey image generation goal string.
+    var goal: String { quizText["q3"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
     var r1 = ""
     var r2 = ""
     var r3 = ""

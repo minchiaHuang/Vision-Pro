@@ -1,17 +1,16 @@
 import SwiftUI
 
-/// 05 · Quiz — one question per screen, paginated.
+/// 05 · Quiz — 6 questions, one per screen, paginated (Figma "Quiz Iterations").
 ///
-/// Layout (matching Figma "quiz variations"):
-///   - Glass card (oopsWindow), fixed 920×530
-///   - Top-left: circular glass back button (chevron ‹)
-///   - Header: "Quiz" bold + subtitle
-///   - Centre: question label + pill row (Q1) or free-text area (Q2–Q4)
-///   - Bottom-right: "Next ›" text (disabled until answered)
-///   - Bottom-centre on last question: "Generate my world" pill CTA
+/// Screen layout:
+///   • Q1 only: glass card with "Quiz" bold title + subtitle, then question + horizontal pills
+///   • Q2–Q6: glass card with just the question label + free-text textarea
+///   • All screens: circular glass back button (top-left), "Next >" text (bottom-right)
+///   • Q6 (last): "Generate my world" pill CTA instead of "Next >"
 ///
-/// Back on the first question raises the existing "Are you sure?" exit dialog.
-/// Back on subsequent questions navigates to the previous question.
+/// Back on Q1 raises the "Are you sure?" exit dialog.
+/// Back on Q2–Q6 navigates to the previous question.
+/// "Next >" is disabled until the current question has an answer.
 struct QuizScreen: View {
     @Binding var answers: OopsAnswers
     let onFinish: () -> Void
@@ -23,9 +22,8 @@ struct QuizScreen: View {
     private var questions: [OopsContent.Question] { OopsContent.questions }
     private var current: OopsContent.Question { questions[currentIndex] }
     private var isFirst: Bool { currentIndex == 0 }
-    private var isLast: Bool { currentIndex == questions.count - 1 }
+    private var isLast:  Bool { currentIndex == questions.count - 1 }
 
-    /// "Next ›" / "Generate my world" is only active when the current question has an answer.
     private var canAdvance: Bool {
         if current.isTextInput {
             let txt = answers.quizText[current.id] ?? ""
@@ -40,12 +38,22 @@ struct QuizScreen: View {
             OopsPassthrough(dim: true)
 
             VStack(spacing: 0) {
-                header
+                // Q1: full header (title + subtitle + back button)
+                // Q2–Q6: compact header (back button only)
+                if isFirst {
+                    fullHeader
+                } else {
+                    compactHeader
+                }
+
                 Spacer(minLength: 0)
+
                 questionContent
                     .padding(.horizontal, 72)
                     .animation(.easeInOut(duration: 0.28), value: currentIndex)
+
                 Spacer(minLength: 0)
+
                 navigationRow
                     .padding(.horizontal, 72)
                     .padding(.bottom, 36)
@@ -59,52 +67,67 @@ struct QuizScreen: View {
                     message: "Your progress will be lost and you will need to re-enter all answers.",
                     confirmTitle: "Yes",
                     onConfirm: { confirm = false; onBack() },
-                    onCancel: { confirm = false })
+                    onCancel:  { confirm = false })
                 .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: confirm)
     }
 
-    // MARK: - Header
+    // MARK: - Headers
 
-    private var header: some View {
+    /// Q1: "Quiz" title + subtitle, with back button in the top-left corner.
+    private var fullHeader: some View {
         ZStack(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Quiz")
                     .font(.system(size: 36, weight: .bold))
                     .foregroundStyle(.white)
                 Text("Take a few minutes to answer these questions. Your answers will shape the world that's built for you")
-                    .font(.system(size: 20, weight: .regular))
+                    .font(.system(size: 19, weight: .regular))
                     .foregroundStyle(.white.opacity(0.72))
                     .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.leading, 108)   // clear of the back button
+            .padding(.leading, 108)
             .padding(.trailing, 56)
             .padding(.top, 44)
 
-            // Circular glass back button (Figma: 60×60, backdrop blur, white/20)
-            Button {
-                if isFirst {
-                    confirm = true
-                } else {
-                    withAnimation(.easeInOut(duration: 0.28)) { currentIndex -= 1 }
-                }
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 52, height: 52)
-                    .background(.white.opacity(0.20), in: Circle())
-                    .background(.ultraThinMaterial, in: Circle())
-                    .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-            .padding(.leading, 28)
-            .padding(.top, 40)
+            backButton
+                .padding(.leading, 28)
+                .padding(.top, 40)
         }
+    }
+
+    /// Q2–Q6: back button only, no title text.
+    private var compactHeader: some View {
+        HStack {
+            backButton
+            Spacer()
+        }
+        .padding(.leading, 28)
+        .padding(.top, 40)
+        .padding(.bottom, 8)
+    }
+
+    private var backButton: some View {
+        Button {
+            if isFirst {
+                confirm = true
+            } else {
+                withAnimation(.easeInOut(duration: 0.28)) { currentIndex -= 1 }
+            }
+        } label: {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 52, height: 52)
+                .background(.white.opacity(0.20), in: Circle())
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Question content
@@ -112,7 +135,6 @@ struct QuizScreen: View {
     @ViewBuilder
     private var questionContent: some View {
         VStack(alignment: .leading, spacing: 24) {
-            // "Qn N: question text"
             Text("Qn \(currentIndex + 1): \(current.label)")
                 .font(.system(size: 22, weight: .regular))
                 .foregroundStyle(.white)
@@ -124,14 +146,14 @@ struct QuizScreen: View {
                 pillRow
             }
         }
-        .id(currentIndex)   // forces SwiftUI to re-create (and animate) on page change
+        .id(currentIndex)
         .transition(.asymmetric(
             insertion: .move(edge: .trailing).combined(with: .opacity),
             removal:   .move(edge: .leading).combined(with: .opacity)
         ))
     }
 
-    // MARK: - Pill row (Q1 — horizontal 4-up)
+    // MARK: - Pill row (Q1 — 4 options in a horizontal row)
 
     private var pillRow: some View {
         HStack(spacing: 18) {
@@ -155,7 +177,6 @@ struct QuizScreen: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 62)
                 .padding(.horizontal, 12)
-                // Figma: glass gradient fill + white border
                 .background(
                     LinearGradient(
                         colors: [Color.white.opacity(0.37), Color(white: 0.45, opacity: 0.42)],
@@ -178,8 +199,8 @@ struct QuizScreen: View {
         .animation(.easeOut(duration: 0.18), value: selected)
     }
 
-    // MARK: - Free-text area (Q2–Q4)
-    // Figma: dark rounded rect (rgba 0,0,0,0.2), radius 21, placeholder at 15% white opacity.
+    // MARK: - Free-text area (Q2–Q6)
+    // Dark rounded rect, per-question placeholder text from OopsContent.
 
     private var freeTextArea: some View {
         let binding = Binding<String>(
@@ -191,7 +212,7 @@ struct QuizScreen: View {
                 .fill(Color.black.opacity(0.22))
 
             if (answers.quizText[current.id] ?? "").isEmpty {
-                Text("Share as much detail as you can. The more context you give, the better the outcome")
+                Text(current.placeholder)
                     .font(.system(size: 18, weight: .regular))
                     .foregroundStyle(.white.opacity(0.28))
                     .padding(.horizontal, 20)
@@ -207,7 +228,7 @@ struct QuizScreen: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
         }
-        .frame(height: 160)
+        .frame(height: 180)
     }
 
     // MARK: - Navigation row
@@ -215,7 +236,6 @@ struct QuizScreen: View {
     @ViewBuilder
     private var navigationRow: some View {
         if isLast {
-            // Final question: centred "Generate my world" pill
             HStack {
                 Spacer()
                 Button("Generate my world", action: onFinish)
@@ -225,7 +245,6 @@ struct QuizScreen: View {
                 Spacer()
             }
         } else {
-            // Intermediate questions: "Next ›" text at trailing edge
             HStack {
                 Spacer()
                 Button {
