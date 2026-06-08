@@ -46,74 +46,11 @@ struct GeneratingScreen: View {
     }
 }
 
-// MARK: - 08 · Preview
-
-struct PreviewScreen: View {
-    let onEnter: () -> Void
-    let onRetry: () -> Void
-
-    var body: some View {
-        ZStack {
-            OopsPassthrough()
-
-            HStack(alignment: .top, spacing: 56) {
-                // left — image
-                VStack(alignment: .leading, spacing: 26) {
-                    Text("Preview of the World")
-                        .font(.system(size: 34, weight: .bold))
-                        .foregroundStyle(OopsGlass.label1)
-                    Image("oops_meadow")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 560, height: 520)
-                        .clipShape(RoundedRectangle(cornerRadius: 48, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 48, style: .continuous)
-                            .strokeBorder(.white.opacity(0.12), lineWidth: 1))
-                }
-
-                // right — copy
-                VStack(alignment: .leading, spacing: 24) {
-                    Text(OopsContent.previewTitle)
-                        .font(.system(size: 36, weight: .bold))
-                        .foregroundStyle(.white)
-                    Text(OopsContent.previewBody)
-                        .font(.system(size: 21, weight: .regular))
-                        .foregroundStyle(.white)
-                        .lineSpacing(6)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Button(action: onEnter) {
-                        HStack(spacing: 8) { Text("Enter Now"); Image(systemName: "arrow.right") }
-                    }
-                    .buttonStyle(OopsButton())
-                    .padding(.top, 8)
-                    Button("Not quite right, try another", action: onRetry)
-                        .font(.system(size: 20))
-                        .foregroundStyle(.white)
-                        .underline()
-                        .buttonStyle(.plain)
-                }
-                .frame(maxWidth: 480, alignment: .leading)
-            }
-            .padding(56)
-            .frame(maxWidth: 1180, maxHeight: 760)
-            .oopsCard(cornerRadius: 44)
-            .padding(.horizontal, 40)
-
-            VStack { Spacer(); PageDots().padding(.bottom, 18) }
-        }
-    }
-}
-
-// MARK: - Previews (Generating + PreviewScreen — no AppState dependency)
+// MARK: - Previews
 
 #Preview("Generating") {
     GeneratingScreen(goal: "I want to be a world class ballerina", onDone: {})
         .environment(AppState())
-        .preferredColorScheme(.dark)
-}
-
-#Preview("PreviewScreen") {
-    PreviewScreen(onEnter: {}, onRetry: {})
         .preferredColorScheme(.dark)
 }
 

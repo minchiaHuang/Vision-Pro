@@ -3,14 +3,20 @@ import SwiftUI
 /// The screens of the Oops prototype flow (mirrors the React `screen` state). After the
 /// user steps out of the 3D world they land on the `reflection` screen (5 questions).
 enum OopsScreen {
-    case opening, home, safety, privacy, quiz, generating, preview, world, reflection
+    case opening, home, safety, privacy, quiz, generating, world, reflection
 }
 
 /// Held-in-memory answers for the quiz + post-world reflection (front-end only — never
-/// scored or stored in this pass). `quiz` maps each quiz question id to the selected
-/// option index; `r1`–`r5` hold the reflection free-text answers.
+/// scored or stored in this pass).
+/// - `quiz`: pill questions — maps question id → selected option index
+/// - `quizText`: free-text questions — maps question id → typed string
+/// - `r1`–`r5`: reflection free-text answers (post-world)
 struct OopsAnswers {
-    var quiz: [String: Int] = [:]   // quiz question id -> selected option index
+    var quiz: [String: Int] = [:]
+    var quizText: [String: String] = [:]
+    /// Q3 answer — "What's your ideal future like? Who do you want to become?" — drives the
+    /// Hero's Journey image generation goal string.
+    var goal: String { quizText["q3"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
     var r1 = ""
     var r2 = ""
     var r3 = ""
@@ -114,10 +120,10 @@ struct OopsFlowView: View {
         case .quiz:
             QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
         case .generating:
-            // TODO: wire `goal` from a free-text quiz answer once the dynamic quiz lands.
-            GeneratingScreen(goal: "I want to be a world class ballerina") { go(.preview) }
-        case .preview:
-            PreviewScreen(onEnter: { enterWorld() }, onRetry: { go(.quiz) })
+            // Q2 free-text answer drives the Hero's Journey prompt; fall back to a generic goal
+            // if the user somehow skipped it (should not happen — Next is disabled when empty).
+            let goal = answers.goal.isEmpty ? "build a meaningful future" : answers.goal
+            GeneratingScreen(goal: goal) { enterWorld() }
         case .world:
             EmptyView()
         case .reflection:
