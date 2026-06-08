@@ -22,6 +22,13 @@ struct OpeningScreen: View {
                 .frame(maxWidth: 980, maxHeight: 620)
                 .clipShape(RoundedRectangle(cornerRadius: OopsGlass.radiusWindow, style: .continuous))
 
+            // VisualEyes monogram — centred over the preview (matches Figma node 285:1442).
+            Image("oops_logo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 165)
+                .shadow(color: .black.opacity(0.25), radius: 12, y: 4)
+
             VStack {
                 Spacer()
                 Text("Tap anywhere to begin")
@@ -88,6 +95,13 @@ private struct WorldWindow<Overlay: View>: View {
                 .scaledToFill()
             LinearGradient(colors: [.clear, .black.opacity(0.35)],
                            startPoint: .center, endPoint: .bottom)
+            // VisualEyes monogram — centred over the world preview (Figma node 285:1442:
+            // 233px wide in the 1392px card ≈ 16.7% → ~165pt here).
+            Image("oops_logo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 165)
+                .shadow(color: .black.opacity(0.25), radius: 12, y: 4)
             overlay
         }
         .clipShape(RoundedRectangle(cornerRadius: OopsGlass.radiusWindow, style: .continuous))
