@@ -38,6 +38,12 @@ final class AppState {
     var museumStory: MuseumStory?
     var museumAnswers: MuseumAnswers?
 
+    /// The Future Museum pipeline. Owned here (not by `GeneratingScreen`) so Stage B image
+    /// painting keeps running after the user enters the museum — entering tears down the
+    /// dev-menu window and `GeneratingScreen` with it. The immersive gallery observes this
+    /// generator's `nodes` and re-textures each wall as its painting lands.
+    var museumGenerator = MuseumGenerator()
+
     /// Hidden continuous scores (the bottom layer of research direction 6) and the world
     /// parameters they map to (direction 7). Computed and stored from Phase 3 on; the
     /// display layer consumes `worldParams` from Phase 2 on.
@@ -125,6 +131,10 @@ final class AppState {
         galleryImages = []
         museumStory = nil
         museumAnswers = nil
+        // `MuseumGenerator` is `@MainActor`; hop on (this nonisolated `restart()` is only ever
+        // called from MainActor UI, but the call must be expressed on the actor). Cancels any
+        // in-flight Stage B paint task so a stale run can't keep painting after a restart.
+        Task { @MainActor in museumGenerator.reset() }
         phase = .splash
     }
 }

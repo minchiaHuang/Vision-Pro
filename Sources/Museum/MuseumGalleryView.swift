@@ -23,9 +23,21 @@ final class MuseumGenerator {
     private let curator = CuratorService()
     private let images = ImageGenerationService()
 
-    /// Runs once. Stage A (blocking) then Stage B (all five in parallel; each card updates
-    /// as its image arrives — the "walk = loading bar" idea, minus the walk for now).
-    func run(_ answers: MuseumAnswers) async {
+    /// Nonisolated so the (non-`@MainActor`) `AppState` can create one as a stored-property
+    /// default. Every stored default above is actor-agnostic, so this is safe.
+    nonisolated init() {}
+
+    /// Holds the background Stage B (image painting) task so it keeps running after the caller
+    /// has moved on. The Oops flow enters the museum the moment the story is ready, which tears
+    /// down the dev-menu window — and thus `GeneratingScreen`. By owning the task here (not in a
+    /// view's `.task`), Stage B survives that teardown and keeps streaming images onto the walls.
+    private var paintTask: Task<Void, Never>?
+
+    /// Stage A only. Writes the story, seeds the (image-less) `nodes`, flips to `.painting`,
+    /// and kicks off Stage B **in the background without awaiting it** — so the caller can enter
+    /// the museum the instant the story is ready and let each painting stream onto its wall as it
+    /// lands. Returns once the story resolves (or `.failed`).
+    func generateStory(_ answers: MuseumAnswers) async {
         guard phase == .idle else { return }
         phase = .writing
 
@@ -40,7 +52,13 @@ final class MuseumGenerator {
         story = result
         nodes = result.nodes.map { GeneratedNode(node: $0) }
         phase = .painting
+        paintTask = Task { [weak self] in await self?.paintImages() }
+    }
 
+    /// Stage B. Paints all five beats in parallel; each `GeneratedNode` updates as its image
+    /// arrives (`@Observable`, so a bound view/world re-textures live). Flips to `.ready` once
+    /// every request has resolved (some may have failed individually).
+    private func paintImages() async {
         await withTaskGroup(of: Void.self) { group in
             let images = self.images
             for gen in nodes {
@@ -55,6 +73,13 @@ final class MuseumGenerator {
             }
         }
         phase = .ready
+    }
+
+    /// Runs both stages and awaits completion (Stage A then Stage B). Used by the flat
+    /// `MuseumGalleryView`, whose behaviour is unchanged — it still waits for all five images.
+    func run(_ answers: MuseumAnswers) async {
+        await generateStory(answers)
+        await paintTask?.value
     }
 
     /// Beat-ordered images for the gallery walls — a fixed slot per beat, so frame *i* always
@@ -77,6 +102,8 @@ final class MuseumGenerator {
     }()
 
     func reset() {
+        paintTask?.cancel()
+        paintTask = nil
         phase = .idle
         story = nil
         nodes = []

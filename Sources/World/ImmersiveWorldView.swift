@@ -14,9 +14,16 @@ struct ImmersiveWorldView: View {
     @Environment(AppState.self) private var appState
     /// Retains the per-frame locomotion state + scene subscription across updates.
     @State private var locomotor = ParametricLocomotor()
+    /// Streams the Future Museum paintings onto the gallery walls as Stage B finishes each one
+    /// (the user enters the moment the story is ready, before any image has landed).
+    @State private var wallStreamer = GalleryWallStreamer()
 
     var body: some View {
-        RealityView { content in
+        // Observe each painting's arrival: reading every node's `image` here ties this view's
+        // re-evaluation to Stage B landings, which re-runs the RealityView `update:` closure
+        // below so the walls re-texture as images stream in.
+        let _ = appState.museumGenerator.nodes.map(\.image)
+        return RealityView { content in
             if let params = appState.worldParams,
                let build = await ParametricWorldBuilder.build(params: params,
                                                               galleryPhotos: appState.galleryImages) {
@@ -36,6 +43,10 @@ struct ImmersiveWorldView: View {
                 root.addChild(build.container)
                 content.add(root)
                 locomotor.start(root: root, span: build.span, content: content)
+                // Hand the world root to the streamer and paint whatever has already landed;
+                // the `update:` closure below picks up the rest as they arrive.
+                wallStreamer.root = root
+                wallStreamer.applyIfNeeded(generator: appState.museumGenerator)
             } else {
                 let sphere = await makeSkySphere(
                     override: appState.generatedPano,
@@ -43,6 +54,11 @@ struct ImmersiveWorldView: View {
                 )
                 content.add(sphere)
             }
+        } update: { _ in
+            // Re-runs whenever the generator's observable nodes change (a painting landed);
+            // re-textures only the slots whose images are now ready. No-op for the sky-sphere
+            // path (the streamer has no root there).
+            wallStreamer.applyIfNeeded(generator: appState.museumGenerator)
         }
     }
 
@@ -107,5 +123,30 @@ final class ParametricLocomotor {
 /// renderer). Polled per frame on the main actor.
 private func currentExtendedGamepad() -> GCExtendedGamepad? {
     GCController.controllers().lazy.compactMap { $0.extendedGamepad }.first
+}
+
+/// Streams the Future Museum's five paintings onto the gallery walls as Stage B finishes each
+/// one. Held in the immersive view's `@State` (a class, so the reference is stable across view
+/// updates and its `root`/signature mutations don't churn SwiftUI state). The view's RealityView
+/// `update:` closure calls `applyIfNeeded` — which reads the generator's `@Observable` nodes, so
+/// the closure re-runs as each image lands.
+@MainActor
+final class GalleryWallStreamer {
+    /// The world root entity (set once the immersive world is built). Frames live in its subtree.
+    weak var root: Entity?
+    /// Per-beat "image has landed" flags from the last re-texture, so we re-apply only on change.
+    private var appliedSignature: [Bool] = []
+
+    /// Re-textures the walls iff the set of landed paintings changed since the last apply. Cheap:
+    /// at most five re-applies per run. Placeholder slots (image not yet landed) keep a neutral
+    /// panel via `orderedGalleryImages()`, so the beat→wall mapping never shifts.
+    func applyIfNeeded(generator: MuseumGenerator) {
+        guard let root else { return }
+        let signature = generator.nodes.map { $0.image != nil }   // reads observable → drives re-run
+        guard signature != appliedSignature else { return }
+        appliedSignature = signature
+        let textures = ParametricWorldBuilder.texturesFrom(generator.orderedGalleryImages())
+        ParametricWorldBuilder.applyGalleryPhotos(root, textures: textures)
+    }
 }
 #endif

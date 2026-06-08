@@ -32,13 +32,13 @@ struct GeneratingScreen: View {
     let answers: OopsAnswers
     let onDone: () -> Void
 
-    @State private var generator = MuseumGenerator()
-
-    /// Documentary-toned status, driven by the pipeline phase.
+    /// Documentary-toned status, driven by the pipeline phase. Only Stage A (writing the story)
+    /// is shown here — the moment the story is ready we step inside and the paintings stream
+    /// onto the walls, so this screen no longer lingers through the slow image phase.
     private var statusText: String {
-        switch generator.phase {
+        switch appState.museumGenerator.phase {
         case .idle, .writing: return "Writing the story of this future…"
-        case .painting:       return "Painting the rooms of your museum…"
+        case .painting:       return "Stepping inside…"
         case .ready:          return "Stepping inside…"
         case .failed:         return "Opening the doors…"
         }
@@ -64,16 +64,20 @@ struct GeneratingScreen: View {
         .task { await runGeneration() }
     }
 
-    /// Runs the two-stage Curator pipeline from the OopsFlow answers, stores the story +
-    /// beat-ordered images on `AppState`, then advances. On any failure the run degrades
-    /// gracefully (empty images → bundled placeholders; nil story → no narration) but the
-    /// flow always completes, so the user is never trapped.
+    /// Runs **Stage A only** of the Curator pipeline (the story), then enters the museum
+    /// immediately. Stage B (the five paintings) keeps running in the background on the
+    /// AppState-owned `museumGenerator`, and the immersive gallery streams each painting onto
+    /// its wall as it lands. `galleryImages` is seeded with the beat-ordered placeholders so the
+    /// walls start neutral and "develop" in. On any failure the run degrades gracefully
+    /// (story fails → no narration + bundled placeholders) but the flow always completes, so the
+    /// user is never trapped.
     private func runGeneration() async {
         let museumAnswers = MuseumAnswers(oops: answers)
-        await generator.run(museumAnswers)
-        appState.museumStory   = generator.story
         appState.museumAnswers = museumAnswers
-        appState.galleryImages = generator.orderedGalleryImages()
+        appState.museumGenerator.reset()                  // fresh run (clears any prior paint task)
+        await appState.museumGenerator.generateStory(museumAnswers)   // awaits Stage A only
+        appState.museumStory   = appState.museumGenerator.story
+        appState.galleryImages = appState.museumGenerator.orderedGalleryImages()
         onDone()
     }
 }
@@ -243,6 +247,15 @@ struct OopsGalleryControls: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+            // While Stage B is still painting, reassure the visitor that the (currently neutral)
+            // walls are filling in — the paintings stream on as each one lands.
+            if appState.museumGenerator.phase == .painting {
+                let landed = appState.museumGenerator.nodes.filter { $0.image != nil }.count
+                let total = appState.museumGenerator.nodes.count
+                Label("Paintings developing… \(landed)/\(total)", systemImage: "paintbrush.pointed")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             SplatMovePad()
             Button("Leave gallery", action: performExit)
                 .buttonStyle(.borderedProminent)
