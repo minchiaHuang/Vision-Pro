@@ -150,10 +150,12 @@ enum ParametricWorldBuilder {
     /// Frames are identified by mesh name containing "bake" (the baked artworks — note asset
     /// typos: "manual"/"manuel"/"manua"), excluding the corridor door and the butterfly wings.
     /// Walls, floor, plant, curtains, dream-catchers, etc. have no "bake" in their mesh names.
+    /// The gallery's picture-frame meshes (mesh name contains "bake", excluding the corridor
+    /// door and the butterfly wings), in a stable name-sorted order. Shared by photo assignment
+    /// and proximity narration so the image on a wall and the voice that describes it always
+    /// refer to the same beat index.
     @MainActor
-    static func applyGalleryPhotos(_ root: Entity, textures: [TextureResource]) {
-        guard !textures.isEmpty else { return }
-
+    static func galleryFrames(_ root: Entity) -> [ModelEntity] {
         var frames: [ModelEntity] = []
         forEachModelEntity(root) { entity in
             let name = entity.name.lowercased()
@@ -162,7 +164,14 @@ enum ParametricWorldBuilder {
             frames.append(entity)
         }
         frames.sort { $0.name < $1.name }
+        return frames
+    }
 
+    @MainActor
+    static func applyGalleryPhotos(_ root: Entity, textures: [TextureResource]) {
+        guard !textures.isEmpty else { return }
+
+        let frames = galleryFrames(root)
         for (index, frame) in frames.enumerated() {
             guard var model = frame.model else { continue }
             let texture = textures[index % textures.count]
