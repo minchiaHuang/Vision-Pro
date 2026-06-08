@@ -91,18 +91,40 @@ enum ParametricWorldBuilder {
 
     /// Converts in-memory images (the AI-generated Hero's-Journey series) into textures, in the
     /// same order. Images that can't produce a `CGImage`/`TextureResource` are skipped.
+    ///
+    /// Each image is flipped vertically first: the gallery frames display the photo through an
+    /// `UnlitMaterial.color` texture, which samples the V axis from the opposite origin to the
+    /// USDZ's original PBR `emissiveColor` binding — so an un-flipped image renders upside down.
     @MainActor
     static func texturesFrom(_ images: [UIImage]) -> [TextureResource] {
         images.compactMap { image in
-            guard let cg = image.cgImage else { return nil }
+            guard let cg = flippedVertically(image) else { return nil }
             return try? TextureResource(image: cg, options: .init(semantic: .color))
         }
+    }
+
+    /// Returns `image` flipped top-to-bottom as a `CGImage`. Drawing through a renderer also
+    /// normalises any `imageOrientation` metadata, so the result is a plain, upright bitmap once
+    /// the texture's V-axis sampling is accounted for (see `texturesFrom`).
+    @MainActor
+    private static func flippedVertically(_ image: UIImage) -> CGImage? {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+        let flipped = renderer.image { ctx in
+            let cg = ctx.cgContext
+            cg.translateBy(x: 0, y: image.size.height)
+            cg.scaleBy(x: 1, y: -1)
+            image.draw(in: CGRect(origin: .zero, size: image.size))
+        }
+        return flipped.cgImage
     }
 
     /// Loads every bundled `beach*` image (jpg/jpeg/png) as a texture, sorted by filename
     /// (beach 2, beach 4, beach 7, …) so the photo-to-frame assignment is stable. Enumerating
     /// the bundle — rather than hard-coding names — means whatever beach files are dropped in
-    /// are picked up automatically. Skips any that fail to load.
+    /// are picked up automatically. Skips any that fail to load. Routed through `texturesFrom`
+    /// so the bundled placeholders get the same vertical flip as the AI-generated photos.
     @MainActor
     static func loadGalleryPhotoTextures() async -> [TextureResource] {
         var urls: [URL] = []
@@ -114,14 +136,8 @@ enum ParametricWorldBuilder {
         }
         urls.sort { $0.lastPathComponent < $1.lastPathComponent }
 
-        var textures: [TextureResource] = []
-        for url in urls {
-            if let tex = try? await TextureResource(contentsOf: url,
-                                                    options: .init(semantic: .color)) {
-                textures.append(tex)
-            }
-        }
-        return textures
+        let images = urls.compactMap { UIImage(contentsOfFile: $0.path) }
+        return texturesFrom(images)
     }
 
     /// Replaces every wall-frame mesh's material with an `UnlitMaterial` showing a beach photo,
