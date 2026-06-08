@@ -12,11 +12,11 @@ enum OopsContent {
 
     static let safety: [Statement] = [
         .init(head: "Your Consent & Data",
-              text: "Your quiz answers are used only to match you to a personalised world — they are processed in real time and never stored, shared, or used beyond this session. Camera and motion access are used solely to let you move through your world and are never recorded."),
+              text: "Your quiz answers personalise your world in real time and are never stored or shared. Camera and motion data is used solely for movement and is never recorded."),
         .init(head: "Emotional Safety",
-              text: "What you're about to experience is a reflective simulation based on your values and aspirations, not a forecast of your future or a judgement of who you are. If anything brings up difficult emotions, you are welcome to pause or exit at any time."),
+              text: "This is a reflective simulation based on your values — not a judgement of who you are. If anything feels difficult, pause or exit at any time."),
         .init(head: "Physical Safety",
-              text: "Some users may experience dizziness or nausea during immersive experiences. Please ensure you have clear space around you before you begin, and if you feel any discomfort at any point, exit the experience immediately."),
+              text: "Some users may feel dizzy or nauseous. Ensure you have clear space around you, and exit immediately if you feel any discomfort."),
     ]
 
     static let privacy: [Statement] = [
