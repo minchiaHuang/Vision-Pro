@@ -346,6 +346,10 @@ struct CheckStatement: View {
                     // Body copy reads bright on the frosted card (HTML `.row-body` ≈ white 0.96).
                     .foregroundStyle(.white.opacity(0.92))
                     .lineSpacing(2)
+                    // Reserve 3 lines (the longest body) for every row so each statement
+                    // occupies an identical slot — bullet headings line up across the
+                    // Safety and Privacy screens and both frames end up the same height.
+                    .lineLimit(3, reservesSpace: true)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)

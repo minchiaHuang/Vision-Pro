@@ -160,6 +160,10 @@ struct DeclarationScreen: View {
                         Text(subtitle)
                             .oopsSub(18)
                             .foregroundStyle(.white.opacity(0.92))
+                            // Reserve 2 lines on BOTH screens so the Safety intro (2 lines)
+                            // and the shorter Privacy intro (1 line) push the statements to
+                            // the same Y — keeps frame heights and bullet placement aligned.
+                            .lineLimit(2, reservesSpace: true)
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
