@@ -8,7 +8,17 @@ enum AppPhase {
     case quiz
     case loading
     case world
+    /// World generation failed or timed out; `ErrorView` offers retry / back-home.
+    /// No associated value so `AppPhase` keeps its synthesized `Equatable`
+    /// (needed by `RootView`'s `.animation(value:)`); the message lives in
+    /// `AppState.loadError`.
+    case error
 }
+
+/// Raised when world generation cannot finish in time. Kept tiny on purpose —
+/// today's scoring is instant, so this only fires once the loading step becomes
+/// a real (v2) network call that can hang.
+struct WorldGenTimeout: Error {}
 
 /// Global state (quiz answers, the resolved world, and the current step).
 @Observable
@@ -71,25 +81,72 @@ final class AppState {
     /// is recreated on the way back, so the screen can't live in the view's `@State`).
     var oopsResumeScreen: OopsScreen?
 
+    /// Human-readable reason the world failed to generate, shown by `ErrorView`.
+    /// `nil` whenever we are not in the `.error` phase.
+    var loadError: String?
+
+    /// How long world generation may run before we surface an error. Harmless
+    /// today (scoring is instant); meaningful once loading becomes a real call.
+    private let generationTimeout: Duration = .seconds(15)
+
     /// Quiz done -> loading -> resolve the world -> enter the world.
     func finishQuiz() {
+        startWorldGeneration()
+    }
+
+    /// Re-run world generation after a failure (the `ErrorView` "try again").
+    func retryWorldGeneration() {
+        startWorldGeneration()
+    }
+
+    /// Drive the loading -> world (or -> error) transition. Both `finishQuiz`
+    /// and `retryWorldGeneration` funnel through here so retry is just another
+    /// attempt down the same path.
+    private func startWorldGeneration() {
         phase = .loading
-        Task {
-            // A brief "generating world" beat so the loading screen registers
-            // (v2: this becomes a real API call). Kept short — the scoring below
-            // is instant, so a long sleep only adds perceived slowness.
-            try? await Task.sleep(for: .milliseconds(600))
-            await MainActor.run {
-                // Research direction 6->7: compute the hidden continuous scores first,
-                // then map them into world parameters.
+        loadError = nil
+        Task { @MainActor in
+            do {
+                try await self.generateWorld()
+                self.phase = .world
+            } catch {
+                self.loadError = "We couldn't finish weaving your world. Let's try once more."
+                self.phase = .error
+            }
+        }
+    }
+
+    /// Resolve the world for the current answers, bounded by `generationTimeout`.
+    /// The scoring itself is synchronous and instant; the brief sleep is just a
+    /// "generating world" beat (v2: this body becomes a real API call). Wrapping
+    /// it in a timeout race means a future hang turns into a recoverable error
+    /// instead of a stuck loading screen.
+    @MainActor
+    private func generateWorld() async throws {
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask { @MainActor in
+                // A brief beat so the loading screen registers. Kept short — the
+                // scoring below is instant, so a long sleep only adds perceived
+                // slowness.
+                try await Task.sleep(for: .milliseconds(600))
+
+                // Research direction 6->7: compute the hidden continuous scores
+                // first, then map them into world parameters.
                 let scores = Scorer.score(self.answers)
                 self.axisScores = scores
                 self.worldParams = WorldMapper.map(scores)
-                // title/blurb are derived from the archetype, keeping the overlay text
-                // consistent with the USDZ scene.
+                // title/blurb are derived from the archetype, keeping the overlay
+                // text consistent with the USDZ scene.
                 self.world = WorldCatalog.world(for: self.worldParams!.archetype)
-                self.phase = .world
             }
+            group.addTask {
+                try await Task.sleep(for: self.generationTimeout)
+                throw WorldGenTimeout()
+            }
+            // Take whichever finishes first: success cancels the timeout, a
+            // timeout cancels (and surfaces over) the in-flight generation.
+            try await group.next()
+            group.cancelAll()
         }
     }
 
@@ -147,6 +204,7 @@ final class AppState {
         Task { @MainActor in museumGenerator.reset() }
         museumConversation = nil
         quizVoice.reset()
+        loadError = nil
         phase = .splash
     }
 }
