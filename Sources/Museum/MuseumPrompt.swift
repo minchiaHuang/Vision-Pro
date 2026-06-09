@@ -34,6 +34,8 @@ enum MuseumPrompt {
     - No text, words, signage, or logos in the image.
     - Beats 1-4 share ONE cold style; beat 5 uses the warm style. Write each image_prompt
       as a COMPLETE, self-contained prompt that already begins with the full style string.
+    - COMPOSITION: frame for a wide 16:9 gallery picture. Keep the key subject centered and
+      clear of the top and bottom edges, which may be cropped when mounted.
 
     PERSONALIZATION:
     - Start ages near {age} and progress realistically across ~15-20 years.
