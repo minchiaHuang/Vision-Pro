@@ -289,7 +289,7 @@ final class PlaqueTuning {
     static let shared = PlaqueTuning()
     // Defaults dialed in on the visionOS Simulator (2026-06-09). The plaque positions derive from
     // the fixed BA396 USDZ geometry, so these hold identically on device.
-    var sideOffset: Float = 3.83   // metres along the wall from the frame center
+    var sideOffset: Float = 4.01   // metres along the wall from the frame center
     var sideSign: Float = 1        // +1 = right of the frame, −1 = left
     var vertical: Float = -1.40    // metres up(+) / down(−) from the frame center
     var outward: Float = 0.25      // metres out from the wall toward the room
@@ -395,7 +395,8 @@ struct BeatPlaqueView: View {
                         .padding(.top, 4)
                 }
             }
-            .frame(width: expanded ? 460 : 320, alignment: .leading)
+            // Constant width so expanding only grows downward (no left/right shift on tap).
+            .frame(width: 420, alignment: .leading)
             .padding(.vertical, 20)
             .padding(.horizontal, 26)
             .oopsCard(cornerRadius: 22)
