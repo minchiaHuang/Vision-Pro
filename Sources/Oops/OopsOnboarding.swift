@@ -212,17 +212,19 @@ struct DeclarationScreen: View {
         ZStack {
             OopsPassthrough(dim: true)
 
-            // Figma node 46:1124 stacks the screen vertically: a frosted content card
-            // (back button → title → subtitle → statements) with the CTA pill BELOW it.
-            // A VStack — not an overlay — keeps the button from ever overlapping the
-            // statements, no matter how tall the copy runs.
-            VStack(spacing: 34) {
-                // 1 — Content (back button → title → subtitle → statements), sitting
-                // directly on the single frosted window — no nested second-layer panel.
+            // Figma node 46:1124. A single vertical stack: the content (back button →
+            // title → subtitle → statements) hugs the TOP, then a flexible Spacer, then the
+            // CTA pill. Because the Spacer can never collapse below its minimum, the button
+            // can NOT overlap the statements no matter how tall the copy runs — yet on both
+            // the Safety and Privacy screens it still settles to the same bottom-centre spot
+            // (the Spacer simply absorbs the difference in copy height between the two).
+            VStack(spacing: 0) {
+                // 1 — Content (back button → title → subtitle → statements), top-leading.
                 VStack(alignment: .leading, spacing: 28) {
-                    // Back button — top-leading, above the title (Figma 289:2111)
+                    // Back button — top-leading, above the title (Figma 289:2111).
                     if let onBack {
                         backButton(action: onBack)
+                            .padding(.bottom, 16)
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -237,7 +239,7 @@ struct DeclarationScreen: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    VStack(spacing: 26) {
+                    VStack(spacing: 18) {
                         ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
                             CheckStatement(head: item.head, text: item.text,
                                            checked: checks[i]) { checks[i].toggle() }
@@ -246,16 +248,21 @@ struct DeclarationScreen: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                // 2 — CTA pill, centred BELOW the content (Figma 289:2130) — never overlaps
+                // Flexible gap: grows to push the CTA toward the bottom, but never shrinks
+                // past 24pt — this minimum is what guarantees the pill clears the copy.
+                Spacer(minLength: 24)
+
+                // 2 — CTA pill, bottom-centre (Figma 289:2130). Sized 272×68 — 10% smaller
+                // than the 302×75 base — for reliable clearance on the tall Safety screen.
                 Button(cta, action: onCta)
-                    .buttonStyle(OopsButton(fixedWidth: 302, fixedHeight: 75))
+                    .buttonStyle(OopsButton(fixedWidth: 272, fixedHeight: 68))
                     .disabled(!canContinue)
                     .opacity(canContinue ? 1 : 0.4)
                     .animation(.easeInOut(duration: 0.2), value: canContinue)
             }
             .frame(width: 960)
             .padding(52)
-            // Fixed card height matching the Quiz frame (content stays vertically centred).
+            // Fixed card height matching the Quiz frame.
             .frame(height: cardHeight)
             .oopsWindow()
 
