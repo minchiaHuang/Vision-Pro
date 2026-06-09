@@ -33,10 +33,17 @@ final class SplatManualInput: @unchecked Sendable {
 /// intentionally NOT applied here on visionOS — the user's head supplies pitch via
 /// head tracking, and tilting the whole world is uncomfortable.
 struct SplatLocomotion {
+    /// Axis-aligned hard walls in player space.
+    struct Box { var min: SIMD3<Float>; var max: SIMD3<Float> }
+
     var yaw: Float = 0
     var position: SIMD3<Float> = .zero
     /// Largest scene dimension; movement speed scales by it.
     var span: Float = 1
+    /// Optional hard boundary (player-space, already margin-inset). When set, `tick`
+    /// clamps `position` into this box every frame — a wall the user can't walk through.
+    /// `nil` = unbounded; the splat `.spz` path leaves it nil to keep free movement.
+    var boundary: Box? = nil
 
     private var initialPosition: SIMD3<Float> = .zero
     private var initialYaw: Float = 0
@@ -95,6 +102,10 @@ struct SplatLocomotion {
             yaw = initialYaw
         }
         resetWasPressed = pressed
+
+        // Hard walls: clamp into the boundary after all movement (incl. reset, whose
+        // initialPosition is inside). Hitting an edge fully stops travel on that axis.
+        if let b = boundary { position = simd_clamp(position, b.min, b.max) }
     }
 
     /// The player "vehicle" world transform (yaw + position) that places the user's

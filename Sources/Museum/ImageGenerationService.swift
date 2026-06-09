@@ -18,8 +18,10 @@ struct ImageGenerationService {
         let key = Secrets.openAIAPIKey
         guard !key.isEmpty else { throw ImageError.missingKey }
 
+        // quality "low" trades fidelity for speed/cost — the museum walls read fine at low and
+        // it noticeably shortens the ~90s Stage B wait. Bump back to "medium" for hero shots.
         let payload = Request(model: Self.model, prompt: prompt,
-                              size: "1536x1024", quality: "medium",
+                              size: "1536x1024", quality: "low",
                               output_format: "png", n: 1)
 
         var req = URLRequest(url: URL(string: "https://api.openai.com/v1/images/generations")!)

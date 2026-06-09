@@ -41,6 +41,7 @@ struct MuseumNode: Codable, Sendable, Identifiable {
     let stage: String        // ordinary_world_call | crossing_threshold | ordeal | sacrifice | return_elixir
     let age: Int
     let beat: String
+    let caption: String      // short museum wall-label shown on the plaque beside the picture (≠ narration)
     let narration: String
     let image_prompt: String // self-contained — already includes the style string
     let tone: String         // "cold" (the 4 cost beats) | "warm" (the elixir)

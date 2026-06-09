@@ -25,13 +25,24 @@ struct VisitingArtisanApp: App {
     #endif
     @State private var appState = AppState()
 
+    /// Demo: boot straight into the Oops flow and hide the dev launcher. Set false to restore
+    /// the DevMenu (Oops / Voice / Splat / BA396) for testing individual features.
+    private static let bootDirectlyToOops = true
+
     var body: some Scene {
         // `id: "dev-menu"` so the splat flow can dismiss/reopen this window when
         // entering/leaving the full-immersion world.
         WindowGroup(id: "dev-menu") {
             Group {
-                // DEV: in-app launcher to test each feature. Swap to RootView() before shipping.
-                DevMenuView()
+                // Demo build boots straight into the Oops flow (the product experience); the dev
+                // launcher (Voice / Splat / BA396) is hidden. Flip `bootDirectlyToOops` to false to
+                // get the DevMenu back. The leave-world path reopens this window and OopsFlowView
+                // resumes at `.reflection` via `appState.oopsResumeScreen`, so the loop still works.
+                if Self.bootDirectlyToOops {
+                    OopsFlowView()
+                } else {
+                    DevMenuView()
+                }
             }
             .environment(appState)
             // DEBUG: run the hand-gesture algorithm self-test once (Simulator-runnable; no
@@ -151,9 +162,23 @@ struct VisitingArtisanApp: App {
             QuizVoiceOrbView()
                 .environment(appState)
         }
-        .defaultSize(width: 120, height: 270)
+        // .plain drops the system glass chrome so the window is EXACTLY the Capsule the view
+        // draws. A default-glass window in shared space has a minimum size that pads a slim pill
+        // into a wide panel; .plain bypasses that, giving the exact Figma pill. (The full-immersion
+        // .plain input bug doesn't apply: the Quiz orb lives in shared space, not full immersion.)
+        .windowStyle(.plain)
+        .defaultSize(width: 120, height: 320)
         .windowResizability(.contentSize)
         .restorationBehavior(.disabled)
+        .defaultWindowPlacement { _, context in
+            // Place trailing the main flow window so the orb sits to the RIGHT of the Quiz
+            // card instead of floating over it. The Oops flow (incl. the Quiz) renders inside
+            // the `dev-menu` WindowGroup, which is the window the orb opens beside.
+            if let main = context.windows.first(where: { $0.id == "dev-menu" }) {
+                return WindowPlacement(.trailing(main))
+            }
+            return WindowPlacement()
+        }
         #endif
     }
 }
