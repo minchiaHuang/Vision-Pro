@@ -1,5 +1,10 @@
 import Foundation
 import AVFAudio
+import os
+
+/// Logs which voice backend is in use and why it falls back, so a robotic-sounding build
+/// can be diagnosed from the Xcode console (filter by category "Voice").
+private let voiceLog = Logger(subsystem: "VisitingArtisan", category: "Voice")
 
 /// Phase 6b — the world's two-way voice companion.
 ///
@@ -45,14 +50,18 @@ final class ConversationService {
         // (no key / no network / quota exhausted).
         if !Secrets.azureSpeechKey.isEmpty {
             self.cloud = AzureVoice()
+            voiceLog.info("Voice backend = Azure (key present)")
         } else if !Secrets.elevenLabsAPIKey.isEmpty {
             self.cloud = ElevenLabsVoice()
+            voiceLog.info("Voice backend = ElevenLabs (key present)")
         } else {
             self.cloud = nil
+            voiceLog.warning("Voice backend = AVSpeech only (no cloud key) — voice will sound robotic. Add AZURE_SPEECH_KEY or ELEVEN_LABS_API_KEY to the build (~/.config/visualeyes/keys.plist or a scheme env var).")
         }
         cloud?.onFailure = { [weak self] text, permanent in
             guard let self else { return }
             if permanent { self.cloudDisabled = true }   // stop retrying the cloud this session
+            voiceLog.error("Cloud voice failed (permanent=\(permanent, privacy: .public)) → falling back to AVSpeech")
             self.narrator.speak(text)
         }
     }
