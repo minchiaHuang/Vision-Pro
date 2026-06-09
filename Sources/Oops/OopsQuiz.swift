@@ -193,8 +193,14 @@ struct QuizScreen: View {
     // MARK: - Pill row (Q1 — 4 options, fixed-width, left-packed)
 
     private var pillRow: some View {
-        HStack(spacing: 20) {
+        // Span the full content width and distribute the pills with Spacers so the first
+        // pill sits flush against the content's left edge and the last against its right
+        // edge. That makes the gap from the card to the outermost pills identical on both
+        // sides (= sideInset), rather than left-packing the row and dumping all the
+        // leftover space on the right.
+        HStack(spacing: 0) {
             ForEach(Array(current.options.enumerated()), id: \.offset) { idx, option in
+                if idx > 0 { Spacer(minLength: 20) }
                 pillButton(option, selected: answers.quiz[current.id] == idx) {
                     withAnimation(.easeOut(duration: 0.18)) {
                         answers.quiz[current.id] = idx
@@ -202,20 +208,22 @@ struct QuizScreen: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity)
     }
 
-    /// Figma pill: 250×75 px → 165×50 pt, scaled up 10% → 181.5×55 pt; Capsule;
+    /// Figma pill: 250×75 px → 165×50 pt; widened to 220×55 pt to tighten the inter-pill
+    /// gaps now that the row spans the full content width; Capsule;
     /// white border 2.314px → 1.5pt; gradient linear(167°, white.37 → grey.42);
     /// ultraThinMaterial; drop-shadow 18%.
     private func pillButton(_ text: String, selected: Bool,
                             action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(text)
-                // Matches the subheader font size (18) for quiz design consistency.
-                .font(.system(size: 18, weight: .medium))
+                // Subheader font size (18) bumped by 2pt for stronger pill labels.
+                .font(.system(size: 20, weight: .medium))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
-                .frame(width: 181.5, height: 55)
+                .frame(width: 220, height: 55)
                 .background(
                     LinearGradient(
                         colors: [Color.white.opacity(0.37), Color(white: 0.45, opacity: 0.42)],
