@@ -25,13 +25,24 @@ struct VisitingArtisanApp: App {
     #endif
     @State private var appState = AppState()
 
+    /// Demo: boot straight into the Oops flow and hide the dev launcher. Set false to restore
+    /// the DevMenu (Oops / Voice / Splat / BA396) for testing individual features.
+    private static let bootDirectlyToOops = true
+
     var body: some Scene {
         // `id: "dev-menu"` so the splat flow can dismiss/reopen this window when
         // entering/leaving the full-immersion world.
         WindowGroup(id: "dev-menu") {
             Group {
-                // DEV: in-app launcher to test each feature. Swap to RootView() before shipping.
-                DevMenuView()
+                // Demo build boots straight into the Oops flow (the product experience); the dev
+                // launcher (Voice / Splat / BA396) is hidden. Flip `bootDirectlyToOops` to false to
+                // get the DevMenu back. The leave-world path reopens this window and OopsFlowView
+                // resumes at `.reflection` via `appState.oopsResumeScreen`, so the loop still works.
+                if Self.bootDirectlyToOops {
+                    OopsFlowView()
+                } else {
+                    DevMenuView()
+                }
             }
             .environment(appState)
             // DEBUG: run the hand-gesture algorithm self-test once (Simulator-runnable; no
