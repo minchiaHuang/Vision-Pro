@@ -23,6 +23,10 @@ struct QuizScreen: View {
 
     @State private var currentIndex = 0
     @State private var confirm = false
+    // Tracks the last navigation direction so the slide transition flips correctly:
+    // forward (Next) slides the new card in from the trailing edge; back slides it in
+    // from the leading edge. Without this the back button animated the wrong way.
+    @State private var goingBack = false
 
     // Single horizontal inset shared by EVERY Quiz element — back arrow, "Quiz" header,
     // question label, pills and nav. Matches the Declaration card's content inset exactly:
@@ -143,6 +147,7 @@ struct QuizScreen: View {
             if isFirst {
                 confirm = true
             } else {
+                goingBack = true
                 withAnimation(.easeInOut(duration: 0.28)) { currentIndex -= 1 }
             }
         } label: {
@@ -185,8 +190,8 @@ struct QuizScreen: View {
         }
         .id(currentIndex)
         .transition(.asymmetric(
-            insertion: .move(edge: .trailing).combined(with: .opacity),
-            removal:   .move(edge: .leading).combined(with: .opacity)
+            insertion: .move(edge: goingBack ? .leading : .trailing).combined(with: .opacity),
+            removal:   .move(edge: goingBack ? .trailing : .leading).combined(with: .opacity)
         ))
         .animation(.easeInOut(duration: 0.28), value: currentIndex)
     }
@@ -304,6 +309,7 @@ struct QuizScreen: View {
         } else {
             // Q1–Q5: "Next >" — Figma Inter Bold 20px; trailing-aligned.
             Button {
+                goingBack = false
                 withAnimation(.easeInOut(duration: 0.28)) { currentIndex += 1 }
             } label: {
                 Text("Next >")
