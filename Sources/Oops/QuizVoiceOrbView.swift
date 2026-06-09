@@ -34,13 +34,16 @@ struct QuizVoiceOrbView: View {
     }
 
     private var pillContent: some View {
+        // The window uses `.windowStyle(.plain)` (no system glass), so we draw the Figma "World
+        // Bar" capsule ourselves. This yields an exact slim pill at any size, bypassing the
+        // shared-space glass-window minimum that otherwise pads a small window into a wide panel.
         VStack(spacing: 0) {
             // .hoverEffect() is required on visionOS so eye tracking recognises the hit target.
             Button { dismissWindow(id: "quiz-voice-orb") } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.85))
-                    .frame(width: 48, height: 52)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .frame(width: 44, height: 56)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -56,9 +59,28 @@ struct QuizVoiceOrbView: View {
             .hoverEffect()
             .disabled(!canDictate && !stt.isListening)
 
-            Spacer().frame(height: 22)
+            Spacer()
         }
-        .frame(width: 110, height: 250)
+        .padding(.vertical, 18)
+        .frame(width: 110, height: 300)
+        .background(pillBackground)
+    }
+
+    /// The Figma "World Bar" pill (node 50:1658): glass-blur capsule, faint top-leading →
+    /// bottom-trailing gradient, hairline white border, soft drop shadow.
+    private var pillBackground: some View {
+        Capsule()
+            .fill(.ultraThinMaterial)
+            .overlay(
+                Capsule().fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.22), Color(white: 0.45, opacity: 0.25)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    )
+                )
+            )
+            .overlay(Capsule().strokeBorder(.white.opacity(0.55), lineWidth: 1.5))
+            .shadow(color: .black.opacity(0.18), radius: 14, y: 1)
     }
 
     private func tap() {

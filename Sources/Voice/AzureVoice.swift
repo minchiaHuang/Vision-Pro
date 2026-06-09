@@ -1,5 +1,9 @@
 import Foundation
 import AVFAudio
+import os
+
+/// Diagnostic log for the Azure TTS path (filter the Xcode console by category "Voice").
+private let azureLog = Logger(subsystem: "VisitingArtisan", category: "Voice")
 
 /// Cloud text-to-speech via the Azure Speech REST API (one-shot: full MP3 then play).
 ///
