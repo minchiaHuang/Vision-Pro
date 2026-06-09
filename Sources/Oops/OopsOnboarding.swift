@@ -81,71 +81,152 @@ private struct FloatingFramesImage: View {
 
 // MARK: - VisualEyes monogram with a periodic specular "glint"
 
-/// The VisualEyes monogram with a soft light-sweep that travels diagonally across the
-/// glyph every few seconds. The base mark sits slightly dimmed; a brighter, glowing copy
-/// is revealed through a moving gradient band, so the glint reads clearly even though the
-/// logo is white. Honours Reduce Motion (renders a static mark instead).
+/// The VisualEyes monogram with a particle-reveal entrance and a periodic specular "glint".
+/// On appear, a cloud of soft white motes rushes inward and condenses while the glyph
+/// resolves out of it; thereafter a brighter copy is swept by a moving gradient band so the
+/// glint reads clearly even though the logo is white. Honours Reduce Motion (renders a
+/// static mark, with no particles or sweep).
 private struct GlintLogo: View {
     var width: CGFloat = 165
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 0 → 1 drives the band from fully off the left edge to fully off the right.
     @State private var sweep: CGFloat = 0
-    /// false → true plays the entrance: huge + diagonally spun → settled at final size.
-    @State private var entered = false
+    /// 0 → 1 drives the particle reveal: the cloud flies in and the mark coalesces from it.
+    @State private var reveal: CGFloat = 0
+    /// 0 → 1 drives the mark's own fade-in. Kept separate from `reveal` so the glyph can
+    /// resolve more slowly than the (snappier) particle cloud.
+    @State private var logoIn: CGFloat = 0
+
+    /// Number of motes in the reveal cloud.
+    private let particleCount = 90
 
     private var mark: some View {
         Image("oops_logo").resizable().scaledToFit().frame(width: width)
     }
 
-    var body: some View {
+    /// The two stacked marks — a dimmed base plus a glowing copy that the glint band sweeps.
+    private var marks: some View {
         ZStack {
+            // Dimmed base mark.
+            mark.opacity(0.7)
+
+            // Bright, glowing copy revealed only where the moving band crosses.
+            mark
+                .shadow(color: .white.opacity(0.95), radius: 11)
+                .shadow(color: .white.opacity(0.6), radius: 4)
+                .mask {
+                    GeometryReader { geo in
+                        let w = geo.size.width
+                        let band = w * 0.7
+                        // Travel a little over two logo-widths so the band is on-screen
+                        // for a good beat, then a short pause before the cycle repeats.
+                        let travel = w * 2.2 + band
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: 0.0),
+                                .init(color: .white, location: 0.5),
+                                .init(color: .clear, location: 1.0),
+                            ],
+                            startPoint: .leading, endPoint: .trailing)
+                            .frame(width: band, height: geo.size.height * 1.6)
+                            .rotationEffect(.degrees(18))
+                            .offset(x: -band + sweep * travel)
+                            .frame(width: w, height: geo.size.height)
+                    }
+                }
+        }
+    }
+
+    var body: some View {
+        Group {
             if reduceMotion {
                 mark
             } else {
-                // Dimmed base mark.
-                mark.opacity(0.7)
-
-                // Bright, glowing copy revealed only where the moving band crosses.
-                mark
-                    .shadow(color: .white.opacity(0.95), radius: 11)
-                    .shadow(color: .white.opacity(0.6), radius: 4)
-                    .mask {
-                        GeometryReader { geo in
-                            let w = geo.size.width
-                            let band = w * 0.7
-                            // Travel a little over two logo-widths so the band is on-screen
-                            // for a good beat, then a short pause before the cycle repeats.
-                            let travel = w * 2.2 + band
-                            LinearGradient(
-                                stops: [
-                                    .init(color: .clear, location: 0.0),
-                                    .init(color: .white, location: 0.5),
-                                    .init(color: .clear, location: 1.0),
-                                ],
-                                startPoint: .leading, endPoint: .trailing)
-                                .frame(width: band, height: geo.size.height * 1.6)
-                                .rotationEffect(.degrees(18))
-                                .offset(x: -band + sweep * travel)
-                                .frame(width: w, height: geo.size.height)
-                        }
-                    }
+                marks
+                    // The mark resolves out of the cloud: invisible until the motes begin
+                    // to condense, then settling to full opacity and size.
+                    .opacity(logoResolve)
+                    .scaleEffect(0.92 + 0.08 * logoResolve)
+                    // Glowing particle cloud, drawn on top and allowed to spill well beyond
+                    // the mark so the motes can fly in from outside it.
+                    .overlay { particles }
             }
         }
         .frame(width: width)
         .shadow(color: .black.opacity(0.25), radius: 12, y: 4)
-        // Entrance: start huge and spun about a diagonal axis, then shrink + spin to rest.
-        .scaleEffect((reduceMotion || entered) ? 1 : 4)
-        .rotation3DEffect(.degrees((reduceMotion || entered) ? 0 : 540),
-                          axis: (x: 1, y: 1, z: 0))
         .onAppear {
             guard !reduceMotion else { return }
-            withAnimation(.easeOut(duration: 1.2)) { entered = true }
-            // Hold the glint until the entrance has settled, then loop it.
-            withAnimation(.easeInOut(duration: 1.8).delay(1.4).repeatForever(autoreverses: false)) {
+            withAnimation(.easeOut(duration: 1.5)) { reveal = 1 }
+            // Fade the glyph in slowly, starting once the cloud has begun to condense.
+            withAnimation(.easeInOut(duration: 2.8).delay(0.5)) { logoIn = 1 }
+            // Hold the glint until the fade-in has settled, then loop it.
+            withAnimation(.easeInOut(duration: 1.8).delay(3.4).repeatForever(autoreverses: false)) {
                 sweep = 1
             }
         }
+    }
+
+    /// How resolved the mark is (0 → invisible, 1 → fully present). Lags the particle
+    /// cloud so the glyph appears to coalesce from it.
+    private var logoResolve: CGFloat {
+        reduceMotion ? 1 : logoIn
+    }
+
+    // MARK: Particle cloud
+
+    /// A field of soft white motes that start scattered around the mark and fly inward,
+    /// fading out as they arrive — leaving the resolved logo behind. The drawing is a pure
+    /// function of `reveal`, so SwiftUI redraws it on each animation frame.
+    private var particles: some View {
+        Canvas { ctx, size in
+            ctx.drawLayer { layer in
+                layer.addFilter(.blur(radius: 1.4))
+                let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                let r = width * 0.5                       // logo half-width reference
+                for i in 0..<particleCount {
+                    let delay = hash(i, 0) * 0.4
+                    let t = smoothstep(0, 1, (reveal - delay) / max(0.0001, 1 - delay))
+                    if t <= 0 { continue }
+
+                    // Home: somewhere within the mark's box. Start: scattered outward.
+                    let home = CGPoint(x: center.x + (hash(i, 1) * 2 - 1) * r * 0.85,
+                                       y: center.y + (hash(i, 2) * 2 - 1) * r * 0.85)
+                    let scatter = 1.0 + hash(i, 3) * 1.2
+                    let start = CGPoint(x: home.x + (hash(i, 4) * 2 - 1) * r * scatter,
+                                        y: home.y + (hash(i, 5) * 2 - 1) * r * scatter)
+                    let pos = CGPoint(x: start.x + (home.x - start.x) * t,
+                                      y: start.y + (home.y - start.y) * t)
+
+                    // Fade in as it sets off, fade out as it reaches home.
+                    let op = smoothstep(0, 0.18, t) * (1 - smoothstep(0.7, 1, t))
+                    if op <= 0.01 { continue }
+
+                    let s = 1.6 + hash(i, 6) * 3.0
+                    let rect = CGRect(x: pos.x - s / 2, y: pos.y - s / 2, width: s, height: s)
+                    layer.fill(Path(ellipseIn: rect), with: .color(.white.opacity(op)))
+                }
+            }
+        }
+        // Spill beyond the mark (symmetrically, so the cloud stays centred on the glyph).
+        .padding(-width * 1.4)
+        .allowsHitTesting(false)
+    }
+
+    /// Smooth Hermite interpolation between two edges, clamped to [0, 1].
+    private func smoothstep(_ edge0: CGFloat, _ edge1: CGFloat, _ x: CGFloat) -> CGFloat {
+        let t = max(0, min(1, (x - edge0) / (edge1 - edge0)))
+        return t * t * (3 - 2 * t)
+    }
+
+    /// Deterministic 0…1 pseudo-random keyed by mote index `i` and channel `k`, so the cloud
+    /// is identical on every redraw. Integer-only (no trig / Foundation dependency).
+    private func hash(_ i: Int, _ k: Int) -> CGFloat {
+        var x = UInt64(bitPattern: Int64((i &* 73856093) ^ (k &* 19349663) ^ 0x9E3779B9))
+        x ^= x >> 16; x &*= 0x7feb352d
+        x ^= x >> 15; x &*= 0x846ca68b
+        x ^= x >> 16
+        return CGFloat(x & 0xFFFFFF) / CGFloat(0xFFFFFF)
     }
 }
 
