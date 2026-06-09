@@ -292,10 +292,10 @@ struct QuizScreen: View {
     @ViewBuilder
     private var navigationRow: some View {
         if isLast {
-            // Q6: "Generate my world" — the same primary CTA pill used on the Safety
-            // Declaration & Privacy Preferences screens (OopsButton 302×75), centred.
+            // Q6: "Generate my world" — the primary CTA pill, sized ~14.5% smaller than the
+            // standard OopsButton (302×75 → 258.21×64.125), centred.
             Button("Generate my world", action: onFinish)
-                .buttonStyle(OopsButton(fixedWidth: 302, fixedHeight: 75))
+                .buttonStyle(OopsButton(fixedWidth: 258.21, fixedHeight: 64.125))
                 .disabled(!canAdvance)
                 .opacity(canAdvance ? 1 : 0.4)
                 .animation(.easeInOut(duration: 0.2), value: canAdvance)
