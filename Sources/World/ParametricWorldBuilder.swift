@@ -253,6 +253,105 @@ enum ParametricWorldBuilder {
         }
     }
 
+    // MARK: - BA396 plaque anchors (museum wall-labels)
+
+    /// BASE anchors (one per portrait tile, SAME order as `ba396PortraitTiles`) for the museum
+    /// plaques — each frame's centroid + roomward facing normal, derived from the Portraits mesh
+    /// GEOMETRY. The 6 atlas tiles map to 6 physical quads on different walls of the hall (not a
+    /// coplanar grid), so a single bounding box can't place them. Instead we read the mesh
+    /// triangles, bucket each by the atlas tile its UVs fall in, and average vertex positions +
+    /// normals per tile. The side/vertical/outward/scale offsets are NOT applied here — they're
+    /// applied at placement time from the live-tunable `PlaqueTuning`. `space` is the entity the
+    /// returned anchors are expressed relative to — pass the world `root` (so the plaques ride
+    /// locomotion with the walls). Empty if the mesh/geometry can't be read (caller hangs nothing).
+    @MainActor
+    static func ba396PlaqueAnchors(_ root: Entity,
+                                   relativeTo space: Entity) -> [(centroid: SIMD3<Float>, normal: SIMD3<Float>)] {
+        var portrait: ModelEntity?
+        forEachModelEntity(root) { entity in
+            guard portrait == nil else { return }
+            let isPortrait = selfOrAncestor(entity, contains: "portrait")
+                          || selfOrAncestor(entity, contains: "网格_006")
+            let isFrame = selfOrAncestor(entity, contains: "frame")
+                       || selfOrAncestor(entity, contains: "网格_005")
+            if isPortrait, !isFrame { portrait = entity }
+        }
+        guard let portrait, let mesh = portrait.model?.mesh else { return [] }
+        let toSpace = portrait.transformMatrix(relativeTo: space)
+
+        let tileCount = ba396PortraitTiles.count
+        var sumPos = [SIMD3<Float>](repeating: .zero, count: tileCount)
+        var sumNrm = [SIMD3<Float>](repeating: .zero, count: tileCount)
+        var count  = [Int](repeating: 0, count: tileCount)
+
+        for model in mesh.contents.models {
+            for part in model.parts {
+                let positions = Array(part.positions)
+                guard let uvBuffer = part.textureCoordinates else { continue }
+                let uvs = Array(uvBuffer)
+                let normals = part.normals.map { Array($0) }
+                guard let indexBuffer = part.triangleIndices else { continue }
+                let indices = Array(indexBuffer)
+                guard positions.count == uvs.count else { continue }
+
+                var i = 0
+                while i + 2 < indices.count {
+                    let a = Int(indices[i]), b = Int(indices[i + 1]), c = Int(indices[i + 2])
+                    i += 3
+                    guard a < positions.count, b < positions.count, c < positions.count else { continue }
+                    let uvMid = (uvs[a] + uvs[b] + uvs[c]) / 3
+                    guard let tile = ba396Tile(forUV: uvMid) else { continue }
+                    sumPos[tile] += (positions[a] + positions[b] + positions[c]) / 3
+                    if let normals, a < normals.count, b < normals.count, c < normals.count {
+                        sumNrm[tile] += normals[a] + normals[b] + normals[c]
+                    } else {
+                        sumNrm[tile] += cross(positions[b] - positions[a], positions[c] - positions[a])
+                    }
+                    count[tile] += 1
+                }
+            }
+        }
+
+        func toWorldPoint(_ p: SIMD3<Float>) -> SIMD3<Float> {
+            let v = toSpace * SIMD4<Float>(p, 1); return SIMD3(v.x, v.y, v.z) / v.w
+        }
+        func toWorldDir(_ d: SIMD3<Float>) -> SIMD3<Float> {
+            let v = toSpace * SIMD4<Float>(d, 0); return SIMD3(v.x, v.y, v.z)
+        }
+
+        return ba396PortraitTiles.indices.map { t in
+            guard count[t] > 0 else { return (SIMD3<Float>.zero, SIMD3<Float>(0, 0, 1)) }
+            let centroid = toWorldPoint(sumPos[t] / Float(count[t]))
+            var normal = toWorldDir(sumNrm[t])
+            normal = length(normal) < 1e-5 ? SIMD3(0, 0, 1) : normalize(normal)
+            // The frame faces into the hall; the model is centred on the origin, so flip the
+            // normal if it points away from the interior. Manual override lives in the view
+            // (`ba396PlaqueFaceFlip`), so it isn't applied here (avoids a double flip).
+            if dot(normal, -centroid) < 0 { normal = -normal }
+            // Return the BASE anchor only (centroid + roomward normal). The side/vertical/outward/
+            // scale offsets are applied at placement time from `PlaqueTuning`, so they tune live.
+            return (centroid, normal)
+        }
+    }
+
+    /// The atlas tile index whose UV rect contains `uv`, else the nearest tile center (handles UVs
+    /// just outside a rect or in the atlas gaps). Buckets BA396's Portraits triangles back to the
+    /// 6 logical frames.
+    private static func ba396Tile(forUV uv: SIMD2<Float>) -> Int? {
+        for (i, t) in ba396PortraitTiles.enumerated()
+        where Float(t.uMin) <= uv.x && uv.x <= Float(t.uMax)
+           && Float(t.vMin) <= uv.y && uv.y <= Float(t.vMax) {
+            return i
+        }
+        var best = -1, bestD = Float.greatestFiniteMagnitude
+        for (i, t) in ba396PortraitTiles.enumerated() {
+            let cx = Float((t.uMin + t.uMax) / 2), cy = Float((t.vMin + t.vMax) / 2)
+            let d = (uv.x - cx) * (uv.x - cx) + (uv.y - cy) * (uv.y - cy)
+            if d < bestD { bestD = d; best = i }
+        }
+        return best >= 0 ? best : nil
+    }
+
     /// Builds the 3x2 portrait atlas as a `TextureResource`. Each image is drawn into its UV
     /// tile's pixel rect; UV is mapped with V increasing upward (pixel y = (1 - v) * H).
     /// If the walls render vertically flipped on device, wrap the result through

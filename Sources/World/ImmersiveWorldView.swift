@@ -19,13 +19,19 @@ struct ImmersiveWorldView: View {
     @State private var wallStreamer = GalleryWallStreamer()
     /// Gentle looping background music for the duration of the immersive gallery visit.
     @State private var music = MuseumMusicPlayer()
+    /// Holds the BA396 plaque entities so their transforms can be re-applied live from
+    /// `PlaqueTuning` (the TEMP slider panel in the gallery controls).
+    @State private var plaqueTuner = PlaqueTuner()
 
     var body: some View {
         // Observe each painting's arrival: reading every node's `image` here ties this view's
         // re-evaluation to Stage B landings, which re-runs the RealityView `update:` closure
         // below so the walls re-texture as images stream in.
         let _ = appState.museumGenerator.nodes.map(\.image)
-        return RealityView { content in
+        // Subscribe to live plaque tuning: reading these makes a slider drag re-run `update:`.
+        let tuning = PlaqueTuning.shared
+        let _ = (tuning.sideOffset, tuning.sideSign, tuning.vertical, tuning.outward, tuning.scale, tuning.faceFlip)
+        return RealityView { content, attachments in
             if let params = appState.worldParams,
                let build = await ParametricWorldBuilder.build(params: params,
                                                               galleryPhotos: appState.galleryImages) {
@@ -59,9 +65,31 @@ struct ImmersiveWorldView: View {
                 } else {
                     locomotor.start(root: root, span: build.span, content: content)
                 }
+                // BA396 Future Museum: hang a museum wall-label beside each portrait. The
+                // caption text is ready from Stage A (before any image lands), so the plaques
+                // appear while the photos are still "developing". Parented under `root` so they
+                // ride locomotion with the walls. Exact placement is tuned on device via the
+                // `ba396Plaque*` constants; the Simulator only needs them to appear + be tappable.
+                if params.archetype == .ba396Museum {
+                    // Real flow uses the generated story; "Visit Old World" / dev entry (no story)
+                    // falls back to sample beats so the plaque layout/size is quick to preview.
+                    let nodes = appState.museumStory?.nodes ?? BeatPlaqueSample.nodes
+                    let anchors = ParametricWorldBuilder.ba396PlaqueAnchors(root, relativeTo: root)
+                    var tuned: [PlaqueTuner.Item] = []
+                    for (i, node) in nodes.prefix(anchors.count).enumerated() {
+                        guard let plaque = attachments.entity(for: node.id) else { continue }
+                        root.addChild(plaque)   // child of root → rides locomotion with the walls
+                        tuned.append(.init(entity: plaque,
+                                           centroid: anchors[i].centroid, normal: anchors[i].normal))
+                    }
+                    // Position/size/orient comes from PlaqueTuning so it can be tuned live.
+                    plaqueTuner.set(tuned)
+                    plaqueTuner.reapply(PlaqueTuning.shared)
+                }
                 // Hand the world root to the streamer and paint whatever has already landed;
                 // the `update:` closure below picks up the rest as they arrive.
                 wallStreamer.root = root
+                wallStreamer.archetype = params.archetype
                 wallStreamer.applyIfNeeded(generator: appState.museumGenerator)
             } else {
                 let sphere = await makeSkySphere(
@@ -70,11 +98,23 @@ struct ImmersiveWorldView: View {
                 )
                 content.add(sphere)
             }
-        } update: { _ in
+        } update: { _, _ in
             // Re-runs whenever the generator's observable nodes change (a painting landed);
             // re-textures only the slots whose images are now ready. No-op for the sky-sphere
             // path (the streamer has no root there).
             wallStreamer.applyIfNeeded(generator: appState.museumGenerator)
+            // Live plaque tuning: a slider drag (read in `body`) re-runs this and re-places them.
+            plaqueTuner.reapply(PlaqueTuning.shared)
+        } attachments: {
+            // One museum plaque per beat on the BA396 path. Real story when present; otherwise
+            // sample beats (so "Visit Old World" / dev entry can preview the plaque layout).
+            if appState.worldParams?.archetype == .ba396Museum {
+                ForEach(appState.museumStory?.nodes ?? BeatPlaqueSample.nodes) { node in
+                    Attachment(id: node.id) {
+                        BeatPlaqueView(node: node)
+                    }
+                }
+            }
         }
         .onAppear { music.start() }
         .onDisappear { music.stop() }
@@ -160,6 +200,9 @@ private func currentExtendedGamepad() -> GCExtendedGamepad? {
 final class GalleryWallStreamer {
     /// The world root entity (set once the immersive world is built). Frames live in its subtree.
     weak var root: Entity?
+    /// Which world is being textured — selects the correct wall-photo path (BA396 shared atlas vs
+    /// the Art Gallery's per-frame "bake" meshes). Set alongside `root` when the world is built.
+    var archetype: WorldArchetype?
     /// Per-beat "image has landed" flags from the last re-texture, so we re-apply only on change.
     private var appliedSignature: [Bool] = []
 
@@ -171,8 +214,15 @@ final class GalleryWallStreamer {
         let signature = generator.nodes.map { $0.image != nil }   // reads observable → drives re-run
         guard signature != appliedSignature else { return }
         appliedSignature = signature
-        let textures = ParametricWorldBuilder.texturesFrom(generator.orderedGalleryImages())
-        ParametricWorldBuilder.applyGalleryPhotos(root, textures: textures)
+        let images = generator.orderedGalleryImages()
+        if archetype == .ba396Museum {
+            // BA396's 6 walls are ONE shared atlas mesh, so re-composite the atlas. The gallery
+            // `applyGalleryPhotos` path matches mesh names containing "bake" — BA396 has none, so
+            // using it here silently no-ops and the walls stay on the dark build-time placeholders.
+            ParametricWorldBuilder.applyBA396Portraits(root, images: images)
+        } else {
+            ParametricWorldBuilder.applyGalleryPhotos(root, textures: ParametricWorldBuilder.texturesFrom(images))
+        }
     }
 }
 
@@ -226,6 +276,138 @@ final class MuseumNarrationDirector {
         return frameXZ.indices
             .filter { !fired.contains($0) && d2($0) <= r2 }
             .min { d2($0) < d2($1) }
+    }
+}
+
+// MARK: - Plaque live tuning (TEMP dev tool — fold finals into defaults + delete panel later)
+
+/// Live-tunable placement for the BA396 plaques. Shared across the immersive view (which owns the
+/// plaque entities) and the gallery-controls window (which hosts the sliders). TEMP: once the
+/// numbers are dialed in on device, set these as the defaults and remove the slider panel.
+@Observable
+final class PlaqueTuning {
+    static let shared = PlaqueTuning()
+    // Defaults dialed in on the visionOS Simulator (2026-06-09). The plaque positions derive from
+    // the fixed BA396 USDZ geometry, so these hold identically on device.
+    var sideOffset: Float = 3.83   // metres along the wall from the frame center
+    var sideSign: Float = 1        // +1 = right of the frame, −1 = left
+    var vertical: Float = -1.40    // metres up(+) / down(−) from the frame center
+    var outward: Float = 0.25      // metres out from the wall toward the room
+    var scale: Float = 4.97        // plaque entity scale
+    var faceFlip = false           // flip 180° if a plaque faces into the wall
+}
+
+/// Holds the placed plaque entities + their base anchors so their transforms can be recomputed
+/// live from `PlaqueTuning` (slider drag → `reapply`). Local transforms only; the plaques are
+/// children of the world root, so they ride locomotion automatically.
+@MainActor
+final class PlaqueTuner {
+    struct Item { let entity: Entity; let centroid: SIMD3<Float>; let normal: SIMD3<Float> }
+    private var items: [Item] = []
+
+    func set(_ items: [Item]) { self.items = items }
+
+    func reapply(_ t: PlaqueTuning) {
+        for it in items {
+            // A horizontal vector lying in the wall plane (⊥ to the normal): the left/right axis.
+            let alongRaw = cross(SIMD3<Float>(0, 1, 0), it.normal)
+            let along = length(alongRaw) < 1e-5 ? SIMD3<Float>(1, 0, 0) : normalize(alongRaw)
+            let pos = it.centroid
+                + along * (t.sideOffset * t.sideSign)
+                + it.normal * t.outward
+                + SIMD3<Float>(0, t.vertical, 0)
+            // Orient with `look` (pins world-up) so the label never mirrors/rolls — using
+            // `simd_quatf(from:to:)` flipped the card to its back on opposite-facing walls, which
+            // showed the text reversed. The attachment's front is +Z, and `look` aims -Z at the
+            // target, so aim at (pos − face) to turn +Z toward the room. `look` resets scale, so
+            // set scale AFTER it.
+            let face = t.faceFlip ? -it.normal : it.normal
+            it.entity.look(at: pos - face, from: pos, relativeTo: it.entity.parent)
+            it.entity.scale = .init(repeating: t.scale)
+        }
+    }
+}
+
+// MARK: - Sample beats (plaque preview without running generation)
+
+/// Stand-in beats so the BA396 plaques can be previewed via "Visit Old World" (or dev entry)
+/// without running the quiz + image generation. Six entries (one per wall) with deliberately
+/// mixed caption lengths so the layout/size can be judged on both short and long labels. Used
+/// only when `appState.museumStory` is nil; the real flow always supplies its own story.
+enum BeatPlaqueSample {
+    static let nodes: [MuseumNode] = [
+        .init(stage: "ordinary_world_call", age: 17, beat: "",
+              caption: "The Drawer — where the dream is kept, unspoken.",
+              narration: "Seventeen. You keep the flyer in a drawer. You haven't told anyone yet.",
+              image_prompt: "", tone: "cold"),
+        .init(stage: "crossing_threshold", age: 19, beat: "",
+              caption: "Before Dawn",
+              narration: "Then, for years, every morning before the city wakes. No audience. No applause.",
+              image_prompt: "", tone: "cold"),
+        .init(stage: "ordeal", age: 23, beat: "",
+              caption: "The Empty Row — when the body fails and the others have gone.",
+              narration: "Twenty-three. Your body gives out. The ones who started with you have already left.",
+              image_prompt: "", tone: "cold"),
+        .init(stage: "sacrifice", age: 27, beat: "",
+              caption: "Missed Calls",
+              narration: "You wanted to keep time with your family. You missed the last birthday that mattered.",
+              image_prompt: "", tone: "cold"),
+        .init(stage: "return_elixir", age: 34, beat: "",
+              caption: "Curtain Call — one stage, at last.",
+              narration: "Thirty-four. The Opera House. Whether it was worth it — only you will know.",
+              image_prompt: "", tone: "warm"),
+        .init(stage: "epilogue", age: 40, beat: "",
+              caption: "After — a sample sixth label for sizing.",
+              narration: "A sixth sample beat so all six BA396 walls show a plaque for layout checking.",
+              image_prompt: "", tone: "warm"),
+    ]
+}
+
+// MARK: - Museum plaque (RealityView attachment)
+
+/// A small museum wall-label shown beside a BA396 portrait. Collapsed it shows the short
+/// `caption`; tapping expands it to the full `narration`. Lives inside a `RealityView`
+/// attachment, so the tap is an ordinary SwiftUI `Button` — no RealityKit
+/// `InputTargetComponent`/`CollisionComponent` plumbing is required. Styled with the shared
+/// Oops glass card so it matches the rest of the flow.
+struct BeatPlaqueView: View {
+    let node: MuseumNode
+    @State private var expanded = false
+
+    var body: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.25)) { expanded.toggle() }
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(stageLabel)
+                    .font(.system(size: 16, weight: .semibold))
+                    .tracking(1.5)
+                    .foregroundStyle(OopsGlass.label3)
+                Text(node.caption)
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(OopsGlass.label1)
+                    .fixedSize(horizontal: false, vertical: true)
+                if expanded {
+                    Text(node.narration)
+                        .font(.system(size: 20, weight: .regular))
+                        .foregroundStyle(.white.opacity(0.85))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 4)
+                }
+            }
+            .frame(width: expanded ? 460 : 320, alignment: .leading)
+            .padding(.vertical, 20)
+            .padding(.horizontal, 26)
+            .oopsCard(cornerRadius: 22)
+        }
+        .buttonStyle(.plain)
+        .hoverEffect()
+        .animation(.easeInOut(duration: 0.25), value: expanded)
+    }
+
+    /// "ORDEAL · AGE 23" — a quiet exhibit eyebrow above the caption.
+    private var stageLabel: String {
+        node.stage.replacingOccurrences(of: "_", with: " ").uppercased() + " · AGE \(node.age)"
     }
 }
 #endif
