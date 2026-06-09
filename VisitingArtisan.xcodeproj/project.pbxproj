@@ -67,6 +67,7 @@
 		AA00000100000000000000B3 /* hummingbird_anim.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B3 /* hummingbird_anim.usdz */; };
 		AA00000100000000000000B4 /* SplatHandGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B4 /* SplatHandGesture.swift */; };
 		AA00000100000000000000C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz */; };
+		AA00000100000000000000D5 /* BA396.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D5 /* BA396.usdz */; };
 		AA00000100000000000000F2 /* VoiceTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F2 /* VoiceTestView.swift */; };
 		AA00000100000000000000F3 /* DevMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F3 /* DevMenuView.swift */; };
 		AA00000100000000000000F4 /* SpeechVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F4 /* SpeechVoice.swift */; };
@@ -160,6 +161,7 @@
 		AA00000100000000000001B3 /* hummingbird_anim.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = hummingbird_anim.usdz; sourceTree = "<group>"; };
 		AA00000100000000000001B4 /* SplatHandGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatHandGesture.swift; sourceTree = "<group>"; };
 		AA00000100000000000001C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Richards_Art_Gallery_-_Audio_Tour.usdz"; sourceTree = "<group>"; };
+		AA00000100000000000001D5 /* BA396.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = BA396.usdz; sourceTree = "<group>"; };
 		AA00000100000000000001F2 /* VoiceTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceTestView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F3 /* DevMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevMenuView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F4 /* SpeechVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechVoice.swift; sourceTree = "<group>"; };
@@ -300,6 +302,7 @@
 				AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */,
 				AA00000100000000000001B3 /* hummingbird_anim.usdz */,
 				AA00000100000000000001C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz */,
+				AA00000100000000000001D5 /* BA396.usdz */,
 				121651D52FD547C500C06C29 /* beach 7.jpg */,
 				121651D72FD547CB00C06C29 /* beach 2.jpeg */,
 				121651D92FD547D000C06C29 /* beach 4.jpg */,
@@ -545,6 +548,7 @@
 				121651DA2FD547D000C06C29 /* beach 4.jpg in Resources */,
 				AA00000100000000000000B3 /* hummingbird_anim.usdz in Resources */,
 				AA00000100000000000000C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz in Resources */,
+				AA00000100000000000000D5 /* BA396.usdz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

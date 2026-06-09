@@ -121,12 +121,13 @@ struct OopsFlowView: View {
         }
     }
 
-    /// Enters the Richards Art Gallery.
-    /// - visionOS: sets worldParams to the gallery archetype, opens the shared RealityKit
+    /// Enters the BA396 exhibition hall (the Oops-flow museum world).
+    /// - visionOS: sets worldParams to the BA396 archetype, opens the shared RealityKit
     ///   `world` ImmersiveSpace (head tracking + gamepad locomotion), and shows the small
     ///   `oops-gallery-controls` floating panel. Leaving that panel reopens the dev-menu
-    ///   at the reflection screen.
-    /// - iPad: loads gallery worldParams and shows the in-cover `WorldView` (ParametricWorldView).
+    ///   at the reflection screen. The generated beat images on `appState.galleryImages`
+    ///   are composited onto BA396's 6 portrait walls by `ParametricWorldBuilder`.
+    /// - iPad: loads BA396 worldParams and shows the in-cover `WorldView` (ParametricWorldView).
     private func enterWorld() {
         // When a Curator story exists (the museum flow, not "visit old world"), stand up the one
         // shared voice now so both the orb and the in-gallery proximity narrator use it.
@@ -137,7 +138,7 @@ struct OopsFlowView: View {
         }
         #if os(visionOS)
         Task {
-            appState.loadGalleryWorld()
+            appState.loadBA396World()
             if case .opened = await openImmersiveSpace(id: "world") {
                 openWindow(id: "oops-gallery-controls")
                 if appState.museumConversation != nil { openWindow(id: "museum-voice-orb") }
@@ -145,7 +146,7 @@ struct OopsFlowView: View {
             }
         }
         #else
-        appState.loadGalleryWorld()
+        appState.loadBA396World()
         go(.world)
         #endif
     }

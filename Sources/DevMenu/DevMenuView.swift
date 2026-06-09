@@ -10,6 +10,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
     case oops
     case voice
     case splat
+    case ba396
 
     var id: String { rawValue }
 
@@ -18,6 +19,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
         case .oops:  return "Oops Flow"
         case .voice: return "Voice — Speech Test"
         case .splat: return "Splat — 6DoF Walkthrough"
+        case .ba396: return "BA396 — Museum World"
         }
     }
 
@@ -26,6 +28,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
         case .oops:  return "visionOS glass · onboarding → quiz → world"
         case .voice: return "Tap the orb to talk · ASR / LLM / TTS"
         case .splat: return "Generate or open a World Labs splat"
+        case .ba396: return "Standalone exhibition-hall USDZ · step into the 3D world"
         }
     }
 
@@ -34,6 +37,7 @@ enum DevFeature: String, Identifiable, CaseIterable {
         case .oops:  return "rectangle.stack.badge.play"
         case .voice: return "waveform"
         case .splat: return "point.3.connected.trianglepath.dotted"
+        case .ba396: return "building.columns.fill"
         }
     }
 
@@ -54,6 +58,8 @@ enum DevFeature: String, Identifiable, CaseIterable {
             return true
             #endif
         case .voice:
+            return false
+        case .ba396:
             return false
         }
     }
@@ -180,6 +186,25 @@ private struct DevFeatureContainer: View {
             VoiceTestView()
         case .splat:
             SplatLibraryView(onClose: onClose)
+        case .ba396:
+            BA396WorldEntry(onExit: onClose)
         }
+    }
+}
+
+/// DEV ONLY — loads the BA396 exhibition-hall USDZ as a standalone world and shows the
+/// shared `WorldView`. Its "Step into your world" button opens the `"world"` immersive
+/// space (`ImmersiveWorldView` → `ParametricWorldBuilder.build`), reusing the whole world
+/// pipeline. BA396 has its own archetype, so the gallery-only branches don't fire and the
+/// model renders as authored. `onExit` returns to the dev menu rather than restarting.
+private struct BA396WorldEntry: View {
+    @Environment(AppState.self) private var appState
+    let onExit: () -> Void
+
+    init(onExit: @escaping () -> Void = {}) { self.onExit = onExit }
+
+    var body: some View {
+        WorldView(onExit: onExit)
+            .onAppear { appState.loadBA396World() }
     }
 }

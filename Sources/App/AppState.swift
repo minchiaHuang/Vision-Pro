@@ -179,6 +179,26 @@ final class AppState {
         world = nil
     }
 
+    /// DEV ONLY — loads the BA396 exhibition-hall USDZ as a standalone world for the
+    /// dev-menu BA396 entry. Mirrors `loadGalleryWorld()`: social density = 0, neutral
+    /// light params so the model's own baked materials read correctly. BA396 uses its
+    /// own archetype, so the `.artGallery`-only branches in `ParametricWorldBuilder`
+    /// (photo-frame swap, 0.7 scale, interior-bounds exclusion) do not fire — the model
+    /// shows as authored.
+    func loadBA396World() {
+        worldParams = WorldParams(
+            archetype: .ba396Museum,
+            lightIntensity: 300,
+            colorTemperature: 5500,
+            saturation: 1.0,
+            socialDensity: 0,
+            openness: 0.5,
+            biophilicDensity: 0.5,
+            focal: .ownPath
+        )
+        world = nil
+    }
+
     /// DEV ONLY — preload a neutral default world so the dev menu's "World" option
     /// can jump straight into `WorldView`, skipping the quiz.
     func loadDefaultWorldForTesting() {
