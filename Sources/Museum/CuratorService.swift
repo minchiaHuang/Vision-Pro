@@ -13,13 +13,13 @@ struct CuratorService {
     enum CuratorError: Error { case missingKey, http(String), empty, decode }
 
     /// Single switchable constant. `json_schema` structured outputs require a model in the
-    /// gpt-4o-2024-08-06-or-later family. `gpt-4o-2024-08-06` is non-reasoning, so it returns
-    /// the ~2k JSON in seconds rather than the tens of seconds a reasoning model spends — the
-    /// story leg is on the user's critical path before they enter the museum, so speed wins
-    /// here. Swap to `gpt-5.5` (the 2026 flagship) if you want the highest story quality and
-    /// can absorb the extra latency. List what your key can use:
+    /// gpt-4o-2024-08-06-or-later family. This account has `gpt-5.5` (the 2026 flagship, best
+    /// story quality) and it is the verified-working Stage A model — swapping to
+    /// `gpt-4o-2024-08-06` broke generation on this account (Stage A failed → empty story →
+    /// the default gallery instead of the Future Museum), so keep `gpt-5.5`. List what your key
+    /// can use:
     ///   curl https://api.openai.com/v1/models -H "Authorization: Bearer $OPENAI_API_KEY"
-    private static let model = "gpt-4o-2024-08-06"
+    private static let model = "gpt-5.5"
 
     func generate(_ answers: MuseumAnswers) async throws -> MuseumStory {
         let key = Secrets.openAIAPIKey
