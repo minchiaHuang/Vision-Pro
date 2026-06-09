@@ -24,10 +24,12 @@ struct QuizScreen: View {
     @State private var currentIndex = 0
     @State private var confirm = false
 
-    // Shared horizontal inset for header / question / nav (Figma centres a 1153px column
-    // in the 1392px card → ~80pt margins each side at ×0.66). Keeping one constant means
-    // the "Quiz" title, question label and nav all share the same left edge.
-    private let sideInset: CGFloat = 80
+    // Single horizontal inset shared by EVERY Quiz element — back arrow, "Quiz" header,
+    // question label, pills and nav. Matches the Declaration card's content inset exactly:
+    // that card lays its content in a 960pt column and adds 52pt padding, so all its copy
+    // sits 52pt from the card edge. Using the same 52pt here gives the Quiz and the
+    // Safety/Privacy screens an identical left edge.
+    private let sideInset: CGFloat = 52
 
     // Preferred card size — matches the Safety / Privacy Declaration card's outer glass
     // footprint. That card sizes its content to 960pt then adds 52pt padding on every
@@ -73,7 +75,8 @@ struct QuizScreen: View {
                         .frame(width: contentW, alignment: .leading)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
-                    // 2 — Q1 "Quiz" header (pinned below the back button)
+                    // 2 — Q1 "Quiz" header (pinned below the back button, sharing the common
+                    //     `sideInset` left edge with the back arrow and the question content).
                     if isFirst {
                         quizHeader
                             .frame(width: contentW, alignment: .leading)
@@ -82,9 +85,13 @@ struct QuizScreen: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     }
 
-                    // 3 — Back button (pinned top-leading — IDENTICAL on every screen)
+                    // 3 — Back button (pinned top-leading — IDENTICAL on every screen).
+                    //     Sits near the card top (top 32) so it lines up with the back chevron
+                    //     on the Declaration (Safety / Privacy) screens, whose centred content
+                    //     floats its chevron up to roughly the same height. Kept clear of the
+                    //     "Quiz" header below it (header starts at top 88).
                     backButton
-                        .padding(.leading, 32)
+                        .padding(.leading, sideInset)
                         .padding(.top, 32)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
@@ -127,8 +134,10 @@ struct QuizScreen: View {
 
     // MARK: - Back button
 
-    /// Figma: 60×60 px circle, rgba(255,255,255,0.2) bg + backdrop blur → 40×40 pt.
-    /// Lives in its own overlay layer so it never moves between screens.
+    /// Bare back chevron — no circle. The glyph is left-aligned inside a 40×40 tap target
+    /// so its visual left edge sits at the overlay's `.leading` padding, giving the "Quiz"
+    /// header below it a shared left edge to align to. Lives in its own overlay layer so it
+    /// never moves between screens.
     private var backButton: some View {
         Button {
             if isFirst {
@@ -138,12 +147,12 @@ struct QuizScreen: View {
             }
         } label: {
             Image(systemName: "chevron.left")
-                .font(.system(size: 16, weight: .semibold))
+                // Identical to the Declaration screen's back chevron (size 18.48, 44pt
+                // leading hit target) so both screens' back buttons match exactly.
+                .font(.system(size: 18.48, weight: .semibold))
                 .foregroundStyle(.white)
-                .frame(width: 40, height: 40)
-                .background(.white.opacity(0.20), in: Circle())
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 1))
+                .frame(width: 44, height: 44, alignment: .leading)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
