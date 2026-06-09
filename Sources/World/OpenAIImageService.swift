@@ -105,19 +105,23 @@ enum OpenAIImageService {
         let data: [Item]
     }
 
-    private static func generateImage(prompt: String) async throws -> UIImage {
-        let key = Secrets.openAIAPIKey
-        guard !key.isEmpty else { throw ImageError.missingKey }
+    // `apiKey`/`session` are injectable (defaults preserve production behaviour) so the
+    // decode/error/success paths can be exercised offline via `StubURLProtocol`, mirroring
+    // `WorldLabsService`/`AnthropicClient`. `internal` (not `private`) for `@testable` access.
+    static func generateImage(prompt: String,
+                              apiKey: String = Secrets.openAIAPIKey,
+                              session: URLSession = .shared) async throws -> UIImage {
+        guard !apiKey.isEmpty else { throw ImageError.missingKey }
 
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(GenRequest(
             model: model, prompt: prompt, n: 1, size: size,
             response_format: usesResponseFormat ? "b64_json" : nil))
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw ImageError.badResponse }
         guard (200..<300).contains(http.statusCode) else {
             throw ImageError.api(status: http.statusCode,
