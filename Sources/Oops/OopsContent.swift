@@ -70,16 +70,14 @@ enum OopsContent {
               placeholder: "Share as much details as you can. The more context you give, the better the outcome"),
     ]
 
-    // Reflection copy (frames 17–21) — shown one question per screen after the user
-    // steps out of the 3D world. Free-text only; front-end, never stored or scored.
-    static let reflectionEyebrow = "YOUR REFLECTION"
-    static let reflectionPlaceholder = "Write your thoughts here…"
+    // Reflection copy (Figma "Reflection Part 1–4") — a passive montage shown after the user
+    // steps out of the 3D world: the generated world stays on screen (dimmed) while these
+    // three prompts fade in and out one at a time, each lingering ~5s. No input — purely a
+    // quiet moment to sit with the experience. Line breaks match the Figma frames.
     static let reflectionQuestions: [String] = [
-        "Walking out of that world, what was the first feeling that hit you?",
-        "You came here for stillness. Did you find it in there?",
-        "Was there a moment inside that felt completely, quietly right — like “yes this is me”? What was happening in that moment?",
-        "Was there anything that felt off, or not quite you? Even something small.",
-        "If there’s one thing you could change for this world we built for you, what would it be?",
+        "If no one could see this world,\nWould you still want it?",
+        "Did this world feel fulfilling,\nor simply impressive?",
+        "Which part of this world\ngenuinely felt like you?",
     ]
 
     static let declarationIntro = "Before you step in, here are a few things we want you to know, so you can feel safe, comfortable, and fully present in your experience."

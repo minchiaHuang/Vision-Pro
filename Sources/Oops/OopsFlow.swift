@@ -6,22 +6,16 @@ enum OopsScreen {
     case opening, home, safety, privacy, quiz, generating, world, reflection
 }
 
-/// Held-in-memory answers for the quiz + post-world reflection (front-end only — never
-/// scored or stored in this pass).
+/// Held-in-memory answers for the quiz (front-end only — never scored or stored in this
+/// pass). The post-world reflection is a passive montage with no input, so it stores nothing.
 /// - `quiz`: pill questions — maps question id → selected option index
 /// - `quizText`: free-text questions — maps question id → typed string
-/// - `r1`–`r5`: reflection free-text answers (post-world)
 struct OopsAnswers {
     var quiz: [String: Int] = [:]
     var quizText: [String: String] = [:]
     /// Q3 answer — "What's your ideal future like? Who do you want to become?" — drives the
     /// Hero's Journey image generation goal string.
     var goal: String { quizText["q3"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
-    var r1 = ""
-    var r2 = ""
-    var r3 = ""
-    var r4 = ""
-    var r5 = ""
 }
 
 /// Self-contained coordinator for the Oops glass flow. Owns its own screen + answer
@@ -104,7 +98,8 @@ struct OopsFlowView: View {
         case .world:
             EmptyView()
         case .reflection:
-            ReflectionFlowView(answers: $answers, onFinish: { go(.home) })
+            // A passive question montage over the world; when it ends, return Home.
+            ReflectionFlowView(onFinish: { go(.home) })
         }
     }
 

@@ -1,102 +1,92 @@
 import SwiftUI
 
-/// 17–21 · Reflection — a 5-question reflection the user walks through after stepping out
-/// of the 3D world. One question per screen with a frosted textarea; the last step's CTA
-/// is "Save & Finish". Self-contained sub-coordinator (mirrors `OopsFlowView`'s style):
-/// it owns the current step and writes free-text answers back into the shared
-/// `OopsAnswers` (front-end only — never scored or stored in this pass).
+/// 17 · Reflection (Figma "Reflection Part 1–4") — a short, passive reflective montage shown
+/// after the user steps out of the 3D world. The generated world stays on screen (dimmed)
+/// while three questions fade in and out one at a time, each lingering ~5 seconds. There is
+/// no input — it's a quiet moment to sit with the experience — and when the last question
+/// fades away the flow returns Home.
+///
+/// Sequence (mirrors the four Figma frames):
+///   • Part 1 — the world alone, briefly, before any question (the bright opening beat)
+///   • Part 2–4 — the world dimmed, each question faded in / held / faded out in turn
 struct ReflectionFlowView: View {
-    @Binding var answers: OopsAnswers
     let onFinish: () -> Void
 
-    @State private var step = 0
-
     private var questions: [String] { OopsContent.reflectionQuestions }
-    private var isLast: Bool { step == questions.count - 1 }
+
+    /// Index of the question currently on screen. `-1` is the opening world-only beat (Part 1).
+    @State private var index = -1
+    /// Drives the current question's fade (0 → 1 → 0).
+    @State private var shown = false
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    // Timing (seconds). Each question is on screen ~5s total, measured from the start of its
+    // fade-in: fadeIn + hold + fadeOut == questionDuration.
+    private let openingBeat: Double = 2.2     // Part 1 — world only, before the first question
+    private let fade: Double = 0.8
+    private let questionDuration: Double = 5.0
 
     var body: some View {
         ZStack {
-            OopsPassthrough(dim: true)
+            // The generated world WITHOUT the gold picture frames — full-bleed. (The
+            // frames-removed background can crop freely; there are no frames to clip.)
+            Image("oops_home_bg")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+                .clipped()
 
-            VStack(spacing: 36) {
-                VStack(alignment: .leading, spacing: 24) {
-                    Text(OopsContent.reflectionEyebrow)
-                        .font(.system(size: 15, weight: .semibold))
-                        .tracking(2.4)
-                        .foregroundStyle(OopsGlass.label2)
+            // Dim scrim — light during the opening beat (Part 1), deeper once a question is up
+            // (Parts 2–4) so the white text stays legible.
+            Color.black.opacity(index >= 0 ? 0.45 : 0.18)
+                .ignoresSafeArea()
+                .animation(.easeInOut(duration: fade), value: index)
 
-                    Text(questions[step])
-                        .oopsTitle(30)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .id(step)                       // crossfade between questions
-                        .transition(.opacity)
-
-                    OopsField(text: bindingFor(step),
-                              placeholder: OopsContent.reflectionPlaceholder,
-                              multiline: true)
-                }
-                .padding(.vertical, 46)
-                .padding(.horizontal, 56)
-                .frame(maxWidth: 900)
-                .oopsCard()
-
-                HStack(spacing: 22) {
-                    if step > 0 {
-                        Button("Back", action: back)
-                            .buttonStyle(OopsButton(ghost: true, minWidth: 160))
-                    }
-                    Button(isLast ? "Save & Finish" : "Next", action: next)
-                        .buttonStyle(OopsButton(minWidth: isLast ? 280 : 200))
-                }
-            }
-            .padding(.horizontal, 40)
-            .padding(.vertical, 60)
-
-            VStack {
-                Spacer()
-                ReflectionDots(total: questions.count, current: step)
-                    .padding(.bottom, 18)
+            if index >= 0, index < questions.count {
+                Text(questions[index])
+                    .font(.system(size: 48, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(10)
+                    .shadow(color: .black.opacity(0.35), radius: 18, y: 4)
+                    .padding(.horizontal, 80)
+                    .frame(maxWidth: 1040)
+                    .opacity(shown ? 1 : 0)
+                    .id(index)                       // fresh view per question
             }
         }
-        .animation(.easeInOut(duration: 0.4), value: step)
+        .task { await play() }
     }
 
-    private func next() {
-        if isLast { onFinish() }
-        else { withAnimation(.easeInOut(duration: 0.5)) { step += 1 } }
-    }
+    // MARK: - Playback
 
-    private func back() {
-        guard step > 0 else { return }
-        withAnimation(.easeInOut(duration: 0.5)) { step -= 1 }
-    }
+    @MainActor
+    private func play() async {
+        do {
+            // Part 1 — let the world breathe before the first prompt.
+            try await Task.sleep(for: .seconds(openingBeat))
 
-    private func bindingFor(_ i: Int) -> Binding<String> {
-        switch i {
-        case 0: return $answers.r1
-        case 1: return $answers.r2
-        case 2: return $answers.r3
-        case 3: return $answers.r4
-        default: return $answers.r5
-        }
-    }
-}
-
-/// Stepped progress indicator for the reflection flow — filled capsule for the current
-/// step, faint dots for the rest (continues the `PageDots` visual language).
-private struct ReflectionDots: View {
-    let total: Int
-    let current: Int
-
-    var body: some View {
-        HStack(spacing: 14) {
-            ForEach(0..<total, id: \.self) { i in
-                Capsule()
-                    .fill(.white.opacity(i == current ? 0.85 : 0.3))
-                    .frame(width: i == current ? 34 : 12, height: 12)
-                    .animation(.easeInOut(duration: 0.3), value: current)
+            for i in questions.indices {
+                index = i
+                setShown(true)
+                // Hold so the whole question (incl. its fade-in) lasts ~questionDuration.
+                try await Task.sleep(for: .seconds(questionDuration - fade))
+                setShown(false)
+                try await Task.sleep(for: .seconds(fade))
             }
+        } catch {
+            // Cancelled because the view went away — don't navigate.
+            return
+        }
+        onFinish()
+    }
+
+    private func setShown(_ value: Bool) {
+        if reduceMotion {
+            shown = value
+        } else {
+            withAnimation(.easeInOut(duration: fade)) { shown = value }
         }
     }
 }
@@ -104,12 +94,6 @@ private struct ReflectionDots: View {
 // MARK: - Previews
 
 #Preview("ReflectionFlowView") {
-    ReflectionFlowView(answers: .constant(OopsAnswers()), onFinish: {})
-        .preferredColorScheme(.dark)
-}
-
-#Preview("ReflectionDots") {
-    ReflectionDots(total: 5, current: 2)
-        .padding()
+    ReflectionFlowView(onFinish: {})
         .preferredColorScheme(.dark)
 }
