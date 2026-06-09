@@ -16,6 +16,12 @@ enum MuseumPrompt {
     declarative, second-person ("You..."). Never motivational, never sentimental. No
     clichés, no slogans, no exclamation marks. State what happens and let its weight land.
 
+    For each beat ALSO write `caption`: a short museum wall-label — a title card, not prose.
+    About 3-8 words, like naming an exhibit, optionally with a short dash-led clause of
+    context (e.g. "The Empty Row — when the others have gone"). It is shown on the small
+    plaque beside the picture, so it must read at a glance. It is NOT the narration: do not
+    restate the narration. Plain, objective, third-person or no person, no exclamation marks.
+
     Output ONLY a single valid JSON object matching the provided schema. No prose.
 
     THE FIVE BEATS (fixed — map to the monomyth):
@@ -76,11 +82,11 @@ enum MuseumPrompt {
       "decision_prompt": "You said you started too late — that everyone else began at five. You said you only wanted one moment on a real stage, where your body says what words can't. Most who walk through here never reach that stage. Knowing that: do you still want to begin?",
       "refusal": null,
       "nodes": [
-        { "stage": "ordinary_world_call", "age": 17, "beat": "A teenager's room; the dream kept where no one can see it.", "narration": "Seventeen. You keep the flyer in a drawer. You haven't told anyone yet.", "image_prompt": "desaturated documentary photography, 35mm film grain, muted cold palette, soft natural window light, shallow depth of field, no people, no text — a half-open desk drawer in a teenager's bedroom at dusk, a single ballet performance flyer among ordinary school things, pale light from a window", "tone": "cold" },
-        { "stage": "crossing_threshold", "age": 19, "beat": "The commitment: years of unseen mornings.", "narration": "Then, for years, every morning before the city wakes. No audience. No applause.", "image_prompt": "desaturated documentary photography, 35mm film grain, muted cold palette, soft natural window light, shallow depth of field, no people, no text — a pair of worn pointe shoes with frayed ribbons on a cold studio floor at 5am, a single overhead light, a long empty barre fading into shadow", "tone": "cold" },
-        { "stage": "ordeal", "age": 23, "beat": "The lowest point; the body fails and the others are gone.", "narration": "Twenty-three. Your body gives out. The ones who started with you have already left.", "image_prompt": "desaturated documentary photography, 35mm film grain, muted cold palette, soft natural window light, shallow depth of field, no people, no text — a long row of empty folding chairs in a silent rehearsal hall, a single crutch leaning against the wall at the end of the row, dust in a shaft of grey light", "tone": "cold" },
-        { "stage": "sacrifice", "age": 27, "beat": "The cost at home: the time she couldn't give up, gone anyway.", "narration": "You wanted to keep time with your family. You missed the last birthday that mattered.", "image_prompt": "desaturated documentary photography, 35mm film grain, muted cold palette, soft natural window light, shallow depth of field, no people, no text — a phone face-up on a dressing table showing many missed calls, a cold untouched cup of tea beside it, a folded handwritten note, a mirror reflecting one empty chair", "tone": "cold" },
-        { "stage": "return_elixir", "age": 34, "beat": "The summit: one curtain call on a real stage.", "narration": "Thirty-four. The Opera House. Whether it was worth it — only you will know.", "image_prompt": "warm cinematic photography, golden stage light, rich but restrained color, shallow depth of field, no readable text — the stage of the Sydney Opera House seen from the wings during a curtain call, a single bouquet resting on the polished floor, the auditorium beyond dissolving into a warm sea of light", "tone": "warm" }
+        { "stage": "ordinary_world_call", "age": 17, "beat": "A teenager's room; the dream kept where no one can see it.", "caption": "The Drawer — where the dream is kept, unspoken.", "narration": "Seventeen. You keep the flyer in a drawer. You haven't told anyone yet.", "image_prompt": "desaturated documentary photography, 35mm film grain, muted cold palette, soft natural window light, shallow depth of field, no people, no text — a half-open desk drawer in a teenager's bedroom at dusk, a single ballet performance flyer among ordinary school things, pale light from a window", "tone": "cold" },
+        { "stage": "crossing_threshold", "age": 19, "beat": "The commitment: years of unseen mornings.", "caption": "Before Dawn — years of mornings with no audience.", "narration": "Then, for years, every morning before the city wakes. No audience. No applause.", "image_prompt": "desaturated documentary photography, 35mm film grain, muted cold palette, soft natural window light, shallow depth of field, no people, no text — a pair of worn pointe shoes with frayed ribbons on a cold studio floor at 5am, a single overhead light, a long empty barre fading into shadow", "tone": "cold" },
+        { "stage": "ordeal", "age": 23, "beat": "The lowest point; the body fails and the others are gone.", "caption": "The Empty Row — when the body fails and the others have gone.", "narration": "Twenty-three. Your body gives out. The ones who started with you have already left.", "image_prompt": "desaturated documentary photography, 35mm film grain, muted cold palette, soft natural window light, shallow depth of field, no people, no text — a long row of empty folding chairs in a silent rehearsal hall, a single crutch leaning against the wall at the end of the row, dust in a shaft of grey light", "tone": "cold" },
+        { "stage": "sacrifice", "age": 27, "beat": "The cost at home: the time she couldn't give up, gone anyway.", "caption": "Missed Calls — the time at home, gone anyway.", "narration": "You wanted to keep time with your family. You missed the last birthday that mattered.", "image_prompt": "desaturated documentary photography, 35mm film grain, muted cold palette, soft natural window light, shallow depth of field, no people, no text — a phone face-up on a dressing table showing many missed calls, a cold untouched cup of tea beside it, a folded handwritten note, a mirror reflecting one empty chair", "tone": "cold" },
+        { "stage": "return_elixir", "age": 34, "beat": "The summit: one curtain call on a real stage.", "caption": "Curtain Call — one stage, at last.", "narration": "Thirty-four. The Opera House. Whether it was worth it — only you will know.", "image_prompt": "warm cinematic photography, golden stage light, rich but restrained color, shallow depth of field, no readable text — the stage of the Sydney Opera House seen from the wings during a curtain call, a single bouquet resting on the polished floor, the auditorium beyond dissolving into a warm sea of light", "tone": "warm" }
       ]
     }
     """
@@ -107,11 +113,12 @@ enum MuseumPrompt {
                         "stage": ["type": "string"],
                         "age": ["type": "integer"],
                         "beat": ["type": "string"],
+                        "caption": ["type": "string"],
                         "narration": ["type": "string"],
                         "image_prompt": ["type": "string"],
                         "tone": ["type": "string", "enum": ["cold", "warm"]],
                     ],
-                    "required": ["stage", "age", "beat", "narration", "image_prompt", "tone"],
+                    "required": ["stage", "age", "beat", "caption", "narration", "image_prompt", "tone"],
                 ],
             ],
         ],
