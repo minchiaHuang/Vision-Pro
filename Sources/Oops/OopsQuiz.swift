@@ -177,10 +177,11 @@ struct QuizScreen: View {
                 pillRow.padding(.top, 14)
             }
 
-            // Nav button (Next / Generate) sits directly below the answer with the SAME
-            // gap as question→answer (VStack spacing 12 + 14 = 26pt), on every screen.
+            // Nav button (Next / Generate) sits directly below the answer. Q1–Q5 keep the
+            // question→answer gap (VStack spacing 12 + 14 = 26pt); Q6's "Generate my world"
+            // uses a 24pt top gap to match the Safety Declaration CTA's minimum spacing.
             navigationRow
-                .padding(.top, 14)
+                .padding(.top, isLast ? 24 : 14)
         }
         .id(currentIndex)
         .transition(.asymmetric(
