@@ -212,19 +212,21 @@ struct DeclarationScreen: View {
         ZStack {
             OopsPassthrough(dim: true)
 
-            // Figma node 46:1124. A single vertical stack: the content (back button →
-            // title → subtitle → statements) hugs the TOP, then a flexible Spacer, then the
-            // CTA pill. Because the Spacer can never collapse below its minimum, the button
-            // can NOT overlap the statements no matter how tall the copy runs — yet on both
-            // the Safety and Privacy screens it still settles to the same bottom-centre spot
-            // (the Spacer simply absorbs the difference in copy height between the two).
+            // Figma node 46:1124. A single vertical stack: the header (back button → title →
+            // subtitle) hugs the TOP, then a fixed gap, then the three statements, then a
+            // flexible Spacer, then the CTA pill. Because the Spacer can never collapse below
+            // its minimum, the button can NOT overlap the statements no matter how tall the
+            // copy runs — yet on both the Safety and Privacy screens it still settles to the
+            // same bottom-centre spot (the Spacer absorbs the difference in copy height).
             VStack(spacing: 0) {
-                // 1 — Content (back button → title → subtitle → statements), top-leading.
+                // 1 — Header (back button → title → subtitle), top-leading.
                 VStack(alignment: .leading, spacing: 28) {
                     // Back button — top-leading, above the title (Figma 289:2111).
+                    // Equal top/bottom padding so the arrow sits evenly between the card
+                    // edge and the title.
                     if let onBack {
                         backButton(action: onBack)
-                            .padding(.bottom, 16)
+                            .padding(.vertical, 16)
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -238,12 +240,17 @@ struct DeclarationScreen: View {
                             .lineLimit(2, reservesSpace: true)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                    VStack(spacing: 18) {
-                        ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
-                            CheckStatement(head: item.head, text: item.text,
-                                           checked: checks[i]) { checks[i].toggle() }
-                        }
+                // Gap between the header and the bullet points — pushes the statements down.
+                Color.clear.frame(height: 56)
+
+                // 2 — The three circular-toggle statements, top-leading.
+                VStack(spacing: 18) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
+                        CheckStatement(head: item.head, text: item.text,
+                                       checked: checks[i]) { checks[i].toggle() }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -252,10 +259,10 @@ struct DeclarationScreen: View {
                 // past 24pt — this minimum is what guarantees the pill clears the copy.
                 Spacer(minLength: 24)
 
-                // 2 — CTA pill, bottom-centre (Figma 289:2130). Sized 272×68 — 10% smaller
-                // than the 302×75 base — for reliable clearance on the tall Safety screen.
+                // 3 — CTA pill, bottom-centre (Figma 289:2130). Sized 258×65 — another 5%
+                // down from the prior 272×68 — for reliable clearance on the tall Safety screen.
                 Button(cta, action: onCta)
-                    .buttonStyle(OopsButton(fixedWidth: 272, fixedHeight: 68))
+                    .buttonStyle(OopsButton(fixedWidth: 258, fixedHeight: 65))
                     .disabled(!canContinue)
                     .opacity(canContinue ? 1 : 0.4)
                     .animation(.easeInOut(duration: 0.2), value: canContinue)
@@ -272,16 +279,16 @@ struct DeclarationScreen: View {
       }
     }
 
-    /// Circular glass back button (Figma: 60×60 px → 44×44 pt), matching the quiz screen.
+    /// Bare back chevron — no glass circle. Left-aligned with the title/body copy, with a
+    /// 44pt hit target retained for comfortable tapping.
     private func backButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: "chevron.left")
-                .font(.system(size: 16, weight: .semibold))
+                // 10% + 5% larger than the original 16pt glyph.
+                .font(.system(size: 18.48, weight: .semibold))
                 .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
-                .background(.white.opacity(0.20), in: Circle())
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 1))
+                .frame(width: 44, height: 44, alignment: .leading)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
