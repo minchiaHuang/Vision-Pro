@@ -16,19 +16,17 @@ struct OpeningScreen: View {
             OopsPassthrough()
 
             // Clean centered image — no glass card frame, no sidebar.
-            Image("oops_meadow")
-                .resizable()
-                .scaledToFill()
+            // The four gold picture frames are split into their own transparent layers
+            // (over a frames-removed background) so each can bob gently in place.
+            FloatingFramesImage()
                 .frame(maxWidth: 980, maxHeight: 620)
                 .clipShape(RoundedRectangle(cornerRadius: OopsGlass.radiusWindow, style: .continuous))
-
-            // VisualEyes monogram — centred over the preview (matches Figma node 285:1442).
-            GlintLogo()
 
             VStack {
                 Spacer()
                 Text("Tap anywhere to begin")
                     .oopsSub(20)
+                    .foregroundStyle(.black)
                     .opacity(breathe ? 0.95 : 0.45)
                     .padding(.bottom, 120)
                 PageDots().padding(.bottom, 18)
@@ -39,6 +37,45 @@ struct OpeningScreen: View {
         .onAppear {
             withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) { breathe = true }
         }
+    }
+}
+
+// MARK: - Opening home image with gently floating picture frames
+
+/// The opening "generated world" image. The source artwork (`home7`) had its four gold
+/// picture frames cut out into separate full-canvas transparent layers (`oops_home_f0…f3`)
+/// sitting over a frames-removed background (`oops_home_bg`). Because every layer shares the
+/// same dimensions and the same `scaledToFill` geometry, they register pixel-perfectly; a
+/// small per-frame vertical `offset` then makes each frame bob slightly in place.
+///
+/// Each frame uses a slightly different amplitude and period so they drift out of phase for
+/// an organic float. Honours Reduce Motion (renders static).
+private struct FloatingFramesImage: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var bob = false
+
+    /// Frame layers, top-left · lower-left · top-right · mid-right.
+    private let layers = ["oops_home_f0", "oops_home_f1", "oops_home_f2", "oops_home_f3"]
+    private let amplitudes: [CGFloat] = [12, 14, 11, 13]
+    private let periods: [Double] = [2.8, 3.4, 3.0, 3.6]
+
+    var body: some View {
+        ZStack {
+            Image("oops_home_bg")
+                .resizable()
+                .scaledToFill()
+
+            ForEach(layers.indices, id: \.self) { i in
+                Image(layers[i])
+                    .resizable()
+                    .scaledToFill()
+                    .offset(y: reduceMotion ? 0 : (bob ? -amplitudes[i] : amplitudes[i]))
+                    .animation(reduceMotion ? nil
+                               : .easeInOut(duration: periods[i]).repeatForever(autoreverses: true),
+                               value: bob)
+            }
+        }
+        .onAppear { bob = true }
     }
 }
 
