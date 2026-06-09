@@ -162,9 +162,23 @@ struct VisitingArtisanApp: App {
             QuizVoiceOrbView()
                 .environment(appState)
         }
-        .defaultSize(width: 120, height: 270)
+        // .plain drops the system glass chrome so the window is EXACTLY the Capsule the view
+        // draws. A default-glass window in shared space has a minimum size that pads a slim pill
+        // into a wide panel; .plain bypasses that, giving the exact Figma pill. (The full-immersion
+        // .plain input bug doesn't apply: the Quiz orb lives in shared space, not full immersion.)
+        .windowStyle(.plain)
+        .defaultSize(width: 120, height: 320)
         .windowResizability(.contentSize)
         .restorationBehavior(.disabled)
+        .defaultWindowPlacement { _, context in
+            // Place trailing the main flow window so the orb sits to the RIGHT of the Quiz
+            // card instead of floating over it. The Oops flow (incl. the Quiz) renders inside
+            // the `dev-menu` WindowGroup, which is the window the orb opens beside.
+            if let main = context.windows.first(where: { $0.id == "dev-menu" }) {
+                return WindowPlacement(.trailing(main))
+            }
+            return WindowPlacement()
+        }
         #endif
     }
 }
