@@ -59,11 +59,13 @@ struct ImmersiveWorldView: View {
                     let director = MuseumNarrationDirector(framePositions: positions,
                                                            story: story,
                                                            convo: appState.museumConversation)
-                    locomotor.start(root: root, span: build.span, content: content) { player in
+                    locomotor.start(root: root, span: build.span, bounds: build.bounds,
+                                    content: content) { player in
                         director.tick(playerPosition: player)
                     }
                 } else {
-                    locomotor.start(root: root, span: build.span, content: content)
+                    locomotor.start(root: root, span: build.span, bounds: build.bounds,
+                                    content: content)
                 }
                 // BA396 Future Museum: hang a museum wall-label beside each portrait. The
                 // caption text is ready from Stage A (before any image lands), so the plaques
@@ -165,13 +167,26 @@ final class ParametricLocomotor {
 
     private var onPlayerMove: ((SIMD3<Float>) -> Void)?
 
-    func start(root: Entity, span: Float, content: RealityViewContent,
+    // Hard-wall margins (metres), tunable on device. Inset from the model bounds so the
+    // camera never clips into a wall and to absorb wall thickness.
+    private let wallMargin: Float = 0.5     // side walls (X/Z)
+    private let floorMargin: Float = 0.0    // stand on the floor
+    private let ceilingMargin: Float = 0.5  // don't poke through the roof
+
+    func start(root: Entity, span: Float, bounds: BoundingBox, content: RealityViewContent,
                onPlayerMove: ((SIMD3<Float>) -> Void)? = nil) {
         self.root = root
         self.onPlayerMove = onPlayerMove
         // User already stands inside the floor-aligned world, so start at the origin
         // (no back-off, unlike the splat path). Speed scales with scene size.
         self.loco = SplatLocomotion(position: .zero, span: span)
+        // Hard walls. Player origin == bounds.center horizontally and the floor (bounds.min.y)
+        // sits at y=0, so player space spans ±extents/2 in X/Z and [0, extents.y] in Y.
+        let hx = max(0, bounds.extents.x / 2 - wallMargin)
+        let hz = max(0, bounds.extents.z / 2 - wallMargin)
+        let top = max(floorMargin, bounds.extents.y - ceilingMargin)
+        self.loco.boundary = .init(min: SIMD3(-hx, floorMargin, -hz),
+                                   max: SIMD3( hx, top,         hz))
         subscription = content.subscribe(to: SceneEvents.Update.self) { [weak self] event in
             guard let self, let root = self.root else { return }
             let gamepad = SplatSpikeDebug.ignoreGamepad ? nil : currentExtendedGamepad()
