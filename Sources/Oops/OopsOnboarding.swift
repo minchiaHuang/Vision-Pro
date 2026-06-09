@@ -229,9 +229,9 @@ struct HomeScreen: View {
                 .overlay(alignment: .bottom) {
                     HStack(spacing: 32) {
                         Button("Generate New", action: onGenerate)
-                            .buttonStyle(OopsButton(fixedWidth: 302, fixedHeight: 75))
+                            .buttonStyle(OopsButton(fixedWidth: 258.21, fixedHeight: 64.125))
                         Button("Visit Old World", action: onVisitOld)
-                            .buttonStyle(OopsButton(fixedWidth: 302, fixedHeight: 75))
+                            .buttonStyle(OopsButton(fixedWidth: 258.21, fixedHeight: 64.125))
                     }
                     .padding(.bottom, 54)
                     .opacity(revealed ? 1 : 0)
