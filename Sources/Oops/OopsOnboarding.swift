@@ -5,42 +5,7 @@ import SwiftUI
 /// sidebar, bottom page-dots + home-pill) but let SwiftUI lay it out responsively so it
 /// runs on the iPad / Vision Pro simulators the project targets.
 
-// MARK: - 01 · Opening
-
-struct OpeningScreen: View {
-    let onBegin: () -> Void
-    @State private var breathe = false
-
-    var body: some View {
-        ZStack {
-            OopsPassthrough()
-
-            // Clean centered image — no glass card frame, no sidebar.
-            // The four gold picture frames are split into their own transparent layers
-            // (over a frames-removed background) so each can bob gently in place.
-            FloatingFramesImage()
-                .frame(maxWidth: 980, maxHeight: 620)
-                .clipShape(RoundedRectangle(cornerRadius: OopsGlass.radiusWindow, style: .continuous))
-
-            VStack {
-                Spacer()
-                Text("Tap anywhere to begin")
-                    .oopsSub(20)
-                    .foregroundStyle(.black)
-                    .opacity(breathe ? 0.95 : 0.45)
-                    .padding(.bottom, 120)
-                PageDots().padding(.bottom, 18)
-            }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onBegin)
-        .onAppear {
-            withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) { breathe = true }
-        }
-    }
-}
-
-// MARK: - Opening home image with gently floating picture frames
+// MARK: - Home scene image with gently floating picture frames
 
 /// The opening "generated world" image. The source artwork (`home7`) had its four gold
 /// picture frames cut out into separate full-canvas transparent layers (`oops_home_f0…f3`)
@@ -230,65 +195,59 @@ private struct GlintLogo: View {
     }
 }
 
-// MARK: - 02 · Home
+// MARK: - 01 · Home (timed reveal)
 
+/// The single landing screen. The home scene shows first with its four gold picture frames
+/// bobbing in place; after a short hold the VisualEyes monogram and the two action buttons
+/// fade in together over it.
+///
+/// (Formerly two screens — a tap-to-begin "Opening" followed by "Home" — now merged into one
+/// timed reveal: frames float → 3-second beat → logo + buttons fade in.)
 struct HomeScreen: View {
     let onGenerate: () -> Void
     let onVisitOld: () -> Void
 
+    /// Seconds the frames float alone before the logo + buttons fade in.
+    private let holdBeforeReveal: TimeInterval = 3
+
+    /// false → only the floating frames show · true → logo + buttons have faded in.
+    @State private var revealed = false
+
     var body: some View {
         ZStack {
             OopsPassthrough()
-            HStack {
-                Spacer()
-                WorldWindow {
-                    VStack {
-                        Spacer()
-                        HStack(spacing: 32) {
-                            Button("Generate New", action: onGenerate)
-                                .buttonStyle(OopsButton(fixedWidth: 302, fixedHeight: 75))
-                            Button("Visit Old World", action: onVisitOld)
-                                .buttonStyle(OopsButton(fixedWidth: 302, fixedHeight: 75))
-                        }
-                        .padding(.bottom, 54)
-                    }
-                }
+
+            // The home scene with its four gold frames bobbing in place — visible immediately.
+            FloatingFramesImage()
                 .frame(maxWidth: 980, maxHeight: 620)
-                Spacer()
-            }
-            .padding(.horizontal, 60)
+                .clipShape(RoundedRectangle(cornerRadius: OopsGlass.radiusWindow, style: .continuous))
+                // VisualEyes monogram, centred over the scene — fades in after the hold.
+                .overlay {
+                    GlintLogo().opacity(revealed ? 1 : 0)
+                }
+                // Action buttons, pinned to the bottom of the scene — fade in with the logo.
+                .overlay(alignment: .bottom) {
+                    HStack(spacing: 32) {
+                        Button("Generate New", action: onGenerate)
+                            .buttonStyle(OopsButton(fixedWidth: 302, fixedHeight: 75))
+                        Button("Visit Old World", action: onVisitOld)
+                            .buttonStyle(OopsButton(fixedWidth: 302, fixedHeight: 75))
+                    }
+                    .padding(.bottom, 54)
+                    .opacity(revealed ? 1 : 0)
+                }
 
             VStack {
                 Spacer()
                 PageDots().padding(.bottom, 18)
             }
         }
-    }
-}
-
-/// The framed "generated world" preview pane on Opening / Home. Uses `oops_meadow`
-/// as a stand-in (the prototype's `villa.png` wasn't included in the asset bundle).
-private struct WorldWindow<Overlay: View>: View {
-    @ViewBuilder var overlay: Overlay
-    init(@ViewBuilder overlay: () -> Overlay = { EmptyView() }) { self.overlay = overlay() }
-
-    var body: some View {
-        ZStack {
-            Image("oops_meadow")
-                .resizable()
-                .scaledToFill()
-            LinearGradient(colors: [.clear, .black.opacity(0.35)],
-                           startPoint: .center, endPoint: .bottom)
-            // VisualEyes monogram — centred over the world preview (Figma node 285:1442:
-            // 233px wide in the 1392px card ≈ 16.7% → ~165pt here).
-            GlintLogo()
-            overlay
+        .onAppear {
+            // Hold on the floating frames, then fade the logo + buttons in together.
+            DispatchQueue.main.asyncAfter(deadline: .now() + holdBeforeReveal) {
+                withAnimation(.easeInOut(duration: 0.8)) { revealed = true }
+            }
         }
-        .clipShape(RoundedRectangle(cornerRadius: OopsGlass.radiusWindow, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: OopsGlass.radiusWindow, style: .continuous)
-                .strokeBorder(.white.opacity(0.18), lineWidth: 1))
-        .shadow(color: .black.opacity(0.35), radius: 40, y: 26)
     }
 }
 
@@ -417,12 +376,6 @@ struct DeclarationScreen: View {
 // Note: the real screens float over a clear passthrough (the room) and inside a
 // `.plain` window with no glass. Previews can't render the window/passthrough, so the
 // gray fill below just stands in for the room to make the floating layout legible.
-
-#Preview("Opening") {
-    OpeningScreen(onBegin: {})
-        .preferredColorScheme(.dark)
-        .background(Color.gray.opacity(0.35))
-}
 
 #Preview("Home") {
     HomeScreen(onGenerate: {}, onVisitOld: {})

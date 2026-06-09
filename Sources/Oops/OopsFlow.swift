@@ -3,7 +3,7 @@ import SwiftUI
 /// The screens of the Oops prototype flow (mirrors the React `screen` state). After the
 /// user steps out of the 3D world they land on the `reflection` screen (5 questions).
 enum OopsScreen {
-    case opening, home, safety, privacy, quiz, generating, world, reflection
+    case home, safety, privacy, quiz, generating, world, reflection
 }
 
 /// Held-in-memory answers for the quiz (front-end only — never scored or stored in this
@@ -29,7 +29,7 @@ struct OopsFlowView: View {
     @Environment(\.dismissWindow) private var dismissWindow
     #endif
 
-    @State private var screen: OopsScreen = .opening
+    @State private var screen: OopsScreen = .home
     @State private var answers = OopsAnswers()
     @State private var safety = [false, false, false]
     @State private var privacy = [false, false, false]
@@ -54,7 +54,7 @@ struct OopsFlowView: View {
         .statusBarHidden()
         .onAppear {
             // Returning from the gallery world recreates this window; resume at
-            // the requested screen (reflection) rather than restarting at .opening.
+            // the requested screen (reflection) rather than restarting at .home.
             if let resume = appState.oopsResumeScreen {
                 screen = resume
                 appState.oopsResumeScreen = nil
@@ -72,8 +72,6 @@ struct OopsFlowView: View {
     @ViewBuilder
     private func screenView(_ screen: OopsScreen) -> some View {
         switch screen {
-        case .opening:
-            OpeningScreen { go(.home) }
         case .home:
             HomeScreen(onGenerate: { go(.safety) }, onVisitOld: { enterWorld() })
         case .safety:
