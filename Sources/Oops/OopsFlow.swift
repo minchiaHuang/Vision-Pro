@@ -34,7 +34,16 @@ struct OopsFlowView: View {
     @State private var safety = [false, false, false]
     @State private var privacy = [false, false, false]
 
+    /// Bumped every time we navigate to `.home`, then used as HomeScreen's `.id`. Landing on
+    /// home from a different screen (e.g. returning from the reflection montage) reuses the
+    /// same `switch` branch, so SwiftUI keeps the old HomeScreen + its `@State` alive and the
+    /// `onAppear`-driven opening (floating frames → 3s hold → logo/buttons reveal) never
+    /// replays. Giving it a fresh identity forces a clean re-mount, so every arrival on home
+    /// plays the exact same entrance as the first launch.
+    @State private var homeAppearance = 0
+
     private func go(_ s: OopsScreen) {
+        if s == .home { homeAppearance += 1 }
         withAnimation(.easeInOut(duration: 0.5)) { screen = s }
     }
 
@@ -73,7 +82,10 @@ struct OopsFlowView: View {
     private func screenView(_ screen: OopsScreen) -> some View {
         switch screen {
         case .home:
+            // `.id` keyed to the visit count so each arrival re-mounts HomeScreen and replays
+            // its opening animation (see `homeAppearance`).
             HomeScreen(onGenerate: { go(.safety) }, onVisitOld: { enterWorld() })
+                .id(homeAppearance)
         case .safety:
             DeclarationScreen(
                 label: "03 Safety Declaration", title: "Safety Declaration",
