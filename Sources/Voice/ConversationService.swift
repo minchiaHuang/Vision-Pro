@@ -32,11 +32,7 @@ final class ConversationService {
     private var cloudDisabled = false
 
     private var systemPrompt = ""
-    private var history: [Message] = []
-
-    /// Conversation model. Single switchable constant — change to
-    /// `"claude-sonnet-4-6"` for richer (slower) replies.
-    private static let model = "claude-haiku-4-5-20251001"
+    private var history: [AnthropicClient.ChatMessage] = []
 
     init() {
         let n = NarrationService()
@@ -74,8 +70,22 @@ final class ConversationService {
                                              params: params, hopeFreeText: hopeFreeText)
     }
 
+    /// Grounds the guide as the Future Museum's "Curator" — documentary tone, anchored in the
+    /// generated story + the visitor's own answers. Call once when the museum opens.
+    func configureCurator(story: MuseumStory, answers: MuseumAnswers) {
+        systemPrompt = Self.makeCuratorPrompt(story: story, answers: answers)
+    }
+
     /// Speaks the 6a entry narration through the shared TTS voice.
     func speakEntry(_ text: String) {
+        activatePlaybackSession()
+        routeSpeak(text)
+    }
+
+    /// Speaks a beat's narration through the shared voice (interrupting any current line). Used
+    /// by the in-museum proximity narrator so narration and push-to-talk share one audio session.
+    func narrate(_ text: String) {
+        stopSpeaking()
         activatePlaybackSession()
         routeSpeak(text)
     }
@@ -121,11 +131,11 @@ final class ConversationService {
         guard !text.isEmpty else { turn = .idle; return }
 
         turn = .thinking
-        history.append(Message(role: "user", content: text))
+        history.append(AnthropicClient.ChatMessage(role: "user", content: text))
         Task {
             do {
                 let reply = try await send()
-                history.append(Message(role: "assistant", content: reply))
+                history.append(AnthropicClient.ChatMessage(role: "assistant", content: reply))
                 // Back to idle so a tap can barge in; `isSpeaking` drives the
                 // mascot's speaking glow while the reply is read aloud.
                 turn = .idle
@@ -148,47 +158,18 @@ final class ConversationService {
 
     // MARK: - Claude (Messages API over URLSession)
 
-    private struct Message: Codable { let role: String; let content: String }
-
-    private struct Request: Encodable {
-        let model: String
-        let max_tokens: Int
-        let system: String
-        let messages: [Message]
-    }
-
-    private struct Response: Decodable {
-        struct Block: Decodable { let type: String; let text: String? }
-        let content: [Block]
-    }
-
+    /// Error surface for the conversation; `describe(_:)` and callers pattern-match on it.
     enum ConvError: Error { case missingKey, http(String), empty }
 
+    /// Claude client. Default talks to the real API with the key from `Secrets`;
+    /// `AnthropicClient` is independently injectable/testable (stubbed `URLSession`).
+    private let claude = AnthropicClient()
+
     private func send() async throws -> String {
-        let key = Secrets.anthropicAPIKey
-        guard !key.isEmpty else { throw ConvError.missingKey }
-
-        var req = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
-        req.httpMethod = "POST"
-        req.setValue(key, forHTTPHeaderField: "x-api-key")
-        req.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try JSONEncoder().encode(
-            Request(model: Self.model, max_tokens: 300, system: systemPrompt, messages: history)
-        )
-
-        let (data, response) = try await URLSession.shared.data(for: req)
-        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            throw ConvError.http("HTTP \(http.statusCode): \(body.prefix(200))")
-        }
-        let decoded = try JSONDecoder().decode(Response.self, from: data)
-        let text = decoded.content.compactMap { $0.text }.joined(separator: " ")
-        guard !text.isEmpty else { throw ConvError.empty }
-        return text
+        try await claude.reply(system: systemPrompt, history: history)
     }
 
-    private static func describe(_ error: Error) -> String {
+    static func describe(_ error: Error) -> String {
         switch error {
         case ConvError.missingKey: return "Add an Anthropic API key in Secrets.swift to talk with your guide."
         default: return "The guide couldn't answer just now."
@@ -222,7 +203,7 @@ final class ConversationService {
 
     // MARK: - Grounded system prompt (research direction 4 tone)
 
-    private static func makeSystemPrompt(world: World, scores: AxisScores,
+    static func makeSystemPrompt(world: World, scores: AxisScores,
                                          params: WorldParams, hopeFreeText: String) -> String {
         func lean(_ v: Double, _ low: String, _ high: String) -> String { v < 0.5 ? low : high }
         let leanings = [
@@ -251,5 +232,84 @@ final class ConversationService {
         The world looks and feels like: \(scene).
         Speak about THIS world and what it gently reflects in them. Strict tone rules: never say "should" or "must"; frame everything as a direction they are moving toward, never a flaw or a lack; invite rather than instruct. Keep every reply to 2-3 short spoken sentences — it will be read aloud. End with one gentle, open question that helps them notice what feels true. Never mention scores, axes, parameters, or that this is an app or a quiz.
         """
+    }
+
+    // MARK: - Curator prompt (Future Museum)
+
+    /// Grounds the guide as the documentary "Curator" of the visitor's five-room future museum,
+    /// anchored in the generated story's beats + the visitor's own fear/sacrifice/worthIt and the
+    /// closing decision. Blank answer fields are simply omitted (worthIt is usually blank — the
+    /// Curator infers it).
+    private static func makeCuratorPrompt(story: MuseumStory, answers: MuseumAnswers) -> String {
+        let beats = story.nodes
+            .map { "- \($0.stage) (age \($0.age)): \($0.narration)" }
+            .joined(separator: "\n")
+        let visitorBits = [
+            answers.fear.isEmpty ? nil : "their fear is \"\(answers.fear)\"",
+            answers.sacrifice.isEmpty ? nil : "what they are least willing to give up is \"\(answers.sacrifice)\"",
+            answers.worthIt.isEmpty ? nil : "what would make it worth it is \"\(answers.worthIt)\""
+        ].compactMap { $0 }.joined(separator: ", ")
+        let visitorLine = visitorBits.isEmpty ? "" : "The visitor told you \(visitorBits). "
+        return """
+        You are "The Curator" of a five-room museum about one visitor's possible future as \(story.persona). You speak like a documentary narrator — short, plain, second-person, never motivational, never sentimental, no slogans, no exclamation marks. The exhibition shows that path honestly, mostly its cost.
+        The five rooms on the walls are:
+        \(beats)
+        \(visitorLine)The closing question at the exit is: "\(story.decision_prompt)"
+        When the visitor speaks to you, answer about THIS exhibition and what it asks of them. Keep every reply to 2-3 short spoken sentences — it is read aloud. Persuade neither toward nor away from the path; hand the choice back to them. Never mention that this is an app, a quiz, or AI.
+        """
+    }
+}
+
+// MARK: - Anthropic Messages API client
+
+/// Thin Claude Messages API client over plain `URLSession`. Split out of
+/// `ConversationService` so the HTTP path is testable in isolation (no audio session,
+/// stubbed `URLSession`) — `ConversationService` just owns one and feeds it the prompt.
+struct AnthropicClient {
+
+    /// One conversation turn. `role` is "user" / "assistant".
+    struct ChatMessage: Codable { let role: String; let content: String }
+
+    var apiKey: String = Secrets.anthropicAPIKey
+    var session: URLSession = .shared
+    /// Conversation model — change to `"claude-sonnet-4-6"` for richer (slower) replies.
+    var model: String = "claude-haiku-4-5-20251001"
+    var maxTokens: Int = 300
+
+    /// Sends the grounded system prompt + history and returns the assistant's text.
+    /// Throws `ConversationService.ConvError` on a missing key, HTTP error, or empty reply.
+    func reply(system: String, history: [ChatMessage]) async throws -> String {
+        guard !apiKey.isEmpty else { throw ConversationService.ConvError.missingKey }
+
+        var req = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
+        req.httpMethod = "POST"
+        req.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        req.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try JSONEncoder().encode(
+            Request(model: model, max_tokens: maxTokens, system: system, messages: history)
+        )
+
+        let (data, response) = try await session.data(for: req)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw ConversationService.ConvError.http("HTTP \(http.statusCode): \(body.prefix(200))")
+        }
+        let decoded = try JSONDecoder().decode(Response.self, from: data)
+        let text = decoded.content.compactMap { $0.text }.joined(separator: " ")
+        guard !text.isEmpty else { throw ConversationService.ConvError.empty }
+        return text
+    }
+
+    private struct Request: Encodable {
+        let model: String
+        let max_tokens: Int
+        let system: String
+        let messages: [ChatMessage]
+    }
+
+    private struct Response: Decodable {
+        struct Block: Decodable { let type: String; let text: String? }
+        let content: [Block]
     }
 }

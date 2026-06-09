@@ -21,6 +21,8 @@ struct QuizScreen: View {
     let onFinish: () -> Void
     let onBack: () -> Void
 
+    @Environment(AppState.self) private var appState
+
     @State private var currentIndex = 0
     @State private var confirm = false
     // Tracks the last navigation direction so the slide transition flips correctly:
@@ -115,6 +117,12 @@ struct QuizScreen: View {
             .frame(width: geo.size.width, height: geo.size.height)
         }
         .animation(.easeInOut(duration: 0.3), value: confirm)
+        // Tell the floating voice orb which question to dictate into — nil on the age pills (the
+        // orb only writes free-text answers), set to the question id on Q2–Q6.
+        .onChange(of: currentIndex, initial: true) { _, _ in
+            appState.quizVoice.activeQuestionID = current.isTextInput ? current.id : nil
+        }
+        .onDisappear { appState.quizVoice.activeQuestionID = nil }
     }
 
     // MARK: - Q1 Quiz header

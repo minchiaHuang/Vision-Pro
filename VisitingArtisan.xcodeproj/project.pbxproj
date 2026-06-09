@@ -48,19 +48,55 @@
 		AA0000010000000000000039 /* SplatVisionRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000139 /* SplatVisionRenderer.swift */; };
 		AA000001000000000000003A /* OopsReflection.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000013A /* OopsReflection.swift */; };
 		AA000001000000000000003B /* OopsVoiceOrb.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000013B /* OopsVoiceOrb.swift */; };
+		AA0000010000000000000090 /* QuizVoiceSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000190 /* QuizVoiceSession.swift */; };
+		AA0000010000000000000091 /* QuizVoiceOrbView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000191 /* QuizVoiceOrbView.swift */; };
+		AA0000010000000000000060 /* MuseumModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000160 /* MuseumModels.swift */; };
+		AA0000010000000000000061 /* MuseumPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000161 /* MuseumPrompt.swift */; };
+		AA0000010000000000000062 /* CuratorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000162 /* CuratorService.swift */; };
+		AA0000010000000000000063 /* ImageGenerationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000163 /* ImageGenerationService.swift */; };
+		AA0000010000000000000064 /* MuseumGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000164 /* MuseumGalleryView.swift */; };
+		AA0000010000000000000065 /* MuseumQuestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000165 /* MuseumQuestionsView.swift */; };
+		AA0000010000000000000066 /* MuseumFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000166 /* MuseumFlowView.swift */; };
 		AA0000010000000000000050 /* WorldCameraRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000150 /* WorldCameraRig.swift */; };
 		AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */; };
+		AA00000100000000000000D3 /* museum_clair_de_lune.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */; };
+		AA0000010000000000000067 /* MuseumMusicPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000167 /* MuseumMusicPlayer.swift */; };
 		AA00000100000000000000B0 /* SplatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B0 /* SplatSession.swift */; };
 		AA00000100000000000000B1 /* SplatMeshRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B1 /* SplatMeshRenderer.swift */; };
 		AA00000100000000000000B2 /* SplatMeshShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B2 /* SplatMeshShaders.metal */; };
 		AA00000100000000000000B3 /* hummingbird_anim.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B3 /* hummingbird_anim.usdz */; };
 		AA00000100000000000000B4 /* SplatHandGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B4 /* SplatHandGesture.swift */; };
 		AA00000100000000000000C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz */; };
+		AA00000100000000000000D5 /* BA396.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D5 /* BA396.usdz */; };
 		AA00000100000000000000F2 /* VoiceTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F2 /* VoiceTestView.swift */; };
 		AA00000100000000000000F3 /* DevMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F3 /* DevMenuView.swift */; };
 		AA00000100000000000000F4 /* SpeechVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F4 /* SpeechVoice.swift */; };
 		AA00000100000000000000F5 /* ElevenLabsVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F5 /* ElevenLabsVoice.swift */; };
 		AA00000100000000000000F6 /* AzureVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F6 /* AzureVoice.swift */; };
+		BB0000010000000000000001 /* ScorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000101 /* ScorerTests.swift */; };
+		BB0000010000000000000002 /* WorldMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000102 /* WorldMapperTests.swift */; };
+		BB0000010000000000000003 /* PromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000103 /* PromptBuilderTests.swift */; };
+		BB0000010000000000000004 /* NarrationComposerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000104 /* NarrationComposerTests.swift */; };
+		BB0000010000000000000005 /* WorldCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000105 /* WorldCatalogTests.swift */; };
+		BB0000010000000000000006 /* ColorFromKelvinTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000106 /* ColorFromKelvinTests.swift */; };
+		BB0000010000000000000007 /* SplatResolutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000107 /* SplatResolutionTests.swift */; };
+		BB0000010000000000000008 /* WorldLabsWireFormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000108 /* WorldLabsWireFormatTests.swift */; };
+		BB0000010000000000000009 /* AppStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000109 /* AppStateTests.swift */; };
+		BB000001000000000000000A /* ConversationPromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000010A /* ConversationPromptTests.swift */; };
+		BB000001000000000000000B /* QuizDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000010B /* QuizDataTests.swift */; };
+		BB000001000000000000000C /* ErrorMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000010C /* ErrorMappingTests.swift */; };
+		BB000001000000000000000D /* DesaturationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000010E /* DesaturationTests.swift */; };
+		BB000001000000000000000E /* WorldCameraRigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000001000000000000010F /* WorldCameraRigTests.swift */; };
+		BB000001000000000000000F /* SplatLocomotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000110 /* SplatLocomotionTests.swift */; };
+		BB0000010000000000000010 /* SplatModelManipulationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000111 /* SplatModelManipulationTests.swift */; };
+		BB0000010000000000000011 /* SplatSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000112 /* SplatSessionTests.swift */; };
+		BB0000010000000000000012 /* SplatCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000113 /* SplatCacheTests.swift */; };
+		BB0000010000000000000015 /* MetalSplatter in Frameworks */ = {isa = PBXBuildFile; productRef = BB0000010000000000000902 /* MetalSplatter */; };
+		BB0000010000000000000016 /* SplatIO in Frameworks */ = {isa = PBXBuildFile; productRef = BB0000010000000000000903 /* SplatIO */; };
+		BB0000010000000000000013 /* StubURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000114 /* StubURLProtocol.swift */; };
+		BB0000010000000000000014 /* NetworkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000115 /* NetworkServiceTests.swift */; };
+		BB0000010000000000000017 /* SplatLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000116 /* SplatLibraryTests.swift */; };
+		BB0000010000000000000018 /* ParametricWorldBuilderRealityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */; };
 		AA0000010000000000000A01 /* SplatCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000A02 /* SplatCache.swift */; };
 /* End PBXBuildFile section */
 
@@ -106,19 +142,54 @@
 		AA0000010000000000000139 /* SplatVisionRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatVisionRenderer.swift; sourceTree = "<group>"; };
 		AA000001000000000000013A /* OopsReflection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsReflection.swift; sourceTree = "<group>"; };
 		AA000001000000000000013B /* OopsVoiceOrb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsVoiceOrb.swift; sourceTree = "<group>"; };
+		AA0000010000000000000190 /* QuizVoiceSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizVoiceSession.swift; sourceTree = "<group>"; };
+		AA0000010000000000000191 /* QuizVoiceOrbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizVoiceOrbView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000160 /* MuseumModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumModels.swift; sourceTree = "<group>"; };
+		AA0000010000000000000161 /* MuseumPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumPrompt.swift; sourceTree = "<group>"; };
+		AA0000010000000000000162 /* CuratorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuratorService.swift; sourceTree = "<group>"; };
+		AA0000010000000000000163 /* ImageGenerationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageGenerationService.swift; sourceTree = "<group>"; };
+		AA0000010000000000000164 /* MuseumGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumGalleryView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000165 /* MuseumQuestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumQuestionsView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000166 /* MuseumFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumFlowView.swift; sourceTree = "<group>"; };
+		AA0000010000000000000167 /* MuseumMusicPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumMusicPlayer.swift; sourceTree = "<group>"; };
 		AA0000010000000000000150 /* WorldCameraRig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCameraRig.swift; sourceTree = "<group>"; };
 		AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = vibrant_loft_art_studio.spz; sourceTree = "<group>"; };
+		AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = museum_clair_de_lune.mp3; sourceTree = "<group>"; };
 		AA00000100000000000001B0 /* SplatSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSession.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B1 /* SplatMeshRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatMeshRenderer.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B2 /* SplatMeshShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SplatMeshShaders.metal; sourceTree = "<group>"; };
 		AA00000100000000000001B3 /* hummingbird_anim.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = hummingbird_anim.usdz; sourceTree = "<group>"; };
 		AA00000100000000000001B4 /* SplatHandGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatHandGesture.swift; sourceTree = "<group>"; };
 		AA00000100000000000001C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Richards_Art_Gallery_-_Audio_Tour.usdz"; sourceTree = "<group>"; };
+		AA00000100000000000001D5 /* BA396.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = BA396.usdz; sourceTree = "<group>"; };
 		AA00000100000000000001F2 /* VoiceTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceTestView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F3 /* DevMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevMenuView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F4 /* SpeechVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechVoice.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F5 /* ElevenLabsVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabsVoice.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F6 /* AzureVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AzureVoice.swift; sourceTree = "<group>"; };
+		BB000001000000000000010D /* VisitingArtisanTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VisitingArtisanTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB0000010000000000000101 /* ScorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScorerTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000102 /* WorldMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldMapperTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000103 /* PromptBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBuilderTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000104 /* NarrationComposerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationComposerTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000105 /* WorldCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCatalogTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000106 /* ColorFromKelvinTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorFromKelvinTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000107 /* SplatResolutionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatResolutionTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000108 /* WorldLabsWireFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldLabsWireFormatTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000109 /* AppStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateTests.swift; sourceTree = "<group>"; };
+		BB000001000000000000010A /* ConversationPromptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationPromptTests.swift; sourceTree = "<group>"; };
+		BB000001000000000000010B /* QuizDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizDataTests.swift; sourceTree = "<group>"; };
+		BB000001000000000000010C /* ErrorMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorMappingTests.swift; sourceTree = "<group>"; };
+		BB000001000000000000010E /* DesaturationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesaturationTests.swift; sourceTree = "<group>"; };
+		BB000001000000000000010F /* WorldCameraRigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCameraRigTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000110 /* SplatLocomotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatLocomotionTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000111 /* SplatModelManipulationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatModelManipulationTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000112 /* SplatSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSessionTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000113 /* SplatCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatCacheTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000114 /* StubURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StubURLProtocol.swift; sourceTree = "<group>"; };
+		BB0000010000000000000115 /* NetworkServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkServiceTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000116 /* SplatLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatLibraryTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParametricWorldBuilderRealityTests.swift; sourceTree = "<group>"; };
 		AA0000010000000000000A02 /* SplatCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatCache.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -132,6 +203,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BB0000010000000000000201 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB0000010000000000000015 /* MetalSplatter in Frameworks */,
+				BB0000010000000000000016 /* SplatIO in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -142,6 +222,7 @@
 				AA0000010000000000000304 /* Config */,
 				AA0000010000000000000305 /* USDZ */,
 				AA000001000000000000010C /* Assets.xcassets */,
+				BB0000010000000000000310 /* Tests */,
 				AA0000010000000000000303 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -157,6 +238,7 @@
 				AA000001000000000000030C /* DevMenu */,
 				AA000001000000000000030D /* Core */,
 				AA000001000000000000030E /* Oops */,
+				AA000001000000000000030F /* Museum */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -165,8 +247,38 @@
 			isa = PBXGroup;
 			children = (
 				AA000001000000000000010D /* VisitingArtisan.app */,
+				BB000001000000000000010D /* VisitingArtisanTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		BB0000010000000000000310 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				BB0000010000000000000101 /* ScorerTests.swift */,
+				BB0000010000000000000102 /* WorldMapperTests.swift */,
+				BB0000010000000000000103 /* PromptBuilderTests.swift */,
+				BB0000010000000000000104 /* NarrationComposerTests.swift */,
+				BB0000010000000000000105 /* WorldCatalogTests.swift */,
+				BB0000010000000000000106 /* ColorFromKelvinTests.swift */,
+				BB0000010000000000000107 /* SplatResolutionTests.swift */,
+				BB0000010000000000000108 /* WorldLabsWireFormatTests.swift */,
+				BB0000010000000000000109 /* AppStateTests.swift */,
+				BB000001000000000000010A /* ConversationPromptTests.swift */,
+				BB000001000000000000010B /* QuizDataTests.swift */,
+				BB000001000000000000010C /* ErrorMappingTests.swift */,
+				BB000001000000000000010E /* DesaturationTests.swift */,
+				BB000001000000000000010F /* WorldCameraRigTests.swift */,
+				BB0000010000000000000110 /* SplatLocomotionTests.swift */,
+				BB0000010000000000000111 /* SplatModelManipulationTests.swift */,
+				BB0000010000000000000112 /* SplatSessionTests.swift */,
+				BB0000010000000000000113 /* SplatCacheTests.swift */,
+				BB0000010000000000000114 /* StubURLProtocol.swift */,
+				BB0000010000000000000115 /* NetworkServiceTests.swift */,
+				BB0000010000000000000116 /* SplatLibraryTests.swift */,
+				BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 		AA0000010000000000000304 /* Config */ = {
@@ -190,9 +302,11 @@
 				AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */,
 				AA00000100000000000001B3 /* hummingbird_anim.usdz */,
 				AA00000100000000000001C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz */,
+				AA00000100000000000001D5 /* BA396.usdz */,
 				121651D52FD547C500C06C29 /* beach 7.jpg */,
 				121651D72FD547CB00C06C29 /* beach 2.jpeg */,
 				121651D92FD547D000C06C29 /* beach 4.jpg */,
+				AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */,
 			);
 			path = SpikeAssets;
 			sourceTree = "<group>";
@@ -296,8 +410,25 @@
 				AA0000010000000000000135 /* OopsWorldScreens.swift */,
 				AA000001000000000000013A /* OopsReflection.swift */,
 				AA000001000000000000013B /* OopsVoiceOrb.swift */,
+				AA0000010000000000000190 /* QuizVoiceSession.swift */,
+				AA0000010000000000000191 /* QuizVoiceOrbView.swift */,
 			);
 			path = Oops;
+			sourceTree = "<group>";
+		};
+		AA000001000000000000030F /* Museum */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000010000000000000160 /* MuseumModels.swift */,
+				AA0000010000000000000161 /* MuseumPrompt.swift */,
+				AA0000010000000000000162 /* CuratorService.swift */,
+				AA0000010000000000000163 /* ImageGenerationService.swift */,
+				AA0000010000000000000164 /* MuseumGalleryView.swift */,
+				AA0000010000000000000165 /* MuseumQuestionsView.swift */,
+				AA0000010000000000000166 /* MuseumFlowView.swift */,
+				AA0000010000000000000167 /* MuseumMusicPlayer.swift */,
+			);
+			path = Museum;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -324,7 +455,46 @@
 			productReference = AA000001000000000000010D /* VisitingArtisan.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BB0000010000000000000401 /* VisitingArtisanTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BB0000010000000000000703 /* Build configuration list for PBXNativeTarget "VisitingArtisanTests" */;
+			buildPhases = (
+				BB0000010000000000000501 /* Sources */,
+				BB0000010000000000000201 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BB0000010000000000000A01 /* PBXTargetDependency */,
+			);
+			name = VisitingArtisanTests;
+			packageProductDependencies = (
+				BB0000010000000000000902 /* MetalSplatter */,
+				BB0000010000000000000903 /* SplatIO */,
+			);
+			productName = VisitingArtisanTests;
+			productReference = BB000001000000000000010D /* VisitingArtisanTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		BB0000010000000000000B01 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA0000010000000000000601 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA0000010000000000000401;
+			remoteInfo = VisitingArtisan;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		BB0000010000000000000A01 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA0000010000000000000401 /* VisitingArtisan */;
+			targetProxy = BB0000010000000000000B01 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		AA0000010000000000000601 /* Project object */ = {
@@ -336,6 +506,10 @@
 				TargetAttributes = {
 					AA0000010000000000000401 = {
 						CreatedOnToolsVersion = 26.5;
+					};
+					BB0000010000000000000401 = {
+						CreatedOnToolsVersion = 26.5;
+						TestTargetID = AA0000010000000000000401;
 					};
 				};
 			};
@@ -356,6 +530,7 @@
 			projectRoot = "";
 			targets = (
 				AA0000010000000000000401 /* VisitingArtisan */,
+				BB0000010000000000000401 /* VisitingArtisanTests */,
 			);
 		};
 /* End PBXProject section */
@@ -367,11 +542,13 @@
 			files = (
 				AA000001000000000000000C /* Assets.xcassets in Resources */,
 				AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */,
+				AA00000100000000000000D3 /* museum_clair_de_lune.mp3 in Resources */,
 				121651D62FD547C500C06C29 /* beach 7.jpg in Resources */,
 				121651D82FD547CB00C06C29 /* beach 2.jpeg in Resources */,
 				121651DA2FD547D000C06C29 /* beach 4.jpg in Resources */,
 				AA00000100000000000000B3 /* hummingbird_anim.usdz in Resources */,
 				AA00000100000000000000C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz in Resources */,
+				AA00000100000000000000D5 /* BA396.usdz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -428,6 +605,45 @@
 				AA0000010000000000000035 /* OopsWorldScreens.swift in Sources */,
 				AA000001000000000000003A /* OopsReflection.swift in Sources */,
 				AA000001000000000000003B /* OopsVoiceOrb.swift in Sources */,
+				AA0000010000000000000090 /* QuizVoiceSession.swift in Sources */,
+				AA0000010000000000000091 /* QuizVoiceOrbView.swift in Sources */,
+				AA0000010000000000000060 /* MuseumModels.swift in Sources */,
+				AA0000010000000000000061 /* MuseumPrompt.swift in Sources */,
+				AA0000010000000000000062 /* CuratorService.swift in Sources */,
+				AA0000010000000000000063 /* ImageGenerationService.swift in Sources */,
+				AA0000010000000000000064 /* MuseumGalleryView.swift in Sources */,
+				AA0000010000000000000065 /* MuseumQuestionsView.swift in Sources */,
+				AA0000010000000000000066 /* MuseumFlowView.swift in Sources */,
+				AA0000010000000000000067 /* MuseumMusicPlayer.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BB0000010000000000000501 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB0000010000000000000001 /* ScorerTests.swift in Sources */,
+				BB0000010000000000000002 /* WorldMapperTests.swift in Sources */,
+				BB0000010000000000000003 /* PromptBuilderTests.swift in Sources */,
+				BB0000010000000000000004 /* NarrationComposerTests.swift in Sources */,
+				BB0000010000000000000005 /* WorldCatalogTests.swift in Sources */,
+				BB0000010000000000000006 /* ColorFromKelvinTests.swift in Sources */,
+				BB0000010000000000000007 /* SplatResolutionTests.swift in Sources */,
+				BB0000010000000000000008 /* WorldLabsWireFormatTests.swift in Sources */,
+				BB0000010000000000000009 /* AppStateTests.swift in Sources */,
+				BB000001000000000000000A /* ConversationPromptTests.swift in Sources */,
+				BB000001000000000000000B /* QuizDataTests.swift in Sources */,
+				BB000001000000000000000C /* ErrorMappingTests.swift in Sources */,
+				BB000001000000000000000D /* DesaturationTests.swift in Sources */,
+				BB000001000000000000000E /* WorldCameraRigTests.swift in Sources */,
+				BB000001000000000000000F /* SplatLocomotionTests.swift in Sources */,
+				BB0000010000000000000010 /* SplatModelManipulationTests.swift in Sources */,
+				BB0000010000000000000011 /* SplatSessionTests.swift in Sources */,
+				BB0000010000000000000012 /* SplatCacheTests.swift in Sources */,
+				BB0000010000000000000013 /* StubURLProtocol.swift in Sources */,
+				BB0000010000000000000014 /* NetworkServiceTests.swift in Sources */,
+				BB0000010000000000000017 /* SplatLibraryTests.swift in Sources */,
+				BB0000010000000000000018 /* ParametricWorldBuilderRealityTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -647,6 +863,60 @@
 			};
 			name = Release;
 		};
+		BB0000010000000000000803 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = MCD2V89BPF;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tommy.VisitingArtisanTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VisitingArtisan.app/VisitingArtisan";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		BB0000010000000000000804 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = MCD2V89BPF;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tommy.VisitingArtisanTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VisitingArtisan.app/VisitingArtisan";
+				XROS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -664,6 +934,15 @@
 			buildConfigurations = (
 				AA0000010000000000000803 /* Debug */,
 				AA0000010000000000000804 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BB0000010000000000000703 /* Build configuration list for PBXNativeTarget "VisitingArtisanTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB0000010000000000000803 /* Debug */,
+				BB0000010000000000000804 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -688,6 +967,16 @@
 			productName = MetalSplatter;
 		};
 		AA0000010000000000000903 /* SplatIO */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA0000010000000000000901 /* XCRemoteSwiftPackageReference "MetalSplatter" */;
+			productName = SplatIO;
+		};
+		BB0000010000000000000902 /* MetalSplatter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AA0000010000000000000901 /* XCRemoteSwiftPackageReference "MetalSplatter" */;
+			productName = MetalSplatter;
+		};
+		BB0000010000000000000903 /* SplatIO */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AA0000010000000000000901 /* XCRemoteSwiftPackageReference "MetalSplatter" */;
 			productName = SplatIO;

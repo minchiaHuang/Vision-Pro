@@ -45,9 +45,14 @@ final class SpeechRecognizer {
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
+        // Force on-device recognition on real hardware (lower latency, better privacy). In the
+        // Simulator the on-device model is unreliable / silent, so fall back to server-based
+        // recognition (requires network) — otherwise live audio never produces a transcript.
+        #if !targetEnvironment(simulator)
         if recognizer.supportsOnDeviceRecognition {
             request.requiresOnDeviceRecognition = true
         }
+        #endif
         self.request = request
 
         let input = audioEngine.inputNode

@@ -96,6 +96,73 @@ struct OopsVoiceOrbView: View {
     }
 }
 
+// MARK: - Future Museum Curator orb
+
+/// Floating Curator voice for the Future Museum gallery — the gallery path's counterpart to
+/// `OopsVoiceOrbView` (which is gated on `SplatSession`). The gallery RealityKit space is ready
+/// the moment it opens, so this pill appears immediately. It drives the SHARED
+/// `AppState.museumConversation` (also used by the in-gallery proximity narrator), so per-beat
+/// narration and push-to-talk never overlap. Exit lives on the gallery controls panel, so the
+/// pill is just: replay · orb (tap to talk).
+struct MuseumVoiceOrbView: View {
+    @Environment(AppState.self) private var appState
+    @State private var started = false
+
+    private let welcomeText = "Welcome. Walk slowly. Each room is a part of the path you asked about — most of it is its cost. Talk to me whenever you want to."
+
+    private var convo: ConversationService? { appState.museumConversation }
+
+    var body: some View {
+        Group {
+            if let convo {
+                pill(convo)
+            } else {
+                Color.clear
+            }
+        }
+        .task {
+            guard !started, let convo else { return }
+            started = true
+            try? await Task.sleep(for: .milliseconds(700))
+            convo.speakEntry(welcomeText)
+        }
+        .onDisappear { convo?.stop() }
+    }
+
+    private func pill(_ convo: ConversationService) -> some View {
+        VStack(spacing: 0) {
+            Button { convo.speakEntry(welcomeText) } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .frame(width: 60, height: 80)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .hoverEffect()
+
+            Spacer()
+
+            Button { tap(convo) } label: {
+                OrbView(size: 80, isSpeaking: convo.isSpeaking, isListening: convo.isListening)
+            }
+            .buttonStyle(.plain)
+            .hoverEffect()
+
+            Spacer().frame(height: 40)
+        }
+        .frame(width: 180, height: 360)
+    }
+
+    private func tap(_ convo: ConversationService) {
+        if convo.isListening {
+            convo.finishListeningAndReply()
+        } else if convo.turn == .idle {
+            Task { await convo.beginListening() }
+        }
+    }
+}
+
 // MARK: - Previews (bypass phase/session — show pill directly)
 
 #Preview("Pill — Idle") {

@@ -8,7 +8,17 @@ enum AppPhase {
     case quiz
     case loading
     case world
+    /// World generation failed or timed out; `ErrorView` offers retry / back-home.
+    /// No associated value so `AppPhase` keeps its synthesized `Equatable`
+    /// (needed by `RootView`'s `.animation(value:)`); the message lives in
+    /// `AppState.loadError`.
+    case error
 }
+
+/// Raised when world generation cannot finish in time. Kept tiny on purpose —
+/// today's scoring is instant, so this only fires once the loading step becomes
+/// a real (v2) network call that can hang.
+struct WorldGenTimeout: Error {}
 
 /// Global state (quiz answers, the resolved world, and the current step).
 @Observable
@@ -32,6 +42,28 @@ final class AppState {
     /// beach placeholders. Set by `GeneratingScreen` before the user enters the gallery.
     var galleryImages: [UIImage] = []
 
+    /// Future Museum run: the Curator's 5-beat story and the answers it was built from.
+    /// Set by `GeneratingScreen` alongside `galleryImages`; consumed by the in-gallery voice
+    /// (per-beat narration + push-to-talk) and the closing decision moment.
+    var museumStory: MuseumStory?
+    var museumAnswers: MuseumAnswers?
+
+    /// The Future Museum pipeline. Owned here (not by `GeneratingScreen`) so Stage B image
+    /// painting keeps running after the user enters the museum — entering tears down the
+    /// dev-menu window and `GeneratingScreen` with it. The immersive gallery observes this
+    /// generator's `nodes` and re-textures each wall as its painting lands.
+    var museumGenerator = MuseumGenerator()
+
+    /// The single Curator voice for an open museum gallery — shared by the floating voice orb
+    /// (push-to-talk) and the in-gallery proximity narrator, so both use one audio session and
+    /// never talk over each other. Created on entering the gallery; cleared on exit.
+    var museumConversation: ConversationService?
+
+    /// Quiz speech-to-text bridge — shared between the Quiz screen and the floating
+    /// `quiz-voice-orb` window so the orb can write a spoken answer into the question the user is
+    /// currently on. Front-end only; copied into the flow's `OopsAnswers` as the user answers.
+    let quizVoice = QuizVoiceSession()
+
     /// Hidden continuous scores (the bottom layer of research direction 6) and the world
     /// parameters they map to (direction 7). Computed and stored from Phase 3 on; the
     /// display layer consumes `worldParams` from Phase 2 on.
@@ -49,25 +81,72 @@ final class AppState {
     /// is recreated on the way back, so the screen can't live in the view's `@State`).
     var oopsResumeScreen: OopsScreen?
 
+    /// Human-readable reason the world failed to generate, shown by `ErrorView`.
+    /// `nil` whenever we are not in the `.error` phase.
+    var loadError: String?
+
+    /// How long world generation may run before we surface an error. Harmless
+    /// today (scoring is instant); meaningful once loading becomes a real call.
+    private let generationTimeout: Duration = .seconds(15)
+
     /// Quiz done -> loading -> resolve the world -> enter the world.
     func finishQuiz() {
+        startWorldGeneration()
+    }
+
+    /// Re-run world generation after a failure (the `ErrorView` "try again").
+    func retryWorldGeneration() {
+        startWorldGeneration()
+    }
+
+    /// Drive the loading -> world (or -> error) transition. Both `finishQuiz`
+    /// and `retryWorldGeneration` funnel through here so retry is just another
+    /// attempt down the same path.
+    private func startWorldGeneration() {
         phase = .loading
-        Task {
-            // A brief "generating world" beat so the loading screen registers
-            // (v2: this becomes a real API call). Kept short — the scoring below
-            // is instant, so a long sleep only adds perceived slowness.
-            try? await Task.sleep(for: .milliseconds(600))
-            await MainActor.run {
-                // Research direction 6->7: compute the hidden continuous scores first,
-                // then map them into world parameters.
+        loadError = nil
+        Task { @MainActor in
+            do {
+                try await self.generateWorld()
+                self.phase = .world
+            } catch {
+                self.loadError = "We couldn't finish weaving your world. Let's try once more."
+                self.phase = .error
+            }
+        }
+    }
+
+    /// Resolve the world for the current answers, bounded by `generationTimeout`.
+    /// The scoring itself is synchronous and instant; the brief sleep is just a
+    /// "generating world" beat (v2: this body becomes a real API call). Wrapping
+    /// it in a timeout race means a future hang turns into a recoverable error
+    /// instead of a stuck loading screen.
+    @MainActor
+    private func generateWorld() async throws {
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask { @MainActor in
+                // A brief beat so the loading screen registers. Kept short — the
+                // scoring below is instant, so a long sleep only adds perceived
+                // slowness.
+                try await Task.sleep(for: .milliseconds(600))
+
+                // Research direction 6->7: compute the hidden continuous scores
+                // first, then map them into world parameters.
                 let scores = Scorer.score(self.answers)
                 self.axisScores = scores
                 self.worldParams = WorldMapper.map(scores)
-                // title/blurb are derived from the archetype, keeping the overlay text
-                // consistent with the USDZ scene.
+                // title/blurb are derived from the archetype, keeping the overlay
+                // text consistent with the USDZ scene.
                 self.world = WorldCatalog.world(for: self.worldParams!.archetype)
-                self.phase = .world
             }
+            group.addTask {
+                try await Task.sleep(for: self.generationTimeout)
+                throw WorldGenTimeout()
+            }
+            // Take whichever finishes first: success cancels the timeout, a
+            // timeout cancels (and surfaces over) the in-flight generation.
+            try await group.next()
+            group.cancelAll()
         }
     }
 
@@ -100,6 +179,26 @@ final class AppState {
         world = nil
     }
 
+    /// DEV ONLY — loads the BA396 exhibition-hall USDZ as a standalone world for the
+    /// dev-menu BA396 entry. Mirrors `loadGalleryWorld()`: social density = 0, neutral
+    /// light params so the model's own baked materials read correctly. BA396 uses its
+    /// own archetype, so the `.artGallery`-only branches in `ParametricWorldBuilder`
+    /// (photo-frame swap, 0.7 scale, interior-bounds exclusion) do not fire — the model
+    /// shows as authored.
+    func loadBA396World() {
+        worldParams = WorldParams(
+            archetype: .ba396Museum,
+            lightIntensity: 300,
+            colorTemperature: 5500,
+            saturation: 1.0,
+            socialDensity: 0,
+            openness: 0.5,
+            biophilicDensity: 0.5,
+            focal: .ownPath
+        )
+        world = nil
+    }
+
     /// DEV ONLY — preload a neutral default world so the dev menu's "World" option
     /// can jump straight into `WorldView`, skipping the quiz.
     func loadDefaultWorldForTesting() {
@@ -116,6 +215,16 @@ final class AppState {
         generatedPano = nil
         generatedSplatURL = nil
         generatedWorldId = nil
+        galleryImages = []
+        museumStory = nil
+        museumAnswers = nil
+        // `MuseumGenerator` is `@MainActor`; hop on (this nonisolated `restart()` is only ever
+        // called from MainActor UI, but the call must be expressed on the actor). Cancels any
+        // in-flight Stage B paint task so a stale run can't keep painting after a restart.
+        Task { @MainActor in museumGenerator.reset() }
+        museumConversation = nil
+        quizVoice.reset()
+        loadError = nil
         phase = .splash
     }
 }

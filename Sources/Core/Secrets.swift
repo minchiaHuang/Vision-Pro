@@ -19,6 +19,13 @@ import Foundation
 ///      to the app target. `APIKeys.plist` is gitignored, so it can't be committed.
 ///      (Template placeholder values starting with `YOUR_` are ignored.)
 ///
+///   3. **Simulator only** — a fixed file in the Mac host home,
+///      `~/.config/visualeyes/keys.plist` (same `[String: String]` format). Fill it once and
+///      every worktree / clean build / new checkout picks it up automatically, so you don't
+///      re-enter the key per scheme. Resolved via the simulator-injected `SIMULATOR_HOST_HOME`
+///      env var (the Mac user's home); that var is absent on device, so this source is empty
+///      on real builds and never affects them.
+///
 /// NOTE: any key shipped inside a client app can be extracted from the binary. The two
 /// options above are fine for a prototype. For a public release, move calls behind a
 /// backend proxy so the key lives only on your server and never ships in the app.
@@ -40,15 +47,18 @@ enum Secrets {
 
     // MARK: - Resolution
 
-    /// Resolves a key by name: scheme environment variable first, then `APIKeys.plist`.
-    /// Returns "" when neither holds a usable value, so callers' `isEmpty` guards keep the
-    /// related feature inert on a fresh clone.
+    /// Resolves a key by name: scheme environment variable, then bundled `APIKeys.plist`, then
+    /// the simulator-only host config file. Returns "" when none holds a usable value, so
+    /// callers' `isEmpty` guards keep the related feature inert on a fresh clone.
     private static func value(for name: String) -> String {
         if let env = ProcessInfo.processInfo.environment[name], isUsable(env) {
             return env.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         if let fromPlist = plist[name], isUsable(fromPlist) {
             return fromPlist.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        if let fromHost = hostConfig[name], isUsable(fromHost) {
+            return fromHost.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         return ""
     }
@@ -64,6 +74,20 @@ enum Secrets {
     private static let plist: [String: String] = {
         guard let url = Bundle.main.url(forResource: "APIKeys", withExtension: "plist"),
               let data = try? Data(contentsOf: url),
+              let dict = try? PropertyListSerialization.propertyList(from: data, format: nil)
+                as? [String: String]
+        else { return [:] }
+        return dict
+    }()
+
+    /// Source ③ — simulator only. Lazily-loaded contents of `~/.config/visualeyes/keys.plist`
+    /// in the *Mac host* home, located via the `SIMULATOR_HOST_HOME` env var the simulator
+    /// injects. Lets one file serve every worktree/checkout without re-entering keys per scheme.
+    /// Empty on device (the env var is absent there) and on a Mac without the file.
+    private static let hostConfig: [String: String] = {
+        guard let host = ProcessInfo.processInfo.environment["SIMULATOR_HOST_HOME"] else { return [:] }
+        let url = URL(fileURLWithPath: host).appendingPathComponent(".config/visualeyes/keys.plist")
+        guard let data = try? Data(contentsOf: url),
               let dict = try? PropertyListSerialization.propertyList(from: data, format: nil)
                 as? [String: String]
         else { return [:] }

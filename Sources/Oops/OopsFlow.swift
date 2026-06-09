@@ -69,7 +69,21 @@ struct OopsFlowView: View {
                 appState.oopsResumeScreen = nil
             }
         }
+        // The voice orb is a separate window; fold the speech it recognizes into the flow's
+        // answers so dictation and typing share one set of answers (dictation replaces the field).
+        .onChange(of: appState.quizVoice.text) { _, dict in
+            for (id, value) in dict { answers.quizText[id] = value }
+        }
         #if os(visionOS)
+        // Show the floating speech-to-text orb only while on the Quiz screen.
+        .onChange(of: screen) { _, s in
+            if s == .quiz {
+                openWindow(id: "quiz-voice-orb")
+            } else {
+                dismissWindow(id: "quiz-voice-orb")
+                appState.quizVoice.activeQuestionID = nil
+            }
+        }
         // Let the cover background go clear so the transparent `OopsPassthrough`
         // reveals the window glass / real room rather than an opaque default backing.
         .presentationBackground(.clear)
@@ -101,10 +115,9 @@ struct OopsFlowView: View {
         case .quiz:
             QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
         case .generating:
-            // Q2 free-text answer drives the Hero's Journey prompt; fall back to a generic goal
-            // if the user somehow skipped it (should not happen — Next is disabled when empty).
-            let goal = answers.goal.isEmpty ? "build a meaningful future" : answers.goal
-            GeneratingScreen(goal: goal) { enterWorld() }
+            // The finished quiz answers now drive the Curator pipeline (story + 5 images)
+            // inside GeneratingScreen; the result is stored on AppState before enterWorld().
+            GeneratingScreen(answers: answers) { enterWorld() }
         case .world:
             EmptyView()
         case .reflection:
@@ -113,23 +126,32 @@ struct OopsFlowView: View {
         }
     }
 
-    /// Enters the Richards Art Gallery.
-    /// - visionOS: sets worldParams to the gallery archetype, opens the shared RealityKit
+    /// Enters the BA396 exhibition hall (the Oops-flow museum world).
+    /// - visionOS: sets worldParams to the BA396 archetype, opens the shared RealityKit
     ///   `world` ImmersiveSpace (head tracking + gamepad locomotion), and shows the small
     ///   `oops-gallery-controls` floating panel. Leaving that panel reopens the dev-menu
-    ///   at the reflection screen.
-    /// - iPad: loads gallery worldParams and shows the in-cover `WorldView` (ParametricWorldView).
+    ///   at the reflection screen. The generated beat images on `appState.galleryImages`
+    ///   are composited onto BA396's 6 portrait walls by `ParametricWorldBuilder`.
+    /// - iPad: loads BA396 worldParams and shows the in-cover `WorldView` (ParametricWorldView).
     private func enterWorld() {
+        // When a Curator story exists (the museum flow, not "visit old world"), stand up the one
+        // shared voice now so both the orb and the in-gallery proximity narrator use it.
+        if let story = appState.museumStory {
+            let convo = ConversationService()
+            convo.configureCurator(story: story, answers: appState.museumAnswers ?? MuseumAnswers())
+            appState.museumConversation = convo
+        }
         #if os(visionOS)
         Task {
-            appState.loadGalleryWorld()
+            appState.loadBA396World()
             if case .opened = await openImmersiveSpace(id: "world") {
                 openWindow(id: "oops-gallery-controls")
+                if appState.museumConversation != nil { openWindow(id: "museum-voice-orb") }
                 dismissWindow(id: "dev-menu")
             }
         }
         #else
-        appState.loadGalleryWorld()
+        appState.loadBA396World()
         go(.world)
         #endif
     }

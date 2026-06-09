@@ -27,9 +27,6 @@ enum ParametricWorldBuilder {
             return nil
         }
 
-        let container = Entity()
-        container.addChild(model)
-
         // Gallery only: swap the baked artwork on the wall frames. Prefer AI-generated photos
         // (the Hero's-Journey series) when supplied; otherwise fall back to the bundled beach
         // placeholders. The frames bind their image to `emissiveColor` (diffuse is black), so
@@ -40,6 +37,25 @@ enum ParametricWorldBuilder {
                 : texturesFrom(galleryPhotos)
             applyGalleryPhotos(model, textures: photos)
         }
+
+        // BA396 only: the 6 portrait walls are a single mesh sharing one 3x2 atlas texture,
+        // so we can't bind one image per wall like the gallery. Composite the generated beat
+        // images into one atlas matching the portrait UV tiles and swap the Portraits material.
+        // When no photos are supplied (dev-menu direct entry) leave BA396's baked PortraitUV.
+        if params.archetype == .ba396Museum, !galleryPhotos.isEmpty {
+            applyBA396Portraits(model, images: galleryPhotos)
+        }
+
+        return assemble(model: model, params: params)
+    }
+
+    /// Synchronous assembly of an already-loaded `model` into the parametric world
+    /// (container + framing + lights + orbs). Split out of `build` so it is testable with
+    /// a synthetic model — no bundled USDZ required.
+    @MainActor
+    static func assemble(model: Entity, params: WorldParams) -> ParametricWorldBuild {
+        let container = Entity()
+        container.addChild(model)
 
         let bounds = model.visualBounds(relativeTo: nil)
         let span = max(bounds.extents.x, max(bounds.extents.y, bounds.extents.z))
@@ -91,18 +107,40 @@ enum ParametricWorldBuilder {
 
     /// Converts in-memory images (the AI-generated Hero's-Journey series) into textures, in the
     /// same order. Images that can't produce a `CGImage`/`TextureResource` are skipped.
+    ///
+    /// Each image is flipped vertically first: the gallery frames display the photo through an
+    /// `UnlitMaterial.color` texture, which samples the V axis from the opposite origin to the
+    /// USDZ's original PBR `emissiveColor` binding — so an un-flipped image renders upside down.
     @MainActor
     static func texturesFrom(_ images: [UIImage]) -> [TextureResource] {
         images.compactMap { image in
-            guard let cg = image.cgImage else { return nil }
+            guard let cg = flippedVertically(image) else { return nil }
             return try? TextureResource(image: cg, options: .init(semantic: .color))
         }
+    }
+
+    /// Returns `image` flipped top-to-bottom as a `CGImage`. Drawing through a renderer also
+    /// normalises any `imageOrientation` metadata, so the result is a plain, upright bitmap once
+    /// the texture's V-axis sampling is accounted for (see `texturesFrom`).
+    @MainActor
+    private static func flippedVertically(_ image: UIImage) -> CGImage? {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: image.size, format: format)
+        let flipped = renderer.image { ctx in
+            let cg = ctx.cgContext
+            cg.translateBy(x: 0, y: image.size.height)
+            cg.scaleBy(x: 1, y: -1)
+            image.draw(in: CGRect(origin: .zero, size: image.size))
+        }
+        return flipped.cgImage
     }
 
     /// Loads every bundled `beach*` image (jpg/jpeg/png) as a texture, sorted by filename
     /// (beach 2, beach 4, beach 7, …) so the photo-to-frame assignment is stable. Enumerating
     /// the bundle — rather than hard-coding names — means whatever beach files are dropped in
-    /// are picked up automatically. Skips any that fail to load.
+    /// are picked up automatically. Skips any that fail to load. Routed through `texturesFrom`
+    /// so the bundled placeholders get the same vertical flip as the AI-generated photos.
     @MainActor
     static func loadGalleryPhotoTextures() async -> [TextureResource] {
         var urls: [URL] = []
@@ -114,14 +152,8 @@ enum ParametricWorldBuilder {
         }
         urls.sort { $0.lastPathComponent < $1.lastPathComponent }
 
-        var textures: [TextureResource] = []
-        for url in urls {
-            if let tex = try? await TextureResource(contentsOf: url,
-                                                    options: .init(semantic: .color)) {
-                textures.append(tex)
-            }
-        }
-        return textures
+        let images = urls.compactMap { UIImage(contentsOfFile: $0.path) }
+        return texturesFrom(images)
     }
 
     /// Replaces every wall-frame mesh's material with an `UnlitMaterial` showing a beach photo,
@@ -134,10 +166,12 @@ enum ParametricWorldBuilder {
     /// Frames are identified by mesh name containing "bake" (the baked artworks — note asset
     /// typos: "manual"/"manuel"/"manua"), excluding the corridor door and the butterfly wings.
     /// Walls, floor, plant, curtains, dream-catchers, etc. have no "bake" in their mesh names.
+    /// The gallery's picture-frame meshes (mesh name contains "bake", excluding the corridor
+    /// door and the butterfly wings), in a stable name-sorted order. Shared by photo assignment
+    /// and proximity narration so the image on a wall and the voice that describes it always
+    /// refer to the same beat index.
     @MainActor
-    static func applyGalleryPhotos(_ root: Entity, textures: [TextureResource]) {
-        guard !textures.isEmpty else { return }
-
+    static func galleryFrames(_ root: Entity) -> [ModelEntity] {
         var frames: [ModelEntity] = []
         forEachModelEntity(root) { entity in
             let name = entity.name.lowercased()
@@ -146,7 +180,14 @@ enum ParametricWorldBuilder {
             frames.append(entity)
         }
         frames.sort { $0.name < $1.name }
+        return frames
+    }
 
+    @MainActor
+    static func applyGalleryPhotos(_ root: Entity, textures: [TextureResource]) {
+        guard !textures.isEmpty else { return }
+
+        let frames = galleryFrames(root)
         for (index, frame) in frames.enumerated() {
             guard var model = frame.model else { continue }
             let texture = textures[index % textures.count]
@@ -155,6 +196,136 @@ enum ParametricWorldBuilder {
             model.materials = Array(repeating: unlit, count: model.materials.count)
             frame.model = model
         }
+    }
+
+    // MARK: - BA396 portrait walls
+
+    /// The 6 portrait UV tiles of BA396's `Portraits` mesh (网格_006), as
+    /// (uMin, uMax, vMin, vMax) — a 3-column x 2-row atlas decoded from the USDZ. The whole
+    /// wall set is one mesh sharing one material, so each picture is a sub-rect of one texture.
+    /// Order: bottom row left->right, then top row left->right.
+    /// Physical aspect (width / height) of each BA396 portrait wall quad, measured from the
+    /// `网格_006` mesh: each quad is ~0.775 wide x ~0.441 tall ≈ 1.76:1 (≈16:9 landscape).
+    /// The generated photos are 1.5:1, so they are center-cropped to this before compositing,
+    /// to fill each frame without horizontal stretch.
+    private static let ba396PortraitAspect: CGFloat = 0.775 / 0.441
+
+    private static let ba396PortraitTiles: [(uMin: CGFloat, uMax: CGFloat, vMin: CGFloat, vMax: CGFloat)] = [
+        (0.011, 0.289, 0.013, 0.487),  // col 0, bottom
+        (0.311, 0.589, 0.013, 0.487),  // col 1, bottom
+        (0.611, 0.889, 0.013, 0.487),  // col 2, bottom
+        (0.011, 0.289, 0.513, 0.987),  // col 0, top
+        (0.311, 0.589, 0.513, 0.987),  // col 1, top
+        (0.611, 0.889, 0.513, 0.987),  // col 2, top
+    ]
+
+    /// BA396's portrait UVs are authored rotated 90° (the baked PortraitUV placeholder text is
+    /// sideways), so an upright image renders turned on the wall. We pre-rotate each image 90°
+    /// when compositing to cancel it. Flip this if the walls come out upside-down on device.
+    private static let ba396PortraitRotateClockwise = false
+    /// Per-tile horizontal mirror (some walls' UVs are flipped). Photo mirroring is usually
+    /// imperceptible, so this defaults off; set an index true if that wall looks left-right reversed.
+    private static let ba396PortraitMirror: [Bool] = [false, false, false, false, false, false]
+
+    /// Composites the generated beat `images` into one atlas matching `ba396PortraitTiles` and
+    /// swaps it onto BA396's `Portraits` mesh material, so each of the 6 walls shows a full
+    /// image (cycling if fewer than 6 supplied). No-op if no portrait mesh is found.
+    @MainActor
+    static func applyBA396Portraits(_ root: Entity, images: [UIImage]) {
+        guard !images.isEmpty, let atlas = ba396PortraitAtlas(images) else { return }
+
+        var unlit = UnlitMaterial()
+        unlit.color = .init(tint: .white, texture: .init(atlas))
+
+        forEachModelEntity(root) { entity in
+            // The Portraits surface is mesh 网格_006 under Xform "Portraits"; the PaintingFrame
+            // is 网格_005 under "Portraits_PaintingFrame_0" (also contains "portraits"), so match
+            // on portrait/网格_006 while excluding frame/网格_005 regardless of which name
+            // RealityKit kept (Xform name vs exported mesh id).
+            let isPortrait = selfOrAncestor(entity, contains: "portrait")
+                          || selfOrAncestor(entity, contains: "网格_006")
+            let isFrame = selfOrAncestor(entity, contains: "frame")
+                       || selfOrAncestor(entity, contains: "网格_005")
+            guard isPortrait, !isFrame else { return }
+            guard var model = entity.model else { return }
+            model.materials = Array(repeating: unlit, count: max(1, model.materials.count))
+            entity.model = model
+        }
+    }
+
+    /// Builds the 3x2 portrait atlas as a `TextureResource`. Each image is drawn into its UV
+    /// tile's pixel rect; UV is mapped with V increasing upward (pixel y = (1 - v) * H).
+    /// If the walls render vertically flipped on device, wrap the result through
+    /// `flippedVertically` (one-line change).
+    @MainActor
+    static func ba396PortraitAtlas(_ images: [UIImage]) -> TextureResource? {
+        let side: CGFloat = 2048
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = true
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: side, height: side), format: format)
+
+        let atlas = renderer.image { ctx in
+            UIColor(white: 0.06, alpha: 1).setFill()
+            ctx.fill(CGRect(x: 0, y: 0, width: side, height: side))
+            let cg = ctx.cgContext
+            for (i, tile) in ba396PortraitTiles.enumerated() {
+                // Center-crop to the frame's physical aspect, then rotate 90° (cancelling the
+                // wall's authored UV rotation) and fill the tile. The quad samples the whole
+                // tile, so the result lands as an upright, undistorted landscape photo.
+                let framed = centerCropped(images[i % images.count], toAspect: ba396PortraitAspect)
+                let rect = CGRect(x: tile.uMin * side,
+                                  y: (1 - tile.vMax) * side,
+                                  width: (tile.uMax - tile.uMin) * side,
+                                  height: (tile.vMax - tile.vMin) * side)
+                cg.saveGState()
+                cg.translateBy(x: rect.midX, y: rect.midY)
+                cg.rotate(by: ba396PortraitRotateClockwise ? -.pi / 2 : .pi / 2)
+                if ba396PortraitMirror[i] { cg.scaleBy(x: -1, y: 1) }
+                // In the rotated frame the tile's width/height swap, so the landscape image fills it.
+                framed.draw(in: CGRect(x: -rect.height / 2, y: -rect.width / 2,
+                                       width: rect.height, height: rect.width))
+                cg.restoreGState()
+            }
+        }
+        guard let cg = atlas.cgImage else { return nil }
+        return try? TextureResource(image: cg, options: .init(semantic: .color))
+    }
+
+    /// Returns the largest centered crop of `image` matching `aspect` (width / height). When the
+    /// target is wider than the source it keeps full width and trims top/bottom (and vice versa),
+    /// so the result fills its frame with no stretch — at the cost of a small edge crop.
+    @MainActor
+    private static func centerCropped(_ image: UIImage, toAspect aspect: CGFloat) -> UIImage {
+        let w = image.size.width, h = image.size.height
+        guard w > 0, h > 0 else { return image }
+        let cropW: CGFloat, cropH: CGFloat
+        if w / h > aspect {                 // source too wide → trim sides
+            cropH = h; cropW = h * aspect
+        } else {                            // source too tall → trim top/bottom
+            cropW = w; cropH = w / aspect
+        }
+        let origin = CGPoint(x: (w - cropW) / 2, y: (h - cropH) / 2)
+
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = true
+        return UIGraphicsImageRenderer(size: CGSize(width: cropW, height: cropH), format: format).image { _ in
+            image.draw(in: CGRect(x: -origin.x, y: -origin.y, width: w, height: h))
+        }
+    }
+
+    /// True if `entity` or any of its ancestors has a name containing `token` (case-insensitive).
+    /// Used to identify BA396's Portraits mesh whose own name is the exported mesh id (网格_006)
+    /// but whose parent Xform is named "Portraits".
+    @MainActor
+    private static func selfOrAncestor(_ entity: Entity, contains token: String) -> Bool {
+        var node: Entity? = entity
+        while let n = node {
+            if n.name.lowercased().contains(token) { return true }
+            node = n.parent
+        }
+        return false
     }
 
     /// Depth-first walk applying `body` to every `ModelEntity` under `entity` (inclusive).
@@ -180,7 +351,7 @@ enum ParametricWorldBuilder {
     }
 
     /// Blends `color` toward its Rec. 709 luminance grey by `amount`, preserving alpha.
-    private static func greyed(_ color: UIColor, amount: Float) -> UIColor {
+    static func greyed(_ color: UIColor, amount: Float) -> UIColor {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 1
         if !color.getRed(&r, green: &g, blue: &b, alpha: &a) {
             var w: CGFloat = 0
