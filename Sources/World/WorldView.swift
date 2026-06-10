@@ -238,7 +238,7 @@ struct iOSWorldView: View {
 /// Loads the USDZ for `params.archetype`, then tunes:
 ///   - axis 4: DirectionalLight intensity + color temperature + saturation overlay
 ///   - axis 1: ambient companion orbs (social density)
-/// Drag to look, pinch to move, ○ to reset (PS5/DualSense). Reuses `WorldCameraRig`.
+/// Drag to look, pinch to move, A/B to reset (any extended gamepad). Reuses `WorldCameraRig`.
 struct ParametricWorldView: View {
     let params: WorldParams
 
