@@ -105,8 +105,18 @@ struct ImmersiveWorldView: View {
                 }
             }
         }
-        .onAppear { music.start() }
-        .onDisappear { music.stop() }
+        .onAppear {
+            appState.immersiveWorldOpen = true
+            if appState.museumSettings.musicOn { music.start() }
+        }
+        .onDisappear {
+            appState.immersiveWorldOpen = false
+            music.stop()
+        }
+        // Live music toggle from the in-world settings popover.
+        .onChange(of: appState.museumSettings.musicOn) { _, on in
+            if on { music.start() } else { music.stop() }
+        }
     }
 
     /// Prefers a runtime panorama (e.g. World Labs) when present, else the bundled asset.
@@ -177,7 +187,12 @@ final class ParametricLocomotor {
         subscription = content.subscribe(to: SceneEvents.Update.self) { [weak self] event in
             guard let self, let root = self.root else { return }
             let gamepad = SplatSpikeDebug.ignoreGamepad ? nil : currentExtendedGamepad()
-            self.loco.tick(deltaTime: Float(event.deltaTime), gamepad: gamepad)
+            // On-screen forward/turn pad fallback (settings → "顯示前進方向鍵"); zero when
+            // untouched, so gamepad users are unaffected. Mirrors the splat path
+            // (`SplatVisionRenderer`), which is why the museum was previously unwalkable without
+            // a controller — this `manual:` arg was missing.
+            let manual = SplatManualInput.shared.snapshot()
+            self.loco.tick(deltaTime: Float(event.deltaTime), gamepad: gamepad, manual: manual)
             let player = self.loco.playerTransform()
             root.transform = Transform(matrix: player.inverse)
             // Report the player's scene-space position (root-local) for proximity narration.
@@ -286,6 +301,7 @@ final class PlaqueTuner {
 /// RealityKit `InputTargetComponent`/`CollisionComponent` plumbing. Styled with the shared Oops
 /// glass card so it matches the rest of the flow.
 struct BeatPlaqueView: View {
+    @Environment(AppState.self) private var appState
     let node: MuseumNode
     /// The shared Curator voice. nil on the dev/sample path (no story) → play button disabled.
     var convo: ConversationService?
@@ -333,6 +349,8 @@ struct BeatPlaqueView: View {
             // Play / Stop toggle — first tap has the Curator generate a fresh spoken description for
             // this exhibit; while it plays the button shows a "playing" animation, and tapping it
             // again stops the voice. Pinned to the trailing edge (bottom-right of the plaque).
+            // Hidden when the audio guide is switched off in the in-world settings popover.
+            if appState.museumSettings.audioGuideOn {
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
                 Button {
@@ -362,6 +380,7 @@ struct BeatPlaqueView: View {
                 .disabled(convo == nil)
                 .animation(.easeInOut(duration: 0.2), value: isSpeaking)
                 .animation(.easeInOut(duration: 0.2), value: isThinking)
+            }
             }
         }
         // Constant width so expanding only grows downward (no left/right shift on tap).
@@ -408,6 +427,7 @@ private struct EqualizerBars: View {
         BeatPlaqueView(node: BeatPlaqueSample.nodes[2], convo: ConversationService())
     }
     .preferredColorScheme(.dark)
+    .environment(AppState())
 }
 
 /// The dev/sample path (no story → no `museumConversation`): the play button is disabled/greyed,
@@ -418,5 +438,6 @@ private struct EqualizerBars: View {
         BeatPlaqueView(node: BeatPlaqueSample.nodes[0], convo: nil)
     }
     .preferredColorScheme(.dark)
+    .environment(AppState())
 }
 #endif

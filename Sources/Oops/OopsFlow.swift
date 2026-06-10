@@ -146,7 +146,9 @@ struct OopsFlowView: View {
             appState.loadBA396World()
             if case .opened = await openImmersiveSpace(id: "world") {
                 openWindow(id: "oops-gallery-controls")
-                if appState.museumConversation != nil { openWindow(id: "museum-voice-orb") }
+                // The gallery opens silent: the Curator voice orb is no longer auto-shown.
+                // It's opened on demand from the settings popover's "Talk to the guide" row
+                // (`museumConversation` is still configured above so the frame play buttons work).
                 dismissWindow(id: "dev-menu")
             }
         }

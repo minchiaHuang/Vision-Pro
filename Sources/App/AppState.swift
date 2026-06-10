@@ -20,6 +20,21 @@ enum AppPhase {
 /// a real (v2) network call that can hang.
 struct WorldGenTimeout: Error {}
 
+/// User-tunable settings for an open museum gallery, surfaced in the in-world "⋯" settings
+/// popover. Lives on `AppState` so the floating control window, the immersive view (music +
+/// locomotion), and the per-frame plaques all read one source of truth.
+@Observable
+final class MuseumSettings {
+    /// Spoken exhibit narration (the per-frame play buttons). Off hides those buttons.
+    var audioGuideOn = true
+    /// Looping background music (`MuseumMusicPlayer`).
+    var musicOn = true
+    /// Show the on-screen forward/turn pad in the control bar (default off — gamepad is primary).
+    var showMovePad = false
+    /// Multiplier on the on-screen pad's forward magnitude (0.5–1.5; 1.0 = unscaled).
+    var moveSpeed: Float = 1.0
+}
+
 /// Global state (quiz answers, the resolved world, and the current step).
 @Observable
 final class AppState {
@@ -58,6 +73,14 @@ final class AppState {
     /// (push-to-talk) and the in-gallery proximity narrator, so both use one audio session and
     /// never talk over each other. Created on entering the gallery; cleared on exit.
     var museumConversation: ConversationService?
+
+    /// In-world settings for the open museum gallery (audio guide, music, move pad, speed).
+    var museumSettings = MuseumSettings()
+
+    /// True while the `world` ImmersiveSpace is presented. Set by `ImmersiveWorldView` on
+    /// appear/disappear; the Oops gallery control window observes the true→false transition to
+    /// tear itself down on EVERY exit path (button, gamepad, Digital Crown, system close).
+    var immersiveWorldOpen = false
 
     /// Quiz speech-to-text bridge — shared between the Quiz screen and the floating
     /// `quiz-voice-orb` window so the orb can write a spoken answer into the question the user is

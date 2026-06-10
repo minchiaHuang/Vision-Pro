@@ -114,7 +114,9 @@ struct VisitingArtisanApp: App {
             OopsGalleryControls()
                 .environment(appState)
         }
-        .defaultSize(width: 340, height: 220)
+        // Slim bottom-bar styling (⋯ Settings · Leave); `.contentSize` lets it grow when the
+        // forward pad is enabled. The settings panel is a popover, not part of this window.
+        .defaultSize(width: 440, height: 100)
         .windowResizability(.contentSize)
         .restorationBehavior(.disabled)
 

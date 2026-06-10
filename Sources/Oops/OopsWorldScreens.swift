@@ -263,17 +263,55 @@ struct OopsGalleryControls: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
     @State private var isExiting = false
+    @State private var showSettings = false
 
     var body: some View {
-        VStack(spacing: 14) {
+        // Bottom-bar styled control strip. visionOS has no host window to hang a real
+        // `.ornament` on in full immersion, so we emulate the bottom toolbar with a slim window
+        // + a settings popover. Resting state is just: ⋯ Settings · Leave world.
+        HStack(spacing: 14) {
+            Button { showSettings.toggle() } label: {
+                Label("Settings", systemImage: "ellipsis")
+                    .font(.title3.weight(.semibold))
+            }
+            .buttonStyle(.bordered)
+            .popover(isPresented: $showSettings, arrowEdge: .bottom) { settingsPopover }
+
+            // The forward/turn pad lives in the bar (not the popover) so it stays reachable while
+            // walking. Shown only when enabled in settings; the gamepad is the default.
+            if appState.museumSettings.showMovePad {
+                SplatMovePad(speed: appState.museumSettings.moveSpeed)
+            }
+
+            Button { leave(resume: .reflection) } label: {
+                Label("Leave world", systemImage: "chevron.left")
+                    .font(.title3.weight(.semibold))
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(isExiting)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        // Single teardown path: any exit (button, gamepad, Digital Crown, system close) flips
+        // `immersiveWorldOpen` false via `ImmersiveWorldView.onDisappear`; clean up here so no
+        // floating window is ever left orphaned.
+        .onChange(of: appState.immersiveWorldOpen) { _, open in
+            if !open { performTeardown() }
+        }
+        // Turning the audio guide off silences any narration already playing.
+        .onChange(of: appState.museumSettings.audioGuideOn) { _, on in
+            if !on { appState.museumConversation?.stop() }
+        }
+    }
+
+    @ViewBuilder
+    private var settingsPopover: some View {
+        @Bindable var settings = appState.museumSettings
+        VStack(alignment: .leading, spacing: 14) {
             Text(appState.museumStory == nil ? "Richards Art Gallery" : "Your Future Museum")
                 .font(.headline)
-            Text("Walk to explore · Use gamepad or arrows to move")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            // While Stage B is still painting, reassure the visitor that the (currently neutral)
-            // walls are filling in — the paintings stream on as each one lands.
+
+            // While Stage B is still painting, reassure the visitor the walls are filling in.
             if appState.museumGenerator.phase == .painting {
                 let landed = appState.museumGenerator.nodes.filter { $0.image != nil }.count
                 let total = appState.museumGenerator.nodes.count
@@ -281,9 +319,30 @@ struct OopsGalleryControls: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            SplatMovePad()
 
-            // The closing question, handed back to the visitor at the exit (Future Museum only).
+            Divider()
+
+            Toggle("Audio guide", isOn: $settings.audioGuideOn)
+            Toggle("Background music", isOn: $settings.musicOn)
+            Button {
+                openWindow(id: "museum-voice-orb")
+                showSettings = false
+            } label: {
+                Label("Talk to the guide", systemImage: "message")
+            }
+            .buttonStyle(.plain)
+
+            Divider()
+
+            Toggle("Show forward pad", isOn: $settings.showMovePad)
+            if settings.showMovePad {
+                HStack(spacing: 10) {
+                    Text("Speed").font(.caption).foregroundStyle(.secondary)
+                    Slider(value: $settings.moveSpeed, in: 0.5...1.5)
+                }
+            }
+
+            // The closing question, handed back to the visitor (Future Museum only).
             if let decision = appState.museumStory?.decision_prompt, !decision.isEmpty {
                 Divider()
                 Text("The decision")
@@ -292,40 +351,54 @@ struct OopsGalleryControls: View {
                     .foregroundStyle(.secondary)
                 Text(decision)
                     .font(.footnote)
-                    .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Button("Leave gallery", action: performExit)
-                .buttonStyle(.borderedProminent)
-                .disabled(isExiting)
+            Divider()
+
+            Button { leave(resume: .home) } label: {
+                Label("Start over", systemImage: "arrow.counterclockwise")
+            }
+            .buttonStyle(.plain)
+            .disabled(isExiting)
         }
-        .padding(24)
-        .frame(maxWidth: 360)
+        .padding(20)
+        .frame(width: 320)
     }
 
-    private func performExit() {
+    /// Begins exit: records where to resume, then dismisses the immersive space. The window
+    /// teardown runs in `performTeardown` (driven by `immersiveWorldOpen` → false), so every
+    /// exit path converges on one cleanup.
+    private func leave(resume: OopsScreen) {
+        guard !isExiting else { return }
+        appState.oopsResumeScreen = resume
+        showSettings = false
+        Task { await dismissImmersiveSpace() }
+    }
+
+    /// Idempotent window/state cleanup. Reached once the immersive space is gone — whether the
+    /// user tapped Leave, pressed the Digital Crown, or the system closed it.
+    private func performTeardown() {
         guard !isExiting else { return }
         isExiting = true
-        Task {
-            await dismissImmersiveSpace()
-            // Tear down the shared Curator voice and its floating orb window.
-            appState.museumConversation?.stop()
-            appState.museumConversation = nil
-            appState.worldParams = nil
-            // Return to the Oops reflection screen (same pattern as OopsWorldControls).
-            appState.oopsResumeScreen = .reflection
-            appState.devActiveFeature = .oops
-            openWindow(id: "dev-menu")
-            dismissWindow(id: "oops-gallery-controls")
-            dismissWindow(id: "museum-voice-orb")
-        }
+        appState.museumConversation?.stop()
+        appState.museumConversation = nil
+        appState.worldParams = nil
+        // Default to the reflection montage; Leave / Start-over may have set a screen already,
+        // so don't clobber it.
+        if appState.oopsResumeScreen == nil { appState.oopsResumeScreen = .reflection }
+        appState.devActiveFeature = .oops
+        openWindow(id: "dev-menu")
+        dismissWindow(id: "oops-gallery-controls")
+        dismissWindow(id: "museum-voice-orb")
     }
 }
 
 /// On-screen hold-to-move pad driving `SplatManualInput`, the no-controller locomotion
 /// fallback. Press-and-hold a control to move; release to stop.
 private struct SplatMovePad: View {
+    /// Multiplier on the forward magnitude (settings → "Speed"); turn is unscaled.
+    var speed: Float = 1
     var body: some View {
         VStack(spacing: 10) {
             Text("Hold to move").font(.caption).foregroundStyle(.secondary)
@@ -348,7 +421,7 @@ private struct SplatMovePad: View {
             .contentShape(RoundedRectangle(cornerRadius: 14))
             // minimumDistance 0 → fires on touch-down (hold) and clears on release.
             .gesture(DragGesture(minimumDistance: 0)
-                .onChanged { _ in SplatManualInput.shared.set(forward: forward, turn: turn) }
+                .onChanged { _ in SplatManualInput.shared.set(forward: forward * speed, turn: turn) }
                 .onEnded { _ in SplatManualInput.shared.set(forward: 0, turn: 0) })
     }
 }
