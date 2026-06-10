@@ -175,10 +175,10 @@ struct QuizScreen: View {
     @ViewBuilder
     private var questionContent: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Matches the pointer/statement title on the Privacy & Safety screens
-            // (CheckStatement head — size 20, bold); identical treatment on all 6 screens.
+            // Based on the pointer/statement title on the Privacy & Safety screens
+            // (CheckStatement head — size 20, bold), enlarged 10% → 22; all 6 screens.
             Text("Qn \(currentIndex + 1): \(current.label)")
-                .font(.system(size: 20, weight: .bold))
+                .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -190,11 +190,11 @@ struct QuizScreen: View {
                 pillRow.padding(.top, 14)
             }
 
-            // Nav button (Next / Generate) sits directly below the answer. Q1–Q5 keep the
-            // question→answer gap (VStack spacing 12 + 14 = 26pt); Q6's "Generate my world"
-            // uses a 24pt top gap to match the Safety Declaration CTA's minimum spacing.
+            // Nav button (Next / Generate) sits directly below the answer. Q1–Q5 use a
+            // 43.2pt top gap to give the centred "Next" pill more breathing room; Q6's
+            // "Generate my world" uses 24pt to match the Safety Declaration CTA's spacing.
             navigationRow
-                .padding(.top, isLast ? 24 : 14)
+                .padding(.top, isLast ? 24 : 43.2)
         }
         .id(currentIndex)
         .transition(.asymmetric(
@@ -281,7 +281,7 @@ struct QuizScreen: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Color.clear.frame(height: 21)
                     Text(current.placeholder)
-                        .font(.system(size: 17, weight: .regular))
+                        .font(.system(size: 17.85, weight: .regular))
                         .foregroundStyle(.white.opacity(0.30))
                         .padding(.horizontal, 32)
                         .fixedSize(horizontal: false, vertical: true)
@@ -315,18 +315,17 @@ struct QuizScreen: View {
                 .animation(.easeInOut(duration: 0.2), value: canAdvance)
                 .frame(maxWidth: .infinity, alignment: .center)
         } else {
-            // Q1–Q5: "Next >" — Figma Inter Bold 20px; trailing-aligned.
-            Button {
+            // Q1–Q5: "Next" — standard OopsButton pill (capsule, glass fill, white
+            // stroke) to match the Q6 CTA and the rest of the app; centred.
+            Button("Next") {
                 goingBack = false
                 withAnimation(.easeInOut(duration: 0.28)) { currentIndex += 1 }
-            } label: {
-                Text("Next >")
-                    .font(.system(size: 19, weight: .bold))
-                    .foregroundStyle(canAdvance ? .white : .white.opacity(0.28))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(OopsButton(minWidth: 150))
             .disabled(!canAdvance)
-            .frame(maxWidth: .infinity, alignment: .trailing)
+            .opacity(canAdvance ? 1 : 0.4)
+            .animation(.easeInOut(duration: 0.2), value: canAdvance)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 }
