@@ -241,7 +241,9 @@ final class ParametricLocomotor {
             // ready the anchor is nil and we keep the previous Y (no jump).
             if let device = self.worldTracking.queryDeviceAnchor(atTimestamp: CACurrentMediaTime()) {
                 let headY = device.originFromAnchorTransform.columns.3.y
-                self.loco.position.y = self.eyeHeight - headY
+                // PlaqueTuning.eyeHeightOffset is the live gallery-controls slider (0 = frame centre,
+                // negative = lower) so testers can dial a comfortable height without a rebuild.
+                self.loco.position.y = self.eyeHeight + PlaqueTuning.shared.eyeHeightOffset - headY
             }
             let player = self.loco.playerTransform()
             root.transform = Transform(matrix: player.inverse)
@@ -366,6 +368,11 @@ final class PlaqueTuning {
     var outward: Float = 0.25      // metres out from the wall toward the room
     var scale: Float = 4.97        // plaque entity scale
     var faceFlip = false           // flip 180° if a plaque faces into the wall
+    /// TEMP live eye-height tuner (gallery-controls slider): metres added to the auto frame-centre
+    /// standing height. 0 = at frame centre; negative = lower. Default −0.80 chosen on device
+    /// (frame-centre felt too tall / vertiginous to a tester). Once finalised, fold into
+    /// `ba396EyeHeightOffset` and remove the slider.
+    var eyeHeightOffset: Float = -0.80
 }
 
 /// Holds the placed plaque entities + their base anchors so their transforms can be recomputed

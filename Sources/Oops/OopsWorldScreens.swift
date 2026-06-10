@@ -240,7 +240,8 @@ struct OopsGalleryControls: View {
     @State private var isExiting = false
 
     var body: some View {
-        VStack(spacing: 14) {
+        @Bindable var tuning = PlaqueTuning.shared
+        return VStack(spacing: 14) {
             Text(appState.museumStory == nil ? "Richards Art Gallery" : "Your Future Museum")
                 .font(.headline)
             Text("Walk to explore · Use gamepad or arrows to move")
@@ -269,6 +270,17 @@ struct OopsGalleryControls: View {
                     .font(.footnote)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+
+            // TEMP eye-height tuner — dial the standing viewpoint live (0 = at frame centre,
+            // negative = lower). Once a comfortable value is found, fold it into
+            // `ba396EyeHeightOffset` and remove this slider.
+            Divider()
+            VStack(spacing: 4) {
+                Text(String(format: "Eye height  %+.2f m", tuning.eyeHeightOffset))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Slider(value: $tuning.eyeHeightOffset, in: -1.5...0.3, step: 0.05)
             }
 
             Button("Leave gallery", action: performExit)
