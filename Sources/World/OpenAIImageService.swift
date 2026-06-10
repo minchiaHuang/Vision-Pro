@@ -27,9 +27,10 @@ enum OpenAIImageService {
     /// Builds the 5 Hero's-Journey prompts from `goal` and generates one image per beat,
     /// sequentially (to stay under image rate limits). `onProgress(done, total)` fires before
     /// each beat and once more at completion. Returns the images that succeeded, in beat order.
-    static func generateJourney(goal: String,
+    static func generateJourney(q3: String, q4: String, q5: String, q6: String,
                                 onProgress: @escaping @MainActor (Int, Int) -> Void) async -> [UIImage] {
-        let prompts = heroJourneyPrompts(goal: goal)
+        print("[DEBUG] generateJourney called with q3: \(q3)")
+        let prompts = await heroJourneyPrompts(q3: q3, q4: q4, q5: q5, q6: q6)
         var images: [UIImage] = []
         for (index, prompt) in prompts.enumerated() {
             await onProgress(index, prompts.count)
@@ -69,26 +70,80 @@ enum OpenAIImageService {
 
     /// The 5 ordered scene prompts: Ordinary world → Call → Trials → Transformation → Mastery,
     /// each interpolating `goal` and sharing a style/consistency preamble.
-    static func heroJourneyPrompts(goal: String) -> [String] {
-        let g = goal.trimmingCharacters(in: .whitespacesAndNewlines)
-        let style = "Cinematic, photorealistic, soft natural light, the same single protagonist "
-            + "throughout the whole series with a consistent face, body, and wardrobe, emotional "
-            + "and inspiring, fine-art photography, vertical portrait composition. "
-            + "No text, no captions, no watermark, no logos."
-        let beats = [
-            "Ordinary world: the protagonist at the very beginning of their path toward \(g), "
-                + "in a humble everyday setting, quiet determination, a dream not yet realised.",
-            "The call: the protagonist commits to pursuing \(g), taking the first real steps, "
-                + "hopeful and a little daunted, beginning to train and prepare.",
-            "Trials: the protagonist struggles and perseveres on the way to \(g) — hard practice, "
-                + "setbacks, sweat and resilience, visibly growing stronger.",
-            "Transformation: a breakthrough moment, the protagonist's skill and confidence "
-                + "blossoming toward \(g), grace and mastery emerging.",
-            "Mastery: the protagonist fully realised as \(g), at the triumphant peak, performing "
-                + "with excellence on a grand stage, radiant and accomplished.",
-        ]
-        return beats.map { "\($0) \(style)" }
-    }
+    static func heroJourneyPrompts(q3: String, q4: String, q5: String, q6: String) async -> [String] {
+        let key = Secrets.openAIAPIKey
+        guard !key.isEmpty else { return [] }
+        let systemPrompt = """
+           You are a visual storytelling expert specializing in silhouette-based fine art photography. Given a person's quiz answers about their inner life and aspirations, generate exactly 5 vivid, specific image generation prompts.
+
+           Each prompt must describe a real, grounded scene that uses SILHOUETTE PHOTOGRAPHY STYLE — strong backlit compositions where objects and environments appear as dark silhouettes against dramatically bright, glowing backgrounds. No people, no faces, no portraits.
+
+           Example of a good prompt: "A silhouette of an empty wooden chair beside a large window at golden hour, the chair and windowsill rendered as deep dark shapes against an intensely glowing amber and orange sky outside, dust particles floating in the light, wide cinematic composition, fine-art photography."
+
+           The 5 scenes must represent:
+           1. Where this person is right now — their current emotional state and daily reality
+           2. The obstacle or fear that holds them back
+           3. The turning point — a moment of shift or clarity
+           4. Their ideal life in action — what it actually looks and feels like
+           5. The thing they will never give up — their core love or value
+
+           Rules:
+           - SILHOUETTE STYLE: every scene must have a bright, luminous background with dark foreground elements — strong backlight is mandatory
+           - No people, no faces, no text in the image
+           - Fine-art photography style, high contrast, dramatic lighting
+           - Each prompt should be 2-4 sentences
+           - The background must always be bright and radiant — golden sunrise, glowing sunset, bright window light, moonlit sky, luminous fog, or bright open sky
+           - Wide cinematic compositions showing full environments
+           - Location type: one outdoor nature scene, one urban exterior, one minimalist indoor space, one abstract/surreal space, one transitional space (doorway, bridge, or path)
+           - Time of day: each scene at a different time (dawn, morning, afternoon, dusk, night)
+           - Color temperature: warm amber, cool blue, soft rose/pink, deep violet, bright white — one per scene, never repeated
+
+           Return ONLY a JSON array of exactly 5 strings, nothing else. Example format:
+           ["prompt one", "prompt two", "prompt three", "prompt four", "prompt five"]
+           """
+
+           let userMessage = """
+           Q3 (ideal future): \(q3)
+           Q4 (current self): \(q4)
+           Q5 (biggest obstacle): \(q5)
+           Q6 (thing they won't give up): \(q6)
+           """
+
+           let chatEndpoint = URL(string: "https://api.openai.com/v1/chat/completions")!
+           var request = URLRequest(url: chatEndpoint)
+           request.httpMethod = "POST"
+           request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+           request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+           let body: [String: Any] = [
+               "model": "gpt-4o-mini",
+               "messages": [
+                   ["role": "system", "content": systemPrompt],
+                   ["role": "user", "content": userMessage]
+               ],
+               "temperature": 0.8
+           ]
+           request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+           guard let (data, _) = try? await URLSession.shared.data(for: request) else { return [] }
+
+           struct ChatResponse: Decodable {
+               struct Choice: Decodable {
+                   struct Message: Decodable { let content: String }
+                   let message: Message
+               }
+               let choices: [Choice]
+           }
+
+           guard let decoded = try? JSONDecoder().decode(ChatResponse.self, from: data),
+                 let content = decoded.choices.first?.message.content,
+                 let jsonData = content.data(using: .utf8),
+                 let prompts = try? JSONDecoder().decode([String].self, from: jsonData),
+                 prompts.count == 5 else { return [] }
+
+           return prompts
+       }
+
 
     // MARK: - Networking
 
