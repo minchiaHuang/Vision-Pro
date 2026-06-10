@@ -157,30 +157,6 @@ struct VisitingArtisanApp: App {
             return WindowPlacement()
         }
 
-        // visionOS only: floating speech-to-text orb shown beside the Quiz screen so the user can
-        // speak their answers instead of typing. Pure on-device STT (no AI voice). Opened while the
-        // Oops flow is on the `.quiz` screen; writes into the shared `AppState.quizVoice`.
-        Window("Answer by Voice", id: "quiz-voice-orb") {
-            QuizVoiceOrbView()
-                .environment(appState)
-        }
-        // .plain drops the system glass chrome so the window is EXACTLY the Capsule the view
-        // draws. A default-glass window in shared space has a minimum size that pads a slim pill
-        // into a wide panel; .plain bypasses that, giving the exact Figma pill. (The full-immersion
-        // .plain input bug doesn't apply: the Quiz orb lives in shared space, not full immersion.)
-        .windowStyle(.plain)
-        .defaultSize(width: 120, height: 320)
-        .windowResizability(.contentSize)
-        .restorationBehavior(.disabled)
-        .defaultWindowPlacement { _, context in
-            // Place trailing the main flow window so the orb sits to the RIGHT of the Quiz
-            // card instead of floating over it. The Oops flow (incl. the Quiz) renders inside
-            // the `dev-menu` WindowGroup, which is the window the orb opens beside.
-            if let main = context.windows.first(where: { $0.id == "dev-menu" }) {
-                return WindowPlacement(.trailing(main))
-            }
-            return WindowPlacement()
-        }
         #endif
     }
 }

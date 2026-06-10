@@ -33,6 +33,8 @@ final class MuseumSettings {
     var showMovePad = false
     /// Multiplier on the on-screen pad's forward magnitude (0.5–1.5; 1.0 = unscaled).
     var moveSpeed: Float = 1.0
+    /// Show the Curator's spoken line as text on the exhibit being described.
+    var subtitlesOn = false
 }
 
 /// Global state (quiz answers, the resolved world, and the current step).
@@ -81,11 +83,6 @@ final class AppState {
     /// appear/disappear; the Oops gallery control window observes the true→false transition to
     /// tear itself down on EVERY exit path (button, gamepad, Digital Crown, system close).
     var immersiveWorldOpen = false
-
-    /// Quiz speech-to-text bridge — shared between the Quiz screen and the floating
-    /// `quiz-voice-orb` window so the orb can write a spoken answer into the question the user is
-    /// currently on. Front-end only; copied into the flow's `OopsAnswers` as the user answers.
-    let quizVoice = QuizVoiceSession()
 
     /// Hidden continuous scores (the bottom layer of research direction 6) and the world
     /// parameters they map to (direction 7). Computed and stored from Phase 3 on; the
@@ -246,7 +243,6 @@ final class AppState {
         // in-flight Stage B paint task so a stale run can't keep painting after a restart.
         Task { @MainActor in museumGenerator.reset() }
         museumConversation = nil
-        quizVoice.reset()
         loadError = nil
         phase = .splash
     }
