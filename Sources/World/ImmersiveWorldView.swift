@@ -59,14 +59,14 @@ struct ImmersiveWorldView: View {
                     ? ParametricWorldBuilder.ba396PlaqueAnchors(root, relativeTo: root)
                     : []
                 let spawn = params.archetype == .ba396Museum
-                    ? ParametricWorldBuilder.ba396SpawnPose(anchors: ba396Anchors,
-                                                            order: build.visitOrder)
+                    ? ParametricWorldBuilder.ba396SpawnPose(anchors: ba396Anchors)
                     : nil
-                // Pin the eye to the portrait-frame centre height so paintings sit at eye level
-                // (BA396 frames hang higher than a 1.6m standing eye). Average the frame centroids'
-                // Y — root space with the floor at y=0, so it's the frame-centre height above floor.
+                // Pin the eye to the BOTTOM row of portraits (lowest frame centroid), not the wall's
+                // vertical centre — BA396 is a tall flat 3×2 wall, so the average sat the viewer
+                // floating at mid-wall (felt too high). Bottom-row keeps you grounded, looking up at
+                // the top row; `ba396EyeHeightOffset` (live slider) fine-tunes from there.
                 let museumEyeHeight: Float? = ba396Anchors.isEmpty ? nil
-                    : (ba396Anchors.map { $0.centroid.y }.reduce(0, +) / Float(ba396Anchors.count)
+                    : (ba396Anchors.map { $0.centroid.y }.min()!
                        + ParametricWorldBuilder.ba396EyeHeightOffset)
                 // Locomotion only — spawn at the entrance facing image 1, eye pinned to frame
                 // height. Per-beat narration is no longer proximity-triggered: each wall plaque
@@ -221,15 +221,16 @@ final class ParametricLocomotor {
         subscription = content.subscribe(to: SceneEvents.Update.self) { [weak self] event in
             guard let self, let root = self.root else { return }
             let gamepad = SplatSpikeDebug.ignoreGamepad ? nil : currentExtendedGamepad()
-            self.loco.tick(deltaTime: Float(event.deltaTime), gamepad: gamepad)
+            // Feed the on-screen "Hold to move" pad (SplatManualInput) so the museum is walkable
+            // without a game controller (e.g. the visionOS Simulator).
+            let manual = SplatManualInput.shared.snapshot()
+            self.loco.tick(deltaTime: Float(event.deltaTime), gamepad: gamepad, manual: manual)
             // Pin the eye to a fixed standing height: cancel the real head Y so the view sits at
             // `eyeHeight` above the floor whether the user is seated or standing. Until tracking is
             // ready the anchor is nil and we keep the previous Y (no jump).
             if let device = self.worldTracking.queryDeviceAnchor(atTimestamp: CACurrentMediaTime()) {
                 let headY = device.originFromAnchorTransform.columns.3.y
-                // PlaqueTuning.eyeHeightOffset is the live gallery-controls slider (0 = frame centre,
-                // negative = lower) so testers can dial a comfortable height without a rebuild.
-                self.loco.position.y = self.eyeHeight + PlaqueTuning.shared.eyeHeightOffset - headY
+                self.loco.position.y = self.eyeHeight - headY
             }
             let player = self.loco.playerTransform()
             root.transform = Transform(matrix: player.inverse)
@@ -301,11 +302,6 @@ final class PlaqueTuning {
     var outward: Float = 0.25      // metres out from the wall toward the room
     var scale: Float = 4.97        // plaque entity scale
     var faceFlip = false           // flip 180° if a plaque faces into the wall
-    /// TEMP live eye-height tuner (gallery-controls slider): metres added to the auto frame-centre
-    /// standing height. 0 = at frame centre; negative = lower. Default −0.80 chosen on device
-    /// (frame-centre felt too tall / vertiginous to a tester). Once finalised, fold into
-    /// `ba396EyeHeightOffset` and remove the slider.
-    var eyeHeightOffset: Float = -0.80
 }
 
 /// Holds the placed plaque entities + their base anchors so their transforms can be recomputed

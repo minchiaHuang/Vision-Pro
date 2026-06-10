@@ -54,15 +54,6 @@ enum ParametricWorldBuilder {
         if params.archetype == .ba396Museum {
             let anchors = ba396PlaqueAnchors(model, relativeTo: model)
             visitOrder = ba396VisitOrder(centroids: anchors.map(\.centroid))
-            #if DEBUG
-            // TEMP: dump the real frame geometry so the visit order can be pinned deterministically
-            // (remove once the on-wall layout is confirmed). centroid order = atlas tile 0…5.
-            for (t, a) in anchors.enumerated() {
-                print(String(format: "BA396 tile %d centroid (x %.2f, y %.2f, z %.2f)",
-                             t, a.centroid.x, a.centroid.y, a.centroid.z))
-            }
-            print("BA396 visitOrder:", visitOrder)
-            #endif
             // Prefer the AI-generated beats; on dev-menu direct entry ("Visit Old World", no
             // photos) fall back to the bundled "old world" preset series so the walls show real
             // images for a quick walkthrough instead of BA396's baked PortraitUV.
@@ -284,21 +275,32 @@ enum ParametricWorldBuilder {
     /// Manual full override of the visit order (a permutation of 0..<6 atlas-tile indices). When a
     /// valid permutation is set it wins over the angle-based computation — use it to pin the exact
     /// wall sequence on device. `nil` = derive from geometry via `ba396VisitOrder`.
-    static let ba396VisitOrderOverride: [Int]? = [0, 2, 4, 5, 3, 1]
+    /// Pinned from the real BA396 geometry (the 6 portraits are a flat 3×2 grid on one wall —
+    /// tiles: TL=0 TC=2 TR=4, BL=5 BC=1 BR=3). Boustrophedon age order: top L→R 1,2,3, bottom
+    /// R→L 4,5,6 → image k lands on tile [0,2,4,3,1,5][k].
+    static let ba396VisitOrderOverride: [Int]? = [0, 2, 4, 3, 1, 5]
     /// Which entry of the angle-sorted ring is "position 1" (the spawn wall). Tune on device.
     static let ba396VisitStart = 0
     /// Walk direction around the ring: true = clockwise, false = counter-clockwise. Tune on device.
     static let ba396VisitClockwise = true
 
-    /// Distance (metres) the spawn point sits in front of the first wall, toward the room.
-    static let ba396SpawnStandoff: Float = 2.5
+    /// How far back the spawn stands from the portrait wall, as a multiple of the frame spread
+    /// (scale-independent — BA396's wall is large, so an absolute metre value doesn't transfer).
+    /// ~1.3 puts the whole flat 3×2 wall comfortably in view. Tune on device.
+    static let ba396SpawnStandoffFactor: Float = 1.3
+    /// Manual spawn override (player-space position + yaw). When set it wins over the computed
+    /// centred-in-front pose — pinned from a tester who walked to the spot they wanted (read off the
+    /// TEMP position log). y is irrelevant (the eye-height pin drives it). nil = compute the pose.
+    /// Current: walked-to pose on device — left side of the wall (x −14.36), facing the wall (yaw ≈ 0).
+    static let ba396SpawnPoseOverride: (position: SIMD3<Float>, yaw: Float)? =
+        (SIMD3<Float>(-14.36, 0, -0.12), -0.029)
     /// Fixed spawn height (player-space Y, metres). Default 0 = floor-aligned. NOTE on visionOS the
     /// user's eye height = this + their real standing head height (head tracking adds on top), so a
     /// positive value makes the user float above the floor. Tune on device.
     static let ba396SpawnHeight: Float = 0
-    /// Offset (metres) added to the averaged portrait-frame centre height when pinning the
-    /// first-person eye height (see `ParametricLocomotor`). 0 = exactly at frame centre; nudge
-    /// positive to stand taller / negative to sit lower relative to the paintings. Tune on device.
+    /// Offset added to the bottom-row portrait height when pinning the first-person eye height
+    /// (see `ParametricLocomotor`). 0 = level with the bottom row; negative = lower toward the
+    /// floor. Units are the model's (BA396 is large). Tunable constant.
     static let ba396EyeHeightOffset: Float = 0
 
     /// Orders the portrait tiles into a clockwise walking sequence around the hall centre (origin).
@@ -326,32 +328,36 @@ enum ParametricWorldBuilder {
         return Array(ring[s...] + ring[..<s])
     }
 
-    /// Spawn pose (player-space position + yaw): stand at the gallery entrance — midway between the
-    /// first wall (`order[0]`, image 1) and the last (`order.last`, the blank 6th wall = "image 6"),
-    /// the seam where the ring of walls meets — pushed `standoff` into the room, looking at image 1.
-    /// Replaces standing head-on to one wall (which filled the whole view with that single image).
-    /// `anchors[t]` is tile t's (centroid, roomward normal) in player space. `height` only seeds Y
-    /// before tracking is ready (the caller's per-frame eye pin then takes over). nil if empty.
+    /// Spawn pose (player-space position + yaw): stand centred in front of the portrait wall, facing
+    /// it. BA396's 6 portraits are a flat 3×2 grid on ONE wall, so we place the user at the average
+    /// of all frame centroids, pushed out along the average roomward normal by `standoffFactor` ×
+    /// the frame spread (so the whole wall fits in view at any scale), looking back at the centre.
+    /// `anchors[t]` is tile t's (centroid, roomward normal) in player space. `height` seeds Y before
+    /// tracking; the eye-height pin overrides it at runtime. nil if `anchors` is empty.
     static func ba396SpawnPose(anchors: [(centroid: SIMD3<Float>, normal: SIMD3<Float>)],
-                               order: [Int],
-                               standoff: Float = ba396SpawnStandoff,
-                               height: Float = ba396SpawnHeight)
+                               standoffFactor: Float = ba396SpawnStandoffFactor,
+                               height: Float? = nil,
+                               override: (position: SIMD3<Float>, yaw: Float)? = ba396SpawnPoseOverride)
         -> (position: SIMD3<Float>, yaw: Float)? {
-        guard let first = order.first, let last = order.last,
-              anchors.indices.contains(first), anchors.indices.contains(last) else { return nil }
-        let a = anchors[first]   // image 1
-        let b = anchors[last]    // image 6 (the blank 6th wall, on the other side of the entrance)
-        // Stand at the entrance seam between image 1 and image 6, pushed into the room. "Into the
-        // room" = from the seam midpoint toward the hall centre (origin; the model is origin-centred)
-        // — robust even when the two frames face each other (averaging their normals could cancel).
-        let mid = (a.centroid + b.centroid) / 2
-        let horizMid = SIMD3<Float>(mid.x, 0, mid.z)
-        let inward = length(horizMid) > 1e-4 ? normalize(-horizMid) : SIMD3<Float>(0, 0, 0)
-        var position = mid + inward * standoff
-        position.y = height
-        // Face image 1: player forward (0,0,-1)·yaw must point from `position` to image 1's centre.
-        // Solving the horizontal components gives yaw = atan2(-d.x, -d.z), d = centroid - position.
-        let d = a.centroid - position
+        if let override { return override }   // pinned pose from on-device tuning wins
+        guard !anchors.isEmpty else { return nil }
+        var centreSum = SIMD3<Float>.zero
+        var normalSum = SIMD3<Float>.zero
+        for a in anchors { centreSum += a.centroid; normalSum += a.normal }
+        let centre = centreSum / Float(anchors.count)
+        let normal = length(normalSum) < 1e-5 ? SIMD3<Float>(0, 0, 1) : normalize(normalSum)
+        // How far the frames reach from the wall centre in the ground plane → stand back
+        // proportionally so the whole wall fits in view (independent of the model's scale).
+        var spread: Float = 0
+        for a in anchors {
+            let d = a.centroid - centre
+            spread = max(spread, length(SIMD3<Float>(d.x, 0, d.z)))
+        }
+        var position = centre + normal * (max(spread, 1) * standoffFactor)
+        position.y = height ?? centre.y
+        // Face the wall centre: forward (0,0,-1)·yaw points from `position` toward the centre.
+        // Solving the horizontal components gives yaw = atan2(-d.x, -d.z), d = centre - position.
+        let d = centre - position
         let yaw = atan2(-d.x, -d.z)
         return (position, yaw)
     }

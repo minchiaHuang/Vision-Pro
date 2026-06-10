@@ -4,8 +4,8 @@ import simd
 @testable import VisitingArtisan
 
 /// `ParametricWorldBuilder.ba396VisitOrder` turns the 6 BA396 portrait centroids into a clockwise
-/// walking sequence; `ba396SpawnPose` places the user at the entrance — midway between the first
-/// and last walls, pushed toward the hall centre, facing the first wall. Both pure math.
+/// walking sequence; `ba396SpawnPose` centres the user in front of the (flat) portrait wall, pushed
+/// back by the frame spread, facing the wall. Both pure math.
 struct BA396VisitOrderTests {
 
     // Four anchors on the XZ axes: +X, +Z, -X, -Z (atan2(z,x) = 0, π/2, π, -π/2).
@@ -76,43 +76,44 @@ struct BA396VisitOrderTests {
 
     // MARK: spawn pose
 
-    /// Spawn stands midway between the first (`order[0]`) and last walls, pushed `standoff` toward
-    /// the hall centre (origin) at `height`, facing the first wall.
-    @Test func spawnPoseStandsBetweenFirstAndLastFacingFirst() {
+    /// Spawn centres in front of all the (flat-wall) frames, pushed back `standoffFactor` × the
+    /// horizontal spread, facing the wall.
+    @Test func spawnPoseCentresInFrontOfWall() {
+        // Four frames on a flat z = -2 wall, symmetric about (0,0,-2); roomward normal +Z.
         let anchors: [(centroid: SIMD3<Float>, normal: SIMD3<Float>)] = [
-            (SIMD3(0, 2, -2), SIMD3(0, 0, 1)),   // wall 0 (image 1) — the one we face
-            (SIMD3(2, 2,  0), SIMD3(-1, 0, 0)),  // wall 1 (last) — other side of the entrance
+            (SIMD3(-1,  1, -2), SIMD3(0, 0, 1)),
+            (SIMD3( 1,  1, -2), SIMD3(0, 0, 1)),
+            (SIMD3(-1, -1, -2), SIMD3(0, 0, 1)),
+            (SIMD3( 1, -1, -2), SIMD3(0, 0, 1)),
         ]
-        let pose = ParametricWorldBuilder.ba396SpawnPose(anchors: anchors, order: [0, 1],
-                                                         standoff: Float(2).squareRoot(), height: 0.5)
+        let pose = ParametricWorldBuilder.ba396SpawnPose(anchors: anchors,
+                                                         standoffFactor: 2, height: 0, override: nil)
         let p = try! #require(pose)
-        // mid (1,_,-1) + inward normalize((-1,0,1)) * √2 = (0,_,0); y overridden to 0.5.
-        #expect(abs(p.position.x - 0)   < 1e-4)
-        #expect(abs(p.position.y - 0.5) < 1e-4)
-        #expect(abs(p.position.z - 0)   < 1e-4)
-        // Faces image 1 at (0,_,-2) from (0,_,0): forward -Z → yaw 0.
+        // centre (0,0,-2); horizontal spread 1; +Z normal × (1×2) → (0,0,0).
+        #expect(abs(p.position.x) < 1e-4)
+        #expect(abs(p.position.z) < 1e-4)
+        // Faces the wall centre at -Z: forward -Z → yaw 0.
         #expect(abs(p.yaw) < 1e-4)
     }
 
-    /// When the first and last walls are symmetric about the origin, the entrance midpoint is the
-    /// origin (degenerate inward → no push); spawn sits there and turns to face the first wall.
-    @Test func spawnPoseFacesFirstWhenMidpointIsOrigin() {
+    /// Faces the wall along its roomward normal regardless of orientation (here a +X wall).
+    @Test func spawnPoseFacesWallAlongNormal() {
+        // Two frames on a flat x = 2 wall; roomward normal -X (toward the room at x < 2).
         let anchors: [(centroid: SIMD3<Float>, normal: SIMD3<Float>)] = [
-            (SIMD3(-3, 0, 0), SIMD3(1, 0, 0)),   // wall 0 (image 1), on the −X side
-            (SIMD3( 3, 0, 0), SIMD3(-1, 0, 0)),  // wall 1 (last), on the +X side
+            (SIMD3(2,  1, -1), SIMD3(-1, 0, 0)),
+            (SIMD3(2, -1,  1), SIMD3(-1, 0, 0)),
         ]
-        let pose = ParametricWorldBuilder.ba396SpawnPose(anchors: anchors, order: [0, 1],
-                                                         standoff: 2, height: 0)
+        let pose = ParametricWorldBuilder.ba396SpawnPose(anchors: anchors,
+                                                         standoffFactor: 3, height: 0, override: nil)
         let p = try! #require(pose)
-        #expect(abs(p.position.x) < 1e-4)
+        // centre (2,0,0); spread 1; -X normal × 3 → (-1,0,0).
+        #expect(abs(p.position.x - (-1)) < 1e-4)
         #expect(abs(p.position.z) < 1e-4)
-        // Faces image 1 toward −X from the origin: forward −X → yaw = atan2(3, 0) = π/2.
-        #expect(abs(p.yaw - .pi / 2) < 1e-4)
+        // Faces +X toward the wall: forward +X → yaw = -π/2.
+        #expect(abs(p.yaw - (-.pi / 2)) < 1e-4)
     }
 
-    @Test func spawnPoseNilWhenOrderOrAnchorsEmpty() {
-        #expect(ParametricWorldBuilder.ba396SpawnPose(anchors: [], order: [0]) == nil)
-        let anchors: [(centroid: SIMD3<Float>, normal: SIMD3<Float>)] = [(.zero, SIMD3(0, 0, 1))]
-        #expect(ParametricWorldBuilder.ba396SpawnPose(anchors: anchors, order: []) == nil)
+    @Test func spawnPoseNilWhenNoAnchors() {
+        #expect(ParametricWorldBuilder.ba396SpawnPose(anchors: [], override: nil) == nil)
     }
 }
