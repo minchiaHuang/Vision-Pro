@@ -325,7 +325,7 @@ struct BeatPlaqueView: View {
 
             if expanded {
                 Text(node.narration)
-                    .font(.system(size: 20, weight: .regular))
+                    .font(.system(size: 26, weight: .regular))
                     .foregroundStyle(.white.opacity(0.85))
                     .fixedSize(horizontal: false, vertical: true)
             }
