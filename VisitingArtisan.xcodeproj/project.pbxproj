@@ -97,6 +97,7 @@
 		BB0000010000000000000014 /* NetworkServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000115 /* NetworkServiceTests.swift */; };
 		BB0000010000000000000017 /* SplatLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000116 /* SplatLibraryTests.swift */; };
 		BB0000010000000000000018 /* ParametricWorldBuilderRealityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */; };
+		BB0000010000000000000019 /* BA396VisitOrderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000118 /* BA396VisitOrderTests.swift */; };
 		AA0000010000000000000A01 /* SplatCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000A02 /* SplatCache.swift */; };
 /* End PBXBuildFile section */
 
@@ -190,6 +191,7 @@
 		BB0000010000000000000115 /* NetworkServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkServiceTests.swift; sourceTree = "<group>"; };
 		BB0000010000000000000116 /* SplatLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatLibraryTests.swift; sourceTree = "<group>"; };
 		BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParametricWorldBuilderRealityTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000118 /* BA396VisitOrderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BA396VisitOrderTests.swift; sourceTree = "<group>"; };
 		AA0000010000000000000A02 /* SplatCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatCache.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -277,6 +279,7 @@
 				BB0000010000000000000115 /* NetworkServiceTests.swift */,
 				BB0000010000000000000116 /* SplatLibraryTests.swift */,
 				BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */,
+				BB0000010000000000000118 /* BA396VisitOrderTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -644,6 +647,7 @@
 				BB0000010000000000000014 /* NetworkServiceTests.swift in Sources */,
 				BB0000010000000000000017 /* SplatLibraryTests.swift in Sources */,
 				BB0000010000000000000018 /* ParametricWorldBuilderRealityTests.swift in Sources */,
+				BB0000010000000000000019 /* BA396VisitOrderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
