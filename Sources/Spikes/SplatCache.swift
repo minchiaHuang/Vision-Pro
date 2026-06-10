@@ -163,7 +163,7 @@ enum SplatCache {
 
     private static let magic = Data("SPLATC01".utf8)
 
-    private static func serialize(_ s: CachedScene) -> Data {
+    static func serialize(_ s: CachedScene) -> Data {
         var w = Writer()
         w.append(magic)
         w.write(UInt32(s.pointCount))
@@ -179,7 +179,7 @@ enum SplatCache {
         return w.data
     }
 
-    private static func deserialize(_ data: Data) throws -> CachedScene {
+    static func deserialize(_ data: Data) throws -> CachedScene {
         guard data.count >= magic.count, data.prefix(magic.count) == magic else {
             throw CacheError.badMagic
         }

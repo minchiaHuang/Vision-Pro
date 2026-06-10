@@ -1,7 +1,8 @@
-# Visiting Artisan — Build & Run
+# Visual Eyes — Build & Run
 
-> v1 now includes `VisitingArtisan.xcodeproj` in this repo.
-> You no longer need to create an Xcode project manually or copy `Sources/` into a target.
+> The repo includes `VisitingArtisan.xcodeproj` (the Xcode project/target is still named
+> `VisitingArtisan`; the product is **Visual Eyes**). You don't need to create a project or copy
+> `Sources/` into a target.
 
 ---
 
@@ -15,39 +16,45 @@ Open:
 
 The `VisitingArtisan` target uses:
 
-- Product name: `VisitingArtisan`
+- Product name: `VisitingArtisan` (display name "Visual Eyes")
 - Bundle ID: `com.tommy.VisitingArtisan`
 - Shared SwiftUI source from `Sources/`
 - Supported destinations: iPhone, iPad, Apple Vision
 - Deployment targets: iOS 26.0 and visionOS 26.0
 
-No external API key is required for v1. The repo includes sample 360° images from the Skybox AI asset pack. If any image is missing later, the app falls back to a grey sphere so the full flow can still run.
+The core 3D walkthrough runs with no key (the museum USDZ is bundled and narration uses on-device
+TTS). **Live image generation needs an `openAIAPIKey`** — without it, the walls fall back to
+bundled placeholder textures so the flow still runs.
 
 ---
 
 ## Secrets / API keys
 
-`Sources/Secrets.swift` **is committed to the repo with empty placeholder keys** so that a
-fresh clone builds out of the box. There are no real keys in this repo, and you must never
-commit one.
+`Sources/Core/Secrets.swift` **is committed with empty placeholder keys** so a fresh clone builds
+out of the box. There are no real keys in this repo, and you must never commit one.
 
-The core flow needs no key. The two stub keys gate optional, experimental features only:
+The keys gate optional, layered features:
 
-- `worldLabsAPIKey` — the experimental "World Labs" walkable-splat entry point. Empty →
-  `WorldLabsService` reports "Missing API key" and stays inert.
-- `anthropicAPIKey` — the Phase 6b two-way voice conversation (Claude Messages API). Empty →
-  `ConversationService` reports "Missing API key" and the conversation stays inert. The 6a
-  entry narration still works, since it uses only on-device TTS and needs no key.
+- `openAIAPIKey` — the **Future Museum** pipeline: Stage A `CuratorService` (story) + Stage B
+  `ImageGenerationService` (images). Empty → the walls use bundled placeholders. Your account must
+  expose `gpt-5.5` (Curator) and `gpt-image-2` (images); otherwise swap the model constants in
+  those services.
+- `anthropicAPIKey` — the push-to-talk **conversation** (Claude Messages API). Empty →
+  `ConversationService` shows an add-key notice and conversation stays inert. **Per-beat narration
+  still works**, since it uses only on-device TTS.
+- `azureSpeechKey` / `elevenLabsAPIKey` — optional cloud **TTS** upgrades (Azure preferred). Empty
+  → on-device `AVSpeechSynthesizer` is used automatically.
+- `worldLabsAPIKey` — the experimental walkable-splat spike. Empty → `WorldLabsService` reports
+  "Missing API key" and stays inert.
 
-For local experiments with a real key, edit `Sources/Secrets.swift` locally and keep the
-change unstaged. For extra safety against accidental commits:
+For local experiments, edit `Sources/Core/Secrets.swift` and keep the change unstaged. For extra
+safety against accidental commits:
 
 ```bash
-git update-index --skip-worktree Sources/Secrets.swift
+git update-index --skip-worktree Sources/Core/Secrets.swift
 ```
 
-For any additional out-of-band secrets, use a `*.env` file or `APIKeys.plist` — both are
-gitignored.
+For any additional out-of-band secrets, use a `*.env` file or `APIKeys.plist` — both are gitignored.
 
 ---
 
@@ -58,12 +65,12 @@ gitignored.
 3. Choose one of:
    - `iPad Pro 13-inch (M5)` simulator
    - `Apple Vision Pro` simulator
-4. Press `Cmd-R`.
+4. Press `Cmd-R`. From the Dev Menu, pick **Future Museum**.
 
-Expected v1 flow:
+Expected flow:
 
 ```text
-Splash -> Quiz -> Building your world... -> sample 360 world
+Questions -> "Building your museum…" -> walk the 3D museum (5 images + narration) -> the decision
 ```
 
 ---
@@ -100,12 +107,8 @@ If running both builds at the same time, use separate `-derivedDataPath` values 
 
 ---
 
-## Replace 360° Images Later
+## The museum's images
 
-The current images are sample assets. When final v1 world images are ready, replace the files in `Assets.xcassets` while keeping these exact asset names:
-
-- `world_calm_communal`
-- `world_open_nature`
-- `world_quiet_solitary`
-
-See [WORLDS.md](WORLDS.md) for generation guidance.
+The museum's wall images are generated live per visit (see [WORLDS.md](WORLDS.md)). The 3D museum
+asset itself is the bundled Richards Art Gallery USDZ in `Sources/Spikes/SpikeAssets/`. No image
+assets need to be pre-baked or renamed.

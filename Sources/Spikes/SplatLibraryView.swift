@@ -34,29 +34,32 @@ struct SavedSplatWorld: Codable, Identifiable {
 /// UserDefaults-backed list of generated + imported worlds (dev-only convenience).
 enum SplatLibrary {
     // v2: schema gained flip / remoteURL / localFilename (old v1 data is ignored).
-    private static let key = "splat.library.v2"
+    static let storageKey = "splat.library.v2"
 
-    static func load() -> [SavedSplatWorld] {
-        guard let data = UserDefaults.standard.data(forKey: key),
+    static func load(from defaults: UserDefaults = .standard,
+                     key: String = SplatLibrary.storageKey) -> [SavedSplatWorld] {
+        guard let data = defaults.data(forKey: key),
               let worlds = try? JSONDecoder().decode([SavedSplatWorld].self, from: data)
         else { return [] }
         return worlds
     }
 
     /// Insert at the front, de-duplicating by world id (newest wins).
-    static func add(_ world: SavedSplatWorld) {
-        var worlds = load().filter { $0.id != world.id }
+    static func add(_ world: SavedSplatWorld, to defaults: UserDefaults = .standard,
+                    key: String = SplatLibrary.storageKey) {
+        var worlds = load(from: defaults, key: key).filter { $0.id != world.id }
         worlds.insert(world, at: 0)
-        save(worlds)
+        save(worlds, to: defaults, key: key)
     }
 
-    static func remove(id: String) {
-        save(load().filter { $0.id != id })
+    static func remove(id: String, from defaults: UserDefaults = .standard,
+                       key: String = SplatLibrary.storageKey) {
+        save(load(from: defaults, key: key).filter { $0.id != id }, to: defaults, key: key)
     }
 
-    private static func save(_ worlds: [SavedSplatWorld]) {
+    private static func save(_ worlds: [SavedSplatWorld], to defaults: UserDefaults, key: String) {
         if let data = try? JSONEncoder().encode(worlds) {
-            UserDefaults.standard.set(data, forKey: key)
+            defaults.set(data, forKey: key)
         }
     }
 }

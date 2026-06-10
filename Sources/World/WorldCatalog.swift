@@ -42,6 +42,7 @@ enum WorldCatalog {
         case .cozyCommunal: return byId("calm_communal")
         case .solitaryPath: return byId("quiet_solitary")
         case .artGallery:   return fallback   // gallery uses its own Oops copy, not a World object
+        case .ba396Museum:  return fallback   // standalone dev world — no World copy needed
         }
     }
 

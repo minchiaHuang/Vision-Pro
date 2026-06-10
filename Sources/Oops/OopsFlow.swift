@@ -3,25 +3,19 @@ import SwiftUI
 /// The screens of the Oops prototype flow (mirrors the React `screen` state). After the
 /// user steps out of the 3D world they land on the `reflection` screen (5 questions).
 enum OopsScreen {
-    case opening, home, safety, privacy, quiz, generating, world, reflection
+    case home, safety, privacy, quiz, generating, world, reflection
 }
 
-/// Held-in-memory answers for the quiz + post-world reflection (front-end only — never
-/// scored or stored in this pass).
+/// Held-in-memory answers for the quiz (front-end only — never scored or stored in this
+/// pass). The post-world reflection is a passive montage with no input, so it stores nothing.
 /// - `quiz`: pill questions — maps question id → selected option index
 /// - `quizText`: free-text questions — maps question id → typed string
-/// - `r1`–`r5`: reflection free-text answers (post-world)
 struct OopsAnswers {
     var quiz: [String: Int] = [:]
     var quizText: [String: String] = [:]
     /// Q3 answer — "What's your ideal future like? Who do you want to become?" — drives the
     /// Hero's Journey image generation goal string.
     var goal: String { quizText["q3"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "" }
-    var r1 = ""
-    var r2 = ""
-    var r3 = ""
-    var r4 = ""
-    var r5 = ""
 }
 
 /// Self-contained coordinator for the Oops glass flow. Owns its own screen + answer
@@ -35,19 +29,21 @@ struct OopsFlowView: View {
     @Environment(\.dismissWindow) private var dismissWindow
     #endif
 
-    @State private var screen: OopsScreen = .opening
+    @State private var screen: OopsScreen = .home
     @State private var answers = OopsAnswers()
     @State private var safety = [false, false, false]
     @State private var privacy = [false, false, false]
 
-    private func restart() {
-        answers = OopsAnswers()
-        safety = [false, false, false]
-        privacy = [false, false, false]
-        withAnimation(.easeInOut(duration: 0.5)) { screen = .opening }
-    }
+    /// Bumped every time we navigate to `.home`, then used as HomeScreen's `.id`. Landing on
+    /// home from a different screen (e.g. returning from the reflection montage) reuses the
+    /// same `switch` branch, so SwiftUI keeps the old HomeScreen + its `@State` alive and the
+    /// `onAppear`-driven opening (floating frames → 3s hold → logo/buttons reveal) never
+    /// replays. Giving it a fresh identity forces a clean re-mount, so every arrival on home
+    /// plays the exact same entrance as the first launch.
+    @State private var homeAppearance = 0
 
     private func go(_ s: OopsScreen) {
+        if s == .home { homeAppearance += 1 }
         withAnimation(.easeInOut(duration: 0.5)) { screen = s }
     }
 
@@ -61,37 +57,33 @@ struct OopsFlowView: View {
                 ZoomableContent {
                     screenView(screen)
                 }
-
-                // Restart pill — bottom-left chrome, kept outside the zoom so it stays
-                // a fixed size (matches the prototype chrome).
-                VStack {
-                    Spacer()
-                    HStack {
-                        Button(action: restart) {
-                            Label("Restart", systemImage: "arrow.counterclockwise")
-                                .font(.system(size: 13))
-                                .foregroundStyle(.white.opacity(0.7))
-                                .padding(.horizontal, 16).padding(.vertical, 9)
-                                .background(.ultraThinMaterial, in: Capsule())
-                        }
-                        .buttonStyle(.plain)
-                        Spacer()
-                    }
-                }
-                .padding(20)
             }
         }
         .preferredColorScheme(.dark)
         .statusBarHidden()
         .onAppear {
             // Returning from the gallery world recreates this window; resume at
-            // the requested screen (reflection) rather than restarting at .opening.
+            // the requested screen (reflection) rather than restarting at .home.
             if let resume = appState.oopsResumeScreen {
                 screen = resume
                 appState.oopsResumeScreen = nil
             }
         }
+        // The voice orb is a separate window; fold the speech it recognizes into the flow's
+        // answers so dictation and typing share one set of answers (dictation replaces the field).
+        .onChange(of: appState.quizVoice.text) { _, dict in
+            for (id, value) in dict { answers.quizText[id] = value }
+        }
         #if os(visionOS)
+        // Show the floating speech-to-text orb only while on the Quiz screen.
+        .onChange(of: screen) { _, s in
+            if s == .quiz {
+                openWindow(id: "quiz-voice-orb")
+            } else {
+                dismissWindow(id: "quiz-voice-orb")
+                appState.quizVoice.activeQuestionID = nil
+            }
+        }
         // Let the cover background go clear so the transparent `OopsPassthrough`
         // reveals the window glass / real room rather than an opaque default backing.
         .presentationBackground(.clear)
@@ -103,55 +95,63 @@ struct OopsFlowView: View {
     @ViewBuilder
     private func screenView(_ screen: OopsScreen) -> some View {
         switch screen {
-        case .opening:
-            OpeningScreen { go(.home) }
         case .home:
+            // `.id` keyed to the visit count so each arrival re-mounts HomeScreen and replays
+            // its opening animation (see `homeAppearance`).
             HomeScreen(onGenerate: { go(.safety) }, onVisitOld: { enterWorld() })
+                .id(homeAppearance)
         case .safety:
             DeclarationScreen(
                 label: "03 Safety Declaration", title: "Safety Declaration",
+                subtitle: OopsContent.declarationIntro,
                 items: OopsContent.safety, cta: "I agree & continue",
-                checks: $safety, onCta: { go(.privacy) })
+                checks: $safety, onCta: { go(.privacy) }, onBack: { go(.home) })
         case .privacy:
             DeclarationScreen(
                 label: "04 Privacy Preferences", title: "Privacy Preferences",
+                subtitle: OopsContent.privacyIntro,
                 items: OopsContent.privacy, cta: "Start",
-                checks: $privacy, requireAll: false, onCta: { go(.quiz) })
+                checks: $privacy, requireAll: false, onCta: { go(.quiz) }, onBack: { go(.safety) })
         case .quiz:
             QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
         case .generating:
-            let goal = answers.goal.isEmpty ? "build a meaningful future" : answers.goal
-            GeneratingScreen(
-                goal: goal,
-                currentSelf: answers.quizText["q4"] ?? "",
-                obstacle: answers.quizText["q5"] ?? "",
-                wontGiveUp: answers.quizText["q6"] ?? "",
-                onDone: { enterWorld() }
-            )
+            // The finished quiz answers now drive the Curator pipeline (story + 5 images)
+            // inside GeneratingScreen; the result is stored on AppState before enterWorld().
+            GeneratingScreen(answers: answers) { enterWorld() }
         case .world:
             EmptyView()
         case .reflection:
-            ReflectionFlowView(answers: $answers, onFinish: { go(.home) })
+            // A passive question montage over the world; when it ends, return Home.
+            ReflectionFlowView(onFinish: { go(.home) })
         }
     }
 
-    /// Enters the Richards Art Gallery.
-    /// - visionOS: sets worldParams to the gallery archetype, opens the shared RealityKit
+    /// Enters the BA396 exhibition hall (the Oops-flow museum world).
+    /// - visionOS: sets worldParams to the BA396 archetype, opens the shared RealityKit
     ///   `world` ImmersiveSpace (head tracking + gamepad locomotion), and shows the small
     ///   `oops-gallery-controls` floating panel. Leaving that panel reopens the dev-menu
-    ///   at the reflection screen.
-    /// - iPad: loads gallery worldParams and shows the in-cover `WorldView` (ParametricWorldView).
+    ///   at the reflection screen. The generated beat images on `appState.galleryImages`
+    ///   are composited onto BA396's 6 portrait walls by `ParametricWorldBuilder`.
+    /// - iPad: loads BA396 worldParams and shows the in-cover `WorldView` (ParametricWorldView).
     private func enterWorld() {
+        // When a Curator story exists (the museum flow, not "visit old world"), stand up the one
+        // shared voice now so both the orb and the in-gallery proximity narrator use it.
+        if let story = appState.museumStory {
+            let convo = ConversationService()
+            convo.configureCurator(story: story, answers: appState.museumAnswers ?? MuseumAnswers())
+            appState.museumConversation = convo
+        }
         #if os(visionOS)
         Task {
-            appState.loadGalleryWorld()
+            appState.loadBA396World()
             if case .opened = await openImmersiveSpace(id: "world") {
                 openWindow(id: "oops-gallery-controls")
+                if appState.museumConversation != nil { openWindow(id: "museum-voice-orb") }
                 dismissWindow(id: "dev-menu")
             }
         }
         #else
-        appState.loadGalleryWorld()
+        appState.loadBA396World()
         go(.world)
         #endif
     }
