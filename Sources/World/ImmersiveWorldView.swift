@@ -50,23 +50,10 @@ struct ImmersiveWorldView: View {
                 let root = Entity()
                 root.addChild(build.container)
                 content.add(root)
-                // Future Museum: narrate each beat as the walker approaches its wall frame.
-                // Same ordered `galleryFrames` list as the wall images, so frame i == beat i.
-                if let story = appState.museumStory {
-                    let frames = Array(ParametricWorldBuilder.galleryFrames(build.container)
-                        .prefix(story.nodes.count))
-                    let positions = frames.map { $0.position(relativeTo: root) }
-                    let director = MuseumNarrationDirector(framePositions: positions,
-                                                           story: story,
-                                                           convo: appState.museumConversation)
-                    locomotor.start(root: root, span: build.span, bounds: build.bounds,
-                                    content: content) { player in
-                        director.tick(playerPosition: player)
-                    }
-                } else {
-                    locomotor.start(root: root, span: build.span, bounds: build.bounds,
-                                    content: content)
-                }
+                // Locomotion only. Per-beat narration is no longer proximity-triggered: each wall
+                // plaque now carries a play button that has the Curator generate a fresh spoken
+                // description on demand (`BeatPlaqueView` → `ConversationService.describeExhibit`).
+                locomotor.start(root: root, span: build.span, bounds: build.bounds, content: content)
                 // BA396 Future Museum: hang a museum wall-label beside each portrait. The
                 // caption text is ready from Stage A (before any image lands), so the plaques
                 // appear while the photos are still "developing". Parented under `root` so they
@@ -113,7 +100,7 @@ struct ImmersiveWorldView: View {
             if appState.worldParams?.archetype == .ba396Museum {
                 ForEach(appState.museumStory?.nodes ?? BeatPlaqueSample.nodes) { node in
                     Attachment(id: node.id) {
-                        BeatPlaqueView(node: node)
+                        BeatPlaqueView(node: node, convo: appState.museumConversation)
                     }
                 }
             }
@@ -241,59 +228,6 @@ final class GalleryWallStreamer {
     }
 }
 
-/// Speaks each beat's narration once, when the walker first comes within `radius` metres of that
-/// beat's wall frame. Frame order == beat order (the same `ParametricWorldBuilder.galleryFrames`
-/// list drives the wall images), so frame *i* narrates `story.nodes[i]`. Narration is spoken
-/// through the shared `ConversationService`, so it shares the audio session with push-to-talk.
-@MainActor
-final class MuseumNarrationDirector {
-    private let frameXZ: [SIMD2<Float>]
-    private let narrations: [String]
-    private let tones: [String]
-    private let decisionPrompt: String
-    private weak var convo: ConversationService?
-    private let radius: Float
-    private var fired: Set<Int> = []
-
-    init(framePositions: [SIMD3<Float>], story: MuseumStory,
-         convo: ConversationService?, radius: Float = 2.5) {
-        self.frameXZ = framePositions.map { SIMD2($0.x, $0.z) }
-        self.narrations = story.nodes.map(\.narration)
-        self.tones = story.nodes.map(\.tone)
-        self.decisionPrompt = story.decision_prompt
-        self.convo = convo
-        self.radius = radius
-    }
-
-    /// Called each locomotion frame with the player's scene-space position. The warm Elixir beat
-    /// closes with the decision prompt — the museum's final question, handed back to the visitor.
-    func tick(playerPosition: SIMD3<Float>) {
-        let p = SIMD2(playerPosition.x, playerPosition.z)
-        guard let i = Self.frameToTrigger(playerXZ: p, frameXZ: frameXZ, fired: fired, radius: radius),
-              i < narrations.count else { return }
-        fired.insert(i)
-        var line = narrations[i]
-        if tones[i] == "warm", !decisionPrompt.isEmpty {
-            line += " " + decisionPrompt
-        }
-        convo?.narrate(line)
-    }
-
-    /// Pure: the nearest not-yet-fired frame within `radius`, or nil. Kept free of RealityKit so
-    /// the trigger rule is testable in isolation.
-    static func frameToTrigger(playerXZ: SIMD2<Float>, frameXZ: [SIMD2<Float>],
-                               fired: Set<Int>, radius: Float) -> Int? {
-        let r2 = radius * radius
-        func d2(_ i: Int) -> Float {
-            let dx = playerXZ.x - frameXZ[i].x, dy = playerXZ.y - frameXZ[i].y
-            return dx * dx + dy * dy
-        }
-        return frameXZ.indices
-            .filter { !fired.contains($0) && d2($0) <= r2 }
-            .min { d2($0) < d2($1) }
-    }
-}
-
 // MARK: - Plaque live tuning (TEMP dev tool — fold finals into defaults + delete panel later)
 
 /// Live-tunable placement for the BA396 plaques. Shared across the immersive view (which owns the
@@ -343,81 +277,98 @@ final class PlaqueTuner {
     }
 }
 
-// MARK: - Sample beats (plaque preview without running generation)
-
-/// Stand-in beats so the BA396 plaques can be previewed via "Visit Old World" (or dev entry)
-/// without running the quiz + image generation. Six entries (one per wall) with deliberately
-/// mixed caption lengths so the layout/size can be judged on both short and long labels. Used
-/// only when `appState.museumStory` is nil; the real flow always supplies its own story.
-enum BeatPlaqueSample {
-    static let nodes: [MuseumNode] = [
-        .init(stage: "ordinary_world_call", age: 17, beat: "",
-              caption: "The Drawer — where the dream is kept, unspoken.",
-              narration: "Seventeen. You keep the flyer in a drawer. You haven't told anyone yet.",
-              image_prompt: "", tone: "cold"),
-        .init(stage: "crossing_threshold", age: 19, beat: "",
-              caption: "Before Dawn",
-              narration: "Then, for years, every morning before the city wakes. No audience. No applause.",
-              image_prompt: "", tone: "cold"),
-        .init(stage: "ordeal", age: 23, beat: "",
-              caption: "The Empty Row — when the body fails and the others have gone.",
-              narration: "Twenty-three. Your body gives out. The ones who started with you have already left.",
-              image_prompt: "", tone: "cold"),
-        .init(stage: "sacrifice", age: 27, beat: "",
-              caption: "Missed Calls",
-              narration: "You wanted to keep time with your family. You missed the last birthday that mattered.",
-              image_prompt: "", tone: "cold"),
-        .init(stage: "return_elixir", age: 34, beat: "",
-              caption: "Curtain Call — one stage, at last.",
-              narration: "Thirty-four. The Opera House. Whether it was worth it — only you will know.",
-              image_prompt: "", tone: "warm"),
-        .init(stage: "epilogue", age: 40, beat: "",
-              caption: "After — a sample sixth label for sizing.",
-              narration: "A sixth sample beat so all six BA396 walls show a plaque for layout checking.",
-              image_prompt: "", tone: "warm"),
-    ]
-}
-
 // MARK: - Museum plaque (RealityView attachment)
 
-/// A small museum wall-label shown beside a BA396 portrait. Collapsed it shows the short
-/// `caption`; tapping expands it to the full `narration`. Lives inside a `RealityView`
-/// attachment, so the tap is an ordinary SwiftUI `Button` — no RealityKit
-/// `InputTargetComponent`/`CollisionComponent` plumbing is required. Styled with the shared
-/// Oops glass card so it matches the rest of the flow.
+/// A small museum wall-label shown beside a BA396 portrait. Shows the short `caption`; tapping the
+/// header expands the written `narration`. A play button has the shared Curator voice generate a
+/// FRESH spoken description for THIS exhibit on demand (`ConversationService.describeExhibit`).
+/// Lives inside a `RealityView` attachment, so both taps are ordinary SwiftUI `Button`s — no
+/// RealityKit `InputTargetComponent`/`CollisionComponent` plumbing. Styled with the shared Oops
+/// glass card so it matches the rest of the flow.
 struct BeatPlaqueView: View {
     let node: MuseumNode
+    /// The shared Curator voice. nil on the dev/sample path (no story) → play button disabled.
+    var convo: ConversationService?
     @State private var expanded = false
 
+    /// This plaque is the one the Curator is currently generating/speaking for (others stay idle).
+    private var isThinking: Bool {
+        guard let convo, convo.activeBeatID == node.id else { return false }
+        return convo.turn == .thinking
+    }
+    private var isSpeaking: Bool {
+        guard let convo, convo.activeBeatID == node.id else { return false }
+        return convo.turn == .speaking || convo.isSpeaking
+    }
+
     var body: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.25)) { expanded.toggle() }
-        } label: {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(stageLabel)
-                    .font(.system(size: 16, weight: .semibold))
-                    .tracking(1.5)
-                    .foregroundStyle(OopsGlass.label3)
-                Text(node.caption)
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(OopsGlass.label1)
-                    .fixedSize(horizontal: false, vertical: true)
-                if expanded {
-                    Text(node.narration)
-                        .font(.system(size: 20, weight: .regular))
-                        .foregroundStyle(.white.opacity(0.85))
+        VStack(alignment: .leading, spacing: 14) {
+            // Header — tap to expand the written narration.
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) { expanded.toggle() }
+            } label: {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(stageLabel)
+                        .font(.system(size: 16, weight: .semibold))
+                        .tracking(1.5)
+                        .foregroundStyle(OopsGlass.label3)
+                    Text(node.caption)
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundStyle(OopsGlass.label1)
                         .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 4)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
-            // Constant width so expanding only grows downward (no left/right shift on tap).
-            .frame(width: 420, alignment: .leading)
-            .padding(.vertical, 20)
-            .padding(.horizontal, 26)
-            .oopsCard(cornerRadius: 22)
+            .buttonStyle(.plain)
+            .hoverEffect()
+
+            if expanded {
+                Text(node.narration)
+                    .font(.system(size: 20, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            // Play / Stop toggle — first tap has the Curator generate a fresh spoken description for
+            // this exhibit; while it plays the button shows a "playing" animation, and tapping it
+            // again stops the voice. Pinned to the trailing edge (bottom-right of the plaque).
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                Button {
+                    convo?.toggleDescribe(node)
+                } label: {
+                    HStack(spacing: 10) {
+                        if isThinking {
+                            ProgressView().controlSize(.small).tint(.white)
+                            Text("Thinking…").font(.system(size: 18, weight: .semibold))
+                        } else if isSpeaking {
+                            EqualizerBars()
+                            Text("Stop").font(.system(size: 18, weight: .semibold))
+                            Image(systemName: "pause.fill").font(.system(size: 16, weight: .bold))
+                        } else {
+                            Image(systemName: "play.circle.fill").font(.system(size: 22, weight: .semibold))
+                            Text("Play").font(.system(size: 18, weight: .semibold))
+                        }
+                    }
+                    .foregroundStyle(.white.opacity(convo == nil ? 0.4 : 0.9))
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 18)
+                    .background(.white.opacity(isSpeaking ? 0.20 : 0.12), in: Capsule())
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .hoverEffect()
+                .disabled(convo == nil)
+                .animation(.easeInOut(duration: 0.2), value: isSpeaking)
+                .animation(.easeInOut(duration: 0.2), value: isThinking)
+            }
         }
-        .buttonStyle(.plain)
-        .hoverEffect()
+        // Constant width so expanding only grows downward (no left/right shift on tap).
+        .frame(width: 420, alignment: .leading)
+        .padding(.vertical, 20)
+        .padding(.horizontal, 26)
+        .oopsCard(cornerRadius: 22)
         .animation(.easeInOut(duration: 0.25), value: expanded)
     }
 
@@ -425,5 +376,47 @@ struct BeatPlaqueView: View {
     private var stageLabel: String {
         node.stage.replacingOccurrences(of: "_", with: " ").uppercased() + " · AGE \(node.age)"
     }
+}
+
+/// A tiny animated equalizer shown on the plaque play button while the Curator is speaking —
+/// signals "playing, tap to stop". Three bars bouncing out of phase.
+private struct EqualizerBars: View {
+    @State private var up = false
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 3) {
+            ForEach(0..<3, id: \.self) { i in
+                Capsule()
+                    .fill(.white)
+                    .frame(width: 4, height: up ? 18 : 6)
+                    .animation(.easeInOut(duration: 0.45).repeatForever().delay(Double(i) * 0.14),
+                               value: up)
+            }
+        }
+        .frame(height: 20)
+        .onAppear { up = true }
+    }
+}
+
+// MARK: - Plaque previews
+
+/// The plaque WITH a live Curator voice → the play button is enabled ("Play"). Tapping it in the
+/// canvas would generate + speak; the preview just shows the resting state.
+#Preview("Plaque — play enabled") {
+    ZStack {
+        Color.black.ignoresSafeArea()
+        BeatPlaqueView(node: BeatPlaqueSample.nodes[2], convo: ConversationService())
+    }
+    .preferredColorScheme(.dark)
+}
+
+/// The dev/sample path (no story → no `museumConversation`): the play button is disabled/greyed,
+/// matching what "Visit Old World" shows.
+#Preview("Plaque — no curator (disabled)") {
+    ZStack {
+        Color.black.ignoresSafeArea()
+        BeatPlaqueView(node: BeatPlaqueSample.nodes[0], convo: nil)
+    }
+    .preferredColorScheme(.dark)
 }
 #endif

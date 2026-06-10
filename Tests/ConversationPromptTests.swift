@@ -43,4 +43,37 @@ struct ConversationPromptTests {
         let withText = prompt(scores: .neutral, hopeFreeText: "I want to feel calmer")
         #expect(withText.contains("In their own words, they hope for: \"I want to feel calmer\""))
     }
+
+    /// `describeExhibitMessage` is the synthetic visitor turn sent by a wall-plaque play button.
+    /// It must name THIS exhibit (caption, de-underscored stage, age) and ask the Curator for fresh
+    /// words rather than a re-read of the wall label.
+    @Test func describeExhibitMessageNamesTheExhibitAndAsksForFreshWording() {
+        let beat = MuseumNode(stage: "return_elixir", age: 34, beat: "",
+                              caption: "Curtain Call", narration: "Thirty-four. The Opera House.",
+                              image_prompt: "", tone: "warm")
+        let m = ConversationService.describeExhibitMessage(beat: beat)
+        #expect(m.contains("Curtain Call"))            // names this exhibit
+        #expect(m.contains("return elixir"))           // stage, underscores stripped
+        #expect(m.contains("34"))                      // age anchor
+        #expect(m.contains("say it anew"))             // asks for fresh wording, not the label
+    }
+
+    /// "Visit Old World" grounds the Curator voice in `BeatPlaqueSample.story` (no quiz/generation),
+    /// so the play button there can talk about the sample exhibits. The prompt must carry the sample
+    /// persona, a sample beat's narration, and the closing decision.
+    @Test func curatorPromptGroundsInTheSampleStory() {
+        let p = ConversationService.makeCuratorPrompt(story: BeatPlaqueSample.story,
+                                                      answers: MuseumAnswers())
+        #expect(p.contains(BeatPlaqueSample.story.persona))
+        #expect(p.contains(BeatPlaqueSample.story.decision_prompt))
+        #expect(p.contains("The Opera House"))   // the return_elixir beat's narration is embedded
+    }
+
+    /// The sample story must wrap exactly the sample beats the plaques show, so the spoken Curator
+    /// and the on-wall plaques never describe different exhibits in "Visit Old World".
+    @Test func sampleStoryWrapsTheSampleBeats() {
+        #expect(BeatPlaqueSample.story.nodes.map(\.id) == BeatPlaqueSample.nodes.map(\.id))
+        #expect(BeatPlaqueSample.story.nodes.count == 6)
+        #expect(!BeatPlaqueSample.story.decision_prompt.isEmpty)
+    }
 }
