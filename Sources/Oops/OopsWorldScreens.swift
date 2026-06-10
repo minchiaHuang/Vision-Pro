@@ -262,6 +262,9 @@ struct OopsGalleryControls: View {
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
+    // `dismissWindow(id:)` can't reliably close the window it's called FROM — visionOS reserves it
+    // for closing OTHER windows. To close THIS control window we use the view's own dismiss action.
+    @Environment(\.dismiss) private var dismissSelf
     @State private var isExiting = false
     @State private var showSettings = false
 
@@ -324,6 +327,7 @@ struct OopsGalleryControls: View {
 
             Toggle("Audio guide", isOn: $settings.audioGuideOn)
             Toggle("Background music", isOn: $settings.musicOn)
+            Toggle("Subtitles", isOn: $settings.subtitlesOn)
             Button {
                 openWindow(id: "museum-voice-orb")
                 showSettings = false
@@ -400,8 +404,8 @@ struct OopsGalleryControls: View {
         if appState.oopsResumeScreen == nil { appState.oopsResumeScreen = .reflection }
         appState.devActiveFeature = .oops
         openWindow(id: "dev-menu")
-        dismissWindow(id: "oops-gallery-controls")
-        dismissWindow(id: "museum-voice-orb")
+        dismissWindow(id: "museum-voice-orb")   // a DIFFERENT window — dismissWindow(id:) is correct here
+        dismissSelf()                           // close THIS control window (dismissWindow(self) is unreliable)
     }
 }
 

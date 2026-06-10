@@ -23,6 +23,11 @@ struct ImmersiveWorldView: View {
     /// `PlaqueTuning` (the TEMP slider panel in the gallery controls).
     @State private var plaqueTuner = PlaqueTuner()
 
+    /// Loading/failed overlay placement: centred on each picture frame, sitting just in front of
+    /// the painting; `scale` sizes the SwiftUI card. Constants — tunable on device.
+    private static let overlayOutward: Float = 0.05
+    private static let overlayScale: Float = 3.0
+
     var body: some View {
         // Observe each painting's arrival: reading every node's `image` here ties this view's
         // re-evaluation to Stage B landings, which re-runs the RealityView `update:` closure
@@ -74,6 +79,16 @@ struct ImmersiveWorldView: View {
                     // Position/size/orient comes from PlaqueTuning so it can be tuned live.
                     plaqueTuner.set(tuned)
                     plaqueTuner.reapply(PlaqueTuning.shared)
+                    // Loading/failed overlays, centred on each frame (no side offset — they sit on
+                    // the painting itself). Same anchor order as the plaques + streamed wall photos,
+                    // so overlay i covers frame i. `outward`/`scale` are constants, tunable on device.
+                    for (i, gen) in appState.museumGenerator.nodes.prefix(anchors.count).enumerated() {
+                        guard let overlay = attachments.entity(for: "loading-\(gen.id)") else { continue }
+                        root.addChild(overlay)   // child of root → rides locomotion with the walls
+                        let pos = anchors[i].centroid + anchors[i].normal * Self.overlayOutward
+                        overlay.look(at: pos - anchors[i].normal, from: pos, relativeTo: root)
+                        overlay.scale = .init(repeating: Self.overlayScale)
+                    }
                 }
                 // Hand the world root to the streamer and paint whatever has already landed;
                 // the `update:` closure below picks up the rest as they arrive.
@@ -101,6 +116,13 @@ struct ImmersiveWorldView: View {
                 ForEach(appState.museumStory?.nodes ?? BeatPlaqueSample.nodes) { node in
                     Attachment(id: node.id) {
                         BeatPlaqueView(node: node, convo: appState.museumConversation)
+                    }
+                }
+                // Per-frame loading/failed overlay, one per generated beat (real flow only — the
+                // dev/sample path has no generator nodes, so none appear).
+                ForEach(appState.museumGenerator.nodes) { gen in
+                    Attachment(id: "loading-\(gen.id)") {
+                        FrameLoadingOverlay(gen: gen, generator: appState.museumGenerator)
                     }
                 }
             }
@@ -346,6 +368,21 @@ struct BeatPlaqueView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            // Live subtitle — the Curator's spoken line, shown on the exhibit being described while
+            // "Subtitles" is on. Only on the active plaque; clears when the narration ends.
+            if appState.museumSettings.subtitlesOn,
+               convo?.activeBeatID == node.id,
+               let line = convo?.spokenLine {
+                Text(line)
+                    .font(.system(size: 24, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 14)
+                    .background(.black.opacity(0.28), in: RoundedRectangle(cornerRadius: 14))
+                    .transition(.opacity)
+            }
+
             // Play / Stop toggle — first tap has the Curator generate a fresh spoken description for
             // this exhibit; while it plays the button shows a "playing" animation, and tapping it
             // again stops the voice. Pinned to the trailing edge (bottom-right of the plaque).
@@ -414,6 +451,70 @@ private struct EqualizerBars: View {
         }
         .frame(height: 20)
         .onAppear { up = true }
+    }
+}
+
+// MARK: - Frame loading / failed overlay
+
+/// Sits centred on a BA396 picture frame while its painting is still generating (or failed).
+/// Reads its `GeneratedNode` live: developing → a soft shimmering card; failed → a tap-to-retry
+/// card; once the image lands it renders nothing so the wall texture shows through. A RealityView
+/// attachment, so the retry button is an ordinary SwiftUI `Button` (no RealityKit input plumbing).
+struct FrameLoadingOverlay: View {
+    let gen: GeneratedNode
+    let generator: MuseumGenerator
+    @State private var sweep = false
+
+    var body: some View {
+        Group {
+            if gen.image != nil {
+                Color.clear            // painting landed — let the wall texture show through
+            } else if gen.failed {
+                failedCard
+            } else {
+                developingCard
+            }
+        }
+        .frame(width: 320, height: 320)
+    }
+
+    private var developingCard: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 18).fill(.black.opacity(0.38))
+            // A soft sheen sweeping left→right signals "developing", not frozen.
+            RoundedRectangle(cornerRadius: 18)
+                .fill(LinearGradient(colors: [.clear, .white.opacity(0.16), .clear],
+                                     startPoint: .leading, endPoint: .trailing))
+                .offset(x: sweep ? 200 : -200)
+            VStack(spacing: 14) {
+                ProgressView().controlSize(.large).tint(.white)
+                Text("Developing…")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: false)) { sweep = true }
+        }
+    }
+
+    private var failedCard: some View {
+        Button { generator.retry(gen) } label: {
+            VStack(spacing: 12) {
+                Image(systemName: "wifi.slash").font(.system(size: 30, weight: .semibold))
+                Text("Couldn't load").font(.system(size: 20, weight: .semibold))
+                Text("Tap to retry")
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+            .foregroundStyle(.white)
+            .frame(width: 320, height: 320)
+            .background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 18))
+            .contentShape(RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(.plain)
+        .hoverEffect()
     }
 }
 
