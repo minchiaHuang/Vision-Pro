@@ -1,4 +1,87 @@
 import SwiftUI
+import AVFAudio
+
+/// Loops a short bundled ambient bed under the intro/home screen, before the visitor
+/// engages either action button. Mixes politely with any other app audio, so it needs no
+/// ducking coordination. Mirrors the `AVAudioPlayer` pattern used by `MuseumMusicPlayer`.
+final class IntroAmbientPlayer {
+    /// Steady-state background volume reached after the fade-in.
+    private static let targetVolume: Float = 0.72
+    /// The bed fades up from silence over this many seconds when playback starts. Kept short
+    /// because the clip itself is only a few seconds long and loops continuously.
+    private static let fadeInDuration: TimeInterval = 1.5
+
+    private var player: AVAudioPlayer?
+
+    /// Starts looping playback if not already playing. Idempotent: a second `start()` while a
+    /// track is in flight is a no-op. The bed starts silent and ramps up to `targetVolume`.
+    ///
+    /// The clip is uncompressed PCM (WAV), not AAC/m4a, on purpose: `AVAudioPlayer` loops PCM
+    /// sample-accurately, so the bed flows continuously. A compressed source would loop with a
+    /// short gap each cycle from the codec's priming/padding silence.
+    func start() {
+        guard player == nil,
+              let url = Bundle.main.url(forResource: "intro_ambient", withExtension: "wav")
+        else { return }
+
+        #if !os(macOS)
+        let session = AVAudioSession.sharedInstance()
+        // .playback so it's audible even with the silent switch on (this is intentional
+        // ambience); .mixWithOthers so it doesn't fight the app's voice/STT sessions.
+        try? session.setCategory(.playback, options: [.mixWithOthers])
+        try? session.setActive(true)
+        #endif
+
+        let p = try? AVAudioPlayer(contentsOf: url)
+        p?.numberOfLoops = -1                    // loop forever
+        p?.volume = 0                            // start silent…
+        p?.prepareToPlay()
+        p?.play()
+        p?.setVolume(Self.targetVolume, fadeDuration: Self.fadeInDuration)   // …ramp up
+        player = p
+    }
+
+    /// Stops playback and releases the player (e.g. when leaving the home screen).
+    func stop() {
+        player?.stop()
+        player = nil
+    }
+}
+
+/// Plays a short bundled one-shot sound effect once (no looping) — used for the logo sting
+/// that fires the moment the intro logo + buttons reveal. Retains the player for the duration
+/// of playback so it isn't deallocated mid-sound; `stop()` lets the caller cut it short when
+/// the visitor leaves the screen. Mixes politely with the ambient bed and any voice/STT audio.
+final class IntroSoundEffect {
+    private var player: AVAudioPlayer?
+
+    /// Plays `resource.ext` from the main bundle once from the start. Idempotent restart: a
+    /// fresh call replaces any in-flight playback.
+    func play(_ resource: String, ext: String, volume: Float = 1.0) {
+        guard let url = Bundle.main.url(forResource: resource, withExtension: ext) else { return }
+
+        #if !os(macOS)
+        let session = AVAudioSession.sharedInstance()
+        // .playback so it's audible with the silent switch on; .mixWithOthers so it layers
+        // over the ambient bed instead of interrupting it.
+        try? session.setCategory(.playback, options: [.mixWithOthers])
+        try? session.setActive(true)
+        #endif
+
+        let p = try? AVAudioPlayer(contentsOf: url)
+        p?.volume = volume
+        p?.prepareToPlay()
+        p?.play()
+        player = p
+    }
+
+    /// Stops playback and releases the player (e.g. when leaving the home screen before the
+    /// sting has finished).
+    func stop() {
+        player?.stop()
+        player = nil
+    }
+}
 
 /// Layout note: the prototype uses fixed 1920×1080 absolute coordinates. Here we keep
 /// the same *composition* (passthrough behind, a centered glass window/card, a right-edge
@@ -213,6 +296,13 @@ struct HomeScreen: View {
     /// false → only the floating frames show · true → logo + buttons have faded in.
     @State private var revealed = false
 
+    /// Looping ambient bed that plays while the visitor is on this intro screen, before they
+    /// engage either button. Started on appear, stopped on disappear (leaving home).
+    @State private var ambient = IntroAmbientPlayer()
+
+    /// One-shot logo sting, fired the moment the logo + buttons reveal (after the hold).
+    @State private var logoSound = IntroSoundEffect()
+
     var body: some View {
         ZStack {
             OopsPassthrough()
@@ -243,10 +333,19 @@ struct HomeScreen: View {
             }
         }
         .onAppear {
-            // Hold on the floating frames, then fade the logo + buttons in together.
+            // Begin the looping ambient bed the moment the intro screen appears.
+            ambient.start()
+            // Hold on the floating frames, then fade the logo + buttons in together —
+            // firing the logo sting in sync with the reveal.
             DispatchQueue.main.asyncAfter(deadline: .now() + holdBeforeReveal) {
+                logoSound.play("logo_sound", ext: "m4a")
                 withAnimation(.easeInOut(duration: 0.8)) { revealed = true }
             }
+        }
+        .onDisappear {
+            // Leaving the intro screen (either button, or into the world) stops the audio.
+            ambient.stop()
+            logoSound.stop()
         }
     }
 }

@@ -60,6 +60,8 @@
 		AA0000010000000000000050 /* WorldCameraRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000150 /* WorldCameraRig.swift */; };
 		AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */; };
 		AA00000100000000000000D3 /* museum_clair_de_lune.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */; };
+		AA00000100000000000000E3 /* intro_ambient.wav in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001E3 /* intro_ambient.wav */; };
+		AA00000100000000000000F7 /* logo_sound.m4a in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F7 /* logo_sound.m4a */; };
 		AA0000010000000000000067 /* MuseumMusicPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000167 /* MuseumMusicPlayer.swift */; };
 		AA00000100000000000000B0 /* SplatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B0 /* SplatSession.swift */; };
 		AA00000100000000000000B1 /* SplatMeshRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B1 /* SplatMeshRenderer.swift */; };
@@ -155,6 +157,8 @@
 		AA0000010000000000000150 /* WorldCameraRig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorldCameraRig.swift; sourceTree = "<group>"; };
 		AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = vibrant_loft_art_studio.spz; sourceTree = "<group>"; };
 		AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = museum_clair_de_lune.mp3; sourceTree = "<group>"; };
+		AA00000100000000000001E3 /* intro_ambient.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = intro_ambient.wav; sourceTree = "<group>"; };
+		AA00000100000000000001F7 /* logo_sound.m4a */ = {isa = PBXFileReference; lastKnownFileType = audio.m4a; path = logo_sound.m4a; sourceTree = "<group>"; };
 		AA00000100000000000001B0 /* SplatSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSession.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B1 /* SplatMeshRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatMeshRenderer.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B2 /* SplatMeshShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SplatMeshShaders.metal; sourceTree = "<group>"; };
@@ -307,6 +311,8 @@
 				121651D72FD547CB00C06C29 /* beach 2.jpeg */,
 				121651D92FD547D000C06C29 /* beach 4.jpg */,
 				AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */,
+				AA00000100000000000001E3 /* intro_ambient.wav */,
+				AA00000100000000000001F7 /* logo_sound.m4a */,
 			);
 			path = SpikeAssets;
 			sourceTree = "<group>";
@@ -543,6 +549,8 @@
 				AA000001000000000000000C /* Assets.xcassets in Resources */,
 				AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */,
 				AA00000100000000000000D3 /* museum_clair_de_lune.mp3 in Resources */,
+				AA00000100000000000000E3 /* intro_ambient.wav in Resources */,
+				AA00000100000000000000F7 /* logo_sound.m4a in Resources */,
 				121651D62FD547C500C06C29 /* beach 7.jpg in Resources */,
 				121651D82FD547CB00C06C29 /* beach 2.jpeg in Resources */,
 				121651DA2FD547D000C06C29 /* beach 4.jpg in Resources */,
