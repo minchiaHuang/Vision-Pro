@@ -444,6 +444,7 @@
 				AA0000010000000000000501 /* Sources */,
 				AA0000010000000000000201 /* Frameworks */,
 				AA0000010000000000000502 /* Resources */,
+				AA0000010000000000000503 /* Embed API Keys */,
 			);
 			buildRules = (
 			);
@@ -556,6 +557,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		AA0000010000000000000503 /* Embed API Keys */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed API Keys";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Embed API keys from the developer's central host file into the app bundle so\n# device builds get keys too (the simulator-only SIMULATOR_HOST_HOME path can't\n# reach the host on device). Single source of truth: ~/.config/visualeyes/keys.plist.\n# No-ops gracefully when the file is absent (fresh clone -> empty keys -> app degrades),\n# preserving the fresh-clone-builds-empty safety property in Secrets.swift.\nSRC=\"$HOME/.config/visualeyes/keys.plist\"\nDEST=\"$BUILT_PRODUCTS_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/APIKeys.plist\"\nif [ -f \"$SRC\" ]; then\n  /bin/cp \"$SRC\" \"$DEST\"\n  echo \"Embedded API keys from $SRC into bundle\"\nelse\n  echo \"warning: $SRC not found; building with empty API keys\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		AA0000010000000000000501 /* Sources */ = {
@@ -785,6 +808,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = MCD2V89BPF;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				"GENERATE_INFOPLIST_FILE[sdk=xros*]" = NO;
 				"GENERATE_INFOPLIST_FILE[sdk=xrsimulator*]" = NO;
@@ -831,6 +855,7 @@
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = MCD2V89BPF;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				"GENERATE_INFOPLIST_FILE[sdk=xros*]" = NO;
 				"GENERATE_INFOPLIST_FILE[sdk=xrsimulator*]" = NO;

@@ -83,7 +83,7 @@ struct SplatLocomotion {
             turnX += dead(gp.rightThumbstick.xAxis.value)
             moveX += dead(gp.leftThumbstick.xAxis.value)
             moveY += dead(gp.leftThumbstick.yAxis.value)
-            // Triggers → vertical (R2 up, L2 down, analog).
+            // Triggers → vertical (right up, left down, analog).
             lift  += gp.rightTrigger.value - gp.leftTrigger.value
         }
         // `manual` is the no-controller fallback (on-screen pad), supplied by the caller;
@@ -100,8 +100,9 @@ struct SplatLocomotion {
         position += right * (moveX * speed)
         if !lockVertical { position.y += lift * speed }
 
-        // ○ (buttonB) → reset to the start viewpoint, edge-triggered (controller only).
-        let pressed = gp?.buttonB.isPressed ?? false
+        // Right/bottom face button (A or B) → reset to the start viewpoint, edge-triggered
+        // (controller only). Accepting both sidesteps the Switch Pro A/B position swap.
+        let pressed = (gp?.buttonB.isPressed ?? false) || (gp?.buttonA.isPressed ?? false)
         if pressed && !resetWasPressed {
             position = initialPosition
             yaw = initialYaw
