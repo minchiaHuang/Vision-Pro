@@ -283,7 +283,7 @@ struct OopsGalleryControls: View {
             // The forward/turn pad lives in the bar (not the popover) so it stays reachable while
             // walking. Shown only when enabled in settings; the gamepad is the default.
             if appState.museumSettings.showMovePad {
-                SplatMovePad(speed: appState.museumSettings.moveSpeed)
+                SplatMovePad()
             }
 
             Button { leave(resume: .reflection) } label: {
@@ -338,13 +338,17 @@ struct OopsGalleryControls: View {
 
             Divider()
 
-            Toggle("Show forward pad", isOn: $settings.showMovePad)
-            if settings.showMovePad {
-                HStack(spacing: 10) {
-                    Text("Speed").font(.caption).foregroundStyle(.secondary)
-                    Slider(value: $settings.moveSpeed, in: 0.5...1.5)
-                }
+            // Always-visible: walk speed scales all locomotion (gamepad + pad); height nudges the
+            // viewpoint up/down live.
+            HStack(spacing: 10) {
+                Text("Walk speed").font(.caption).foregroundStyle(.secondary)
+                Slider(value: $settings.moveSpeed, in: 0.5...1.5)
             }
+            HStack(spacing: 10) {
+                Text("Height").font(.caption).foregroundStyle(.secondary)
+                Slider(value: $settings.eyeHeight, in: -0.5...0.5)
+            }
+            Toggle("Show forward pad", isOn: $settings.showMovePad)
 
             // The closing question, handed back to the visitor (Future Museum only).
             if let decision = appState.museumStory?.decision_prompt, !decision.isEmpty {
@@ -412,8 +416,6 @@ struct OopsGalleryControls: View {
 /// On-screen hold-to-move pad driving `SplatManualInput`, the no-controller locomotion
 /// fallback. Press-and-hold a control to move; release to stop.
 private struct SplatMovePad: View {
-    /// Multiplier on the forward magnitude (settings → "Speed"); turn is unscaled.
-    var speed: Float = 1
     var body: some View {
         VStack(spacing: 10) {
             Text("Hold to move").font(.caption).foregroundStyle(.secondary)
@@ -436,7 +438,7 @@ private struct SplatMovePad: View {
             .contentShape(RoundedRectangle(cornerRadius: 14))
             // minimumDistance 0 → fires on touch-down (hold) and clears on release.
             .gesture(DragGesture(minimumDistance: 0)
-                .onChanged { _ in SplatManualInput.shared.set(forward: forward * speed, turn: turn) }
+                .onChanged { _ in SplatManualInput.shared.set(forward: forward, turn: turn) }
                 .onEnded { _ in SplatManualInput.shared.set(forward: 0, turn: 0) })
     }
 }

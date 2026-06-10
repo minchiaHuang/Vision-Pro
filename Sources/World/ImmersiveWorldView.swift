@@ -77,7 +77,8 @@ struct ImmersiveWorldView: View {
                 // height. Per-beat narration is no longer proximity-triggered: each wall plaque
                 // carries a play button (BeatPlaqueView → ConversationService.describeExhibit).
                 locomotor.start(root: root, span: build.span, bounds: build.bounds,
-                                content: content, spawn: spawn, eyeHeight: museumEyeHeight)
+                                content: content, spawn: spawn, eyeHeight: museumEyeHeight,
+                                settings: appState.museumSettings)
                 // BA396 Future Museum: hang a museum wall-label beside each portrait. The
                 // caption text is ready from Stage A (before any image lands), so the plaques
                 // appear while the photos are still "developing". Parented under `root` so they
@@ -219,12 +220,14 @@ final class ParametricLocomotor {
     /// in `start()`, then polled each frame for the head's Y so we can pin the eye height.
     private let arSession = ARKitSession()
     private let worldTracking = WorldTrackingProvider()
-    /// Fixed first-person eye height (metres above the world floor). Without this the eye sits at
-    /// the user's real — possibly seated — head height; we cancel that head Y each frame so every
-    /// visitor sees the world from a consistent viewpoint. Defaults to a standing 1.6m but `start`
-    /// overrides it per world — BA396 passes the portrait-frame centre height so the paintings sit
-    /// at eye level instead of being looked up at. Tunable on device.
-    private var eyeHeight: Float = 1.6
+    /// First-person eye height (metres above the world floor) — the world's DEFAULT, before the
+    /// visitor's live offset is added. Without this the eye sits at the user's real (possibly
+    /// seated) head height; we cancel that head Y each frame so everyone sees the world from a
+    /// consistent viewpoint. Defaults to a standing 1.6m; `start` overrides it per world (BA396
+    /// passes the portrait-frame centre height). The live "Height" slider offset is added on top.
+    private var baseEyeHeight: Float = 1.6
+    /// Live in-world settings (walk speed + eye-height offset), read each frame. Set in `start`.
+    private weak var settings: MuseumSettings?
 
     // Hard-wall margins (metres), tunable on device. Inset from the model bounds so the
     // camera never clips into a wall and to absorb wall thickness.
@@ -235,10 +238,12 @@ final class ParametricLocomotor {
     func start(root: Entity, span: Float, bounds: BoundingBox, content: RealityViewContent,
                spawn: (position: SIMD3<Float>, yaw: Float)? = nil,
                eyeHeight: Float? = nil,
+               settings: MuseumSettings? = nil,
                onPlayerMove: ((SIMD3<Float>) -> Void)? = nil) {
         self.root = root
         self.onPlayerMove = onPlayerMove
-        if let eyeHeight { self.eyeHeight = eyeHeight }   // BA396: portrait-frame centre height
+        self.settings = settings
+        if let eyeHeight { self.baseEyeHeight = eyeHeight }   // BA396: portrait-frame centre height
         // Spawn at the fixed pose when supplied (BA396: in front of the first wall, facing it),
         // else at the origin (the floor-aligned world centre). Speed scales with scene size.
         self.loco = SplatLocomotion(position: spawn?.position ?? .zero,
@@ -260,13 +265,15 @@ final class ParametricLocomotor {
             // Feed the on-screen "Hold to move" pad (SplatManualInput) so the museum is walkable
             // without a game controller (e.g. the visionOS Simulator).
             let manual = SplatManualInput.shared.snapshot()
+            // Live "Walk speed" slider scales all locomotion (gamepad + on-screen pad).
+            self.loco.speedScale = self.settings?.moveSpeed ?? 1
             self.loco.tick(deltaTime: Float(event.deltaTime), gamepad: gamepad, manual: manual)
-            // Pin the eye to a fixed standing height: cancel the real head Y so the view sits at
-            // `eyeHeight` above the floor whether the user is seated or standing. Until tracking is
-            // ready the anchor is nil and we keep the previous Y (no jump).
+            // Pin the eye: cancel the real head Y so the view sits at the world's default height
+            // PLUS the live "Height" slider offset, whether the user is seated or standing. Until
+            // tracking is ready the anchor is nil and we keep the previous Y (no jump).
             if let device = self.worldTracking.queryDeviceAnchor(atTimestamp: CACurrentMediaTime()) {
                 let headY = device.originFromAnchorTransform.columns.3.y
-                self.loco.position.y = self.eyeHeight - headY
+                self.loco.position.y = (self.baseEyeHeight + (self.settings?.eyeHeight ?? 0)) - headY
             }
             let player = self.loco.playerTransform()
             root.transform = Transform(matrix: player.inverse)
