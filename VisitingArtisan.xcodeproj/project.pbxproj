@@ -62,8 +62,6 @@
 		AA0000010000000000000065 /* MuseumQuestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000165 /* MuseumQuestionsView.swift */; };
 		AA0000010000000000000066 /* MuseumFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000166 /* MuseumFlowView.swift */; };
 		AA0000010000000000000067 /* MuseumMusicPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000167 /* MuseumMusicPlayer.swift */; };
-		AA0000010000000000000090 /* QuizVoiceSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000190 /* QuizVoiceSession.swift */; };
-		AA0000010000000000000091 /* QuizVoiceOrbView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000191 /* QuizVoiceOrbView.swift */; };
 		AA00000100000000000000B0 /* SplatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B0 /* SplatSession.swift */; };
 		AA00000100000000000000B1 /* SplatMeshRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B1 /* SplatMeshRenderer.swift */; };
 		AA00000100000000000000B2 /* SplatMeshShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B2 /* SplatMeshShaders.metal */; };
@@ -170,8 +168,6 @@
 		AA0000010000000000000165 /* MuseumQuestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumQuestionsView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000166 /* MuseumFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumFlowView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000167 /* MuseumMusicPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumMusicPlayer.swift; sourceTree = "<group>"; };
-		AA0000010000000000000190 /* QuizVoiceSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizVoiceSession.swift; sourceTree = "<group>"; };
-		AA0000010000000000000191 /* QuizVoiceOrbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuizVoiceOrbView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B0 /* SplatSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSession.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B1 /* SplatMeshRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatMeshRenderer.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B2 /* SplatMeshShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SplatMeshShaders.metal; sourceTree = "<group>"; };
@@ -402,8 +398,6 @@
 				AA00000100000000000001C0 /* OopsLoadingSlideshow.swift */,
 				AA000001000000000000013A /* OopsReflection.swift */,
 				AA000001000000000000013B /* OopsVoiceOrb.swift */,
-				AA0000010000000000000190 /* QuizVoiceSession.swift */,
-				AA0000010000000000000191 /* QuizVoiceOrbView.swift */,
 			);
 			path = Oops;
 			sourceTree = "<group>";
@@ -635,8 +629,6 @@
 				AA00000100000000000000C0 /* OopsLoadingSlideshow.swift in Sources */,
 				AA000001000000000000003A /* OopsReflection.swift in Sources */,
 				AA000001000000000000003B /* OopsVoiceOrb.swift in Sources */,
-				AA0000010000000000000090 /* QuizVoiceSession.swift in Sources */,
-				AA0000010000000000000091 /* QuizVoiceOrbView.swift in Sources */,
 				AA0000010000000000000060 /* MuseumModels.swift in Sources */,
 				AA0000010000000000000061 /* MuseumPrompt.swift in Sources */,
 				AA0000010000000000000062 /* CuratorService.swift in Sources */,

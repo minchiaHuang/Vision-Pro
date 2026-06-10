@@ -69,21 +69,7 @@ struct OopsFlowView: View {
                 appState.oopsResumeScreen = nil
             }
         }
-        // The voice orb is a separate window; fold the speech it recognizes into the flow's
-        // answers so dictation and typing share one set of answers (dictation replaces the field).
-        .onChange(of: appState.quizVoice.text) { _, dict in
-            for (id, value) in dict { answers.quizText[id] = value }
-        }
         #if os(visionOS)
-        // Show the floating speech-to-text orb only while on the Quiz screen.
-        .onChange(of: screen) { _, s in
-            if s == .quiz {
-                openWindow(id: "quiz-voice-orb")
-            } else {
-                dismissWindow(id: "quiz-voice-orb")
-                appState.quizVoice.activeQuestionID = nil
-            }
-        }
         // Let the cover background go clear so the transparent `OopsPassthrough`
         // reveals the window glass / real room rather than an opaque default backing.
         .presentationBackground(.clear)
@@ -146,7 +132,9 @@ struct OopsFlowView: View {
             appState.loadBA396World()
             if case .opened = await openImmersiveSpace(id: "world") {
                 openWindow(id: "oops-gallery-controls")
-                if appState.museumConversation != nil { openWindow(id: "museum-voice-orb") }
+                // The gallery opens silent: the Curator voice orb is no longer auto-shown.
+                // It's opened on demand from the settings popover's "Talk to the guide" row
+                // (`museumConversation` is still configured above so the frame play buttons work).
                 dismissWindow(id: "dev-menu")
             }
         }

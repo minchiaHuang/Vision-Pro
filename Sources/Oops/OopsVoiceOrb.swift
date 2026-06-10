@@ -106,7 +106,6 @@ struct OopsVoiceOrbView: View {
 /// pill is just: replay · orb (tap to talk).
 struct MuseumVoiceOrbView: View {
     @Environment(AppState.self) private var appState
-    @State private var started = false
 
     private let welcomeText = "Welcome. Walk slowly. Each room is a part of the path you asked about — most of it is its cost. Talk to me whenever you want to."
 
@@ -120,12 +119,8 @@ struct MuseumVoiceOrbView: View {
                 Color.clear
             }
         }
-        .task {
-            guard !started, let convo else { return }
-            started = true
-            try? await Task.sleep(for: .milliseconds(700))
-            convo.speakEntry(welcomeText)
-        }
+        // The gallery opens silent — no auto-welcome. The user starts any conversation by
+        // tapping the orb; the replay arrow re-speaks the welcome on demand.
         .onDisappear { convo?.stop() }
     }
 

@@ -10,8 +10,8 @@ struct SplatLocomotionTests {
     @Test func manualForwardMovesAlongYawForward() {
         var loco = SplatLocomotion(position: .zero, span: 1)
         loco.tick(deltaTime: 1, gamepad: nil, manual: .init(forward: 1, turn: 0))
-        // speed = span(1) * moveFraction(0.6) * dt(1) = 0.6; forward at yaw 0 = (0,0,-1)
-        #expect(abs(loco.position.z - (-0.6)) < 1e-5)
+        // speed = span(1) * moveFraction(0.03) * dt(1) = 0.03; forward at yaw 0 = (0,0,-1)
+        #expect(abs(loco.position.z - (-0.03)) < 1e-5)
         #expect(abs(loco.position.x) < 1e-5)
     }
 
@@ -25,8 +25,8 @@ struct SplatLocomotionTests {
     @Test func speedScalesWithSpanAndDeltaTime() {
         var loco = SplatLocomotion(position: .zero, span: 10)
         loco.tick(deltaTime: 0.5, gamepad: nil, manual: .init(forward: 1, turn: 0))
-        // speed = 10 * 0.6 * 0.5 = 3
-        #expect(abs(loco.position.z - (-3)) < 1e-4)
+        // speed = 10 * 0.03 * 0.5 = 0.15
+        #expect(abs(loco.position.z - (-0.15)) < 1e-4)
     }
 
     @Test func noInputLeavesPoseUnchanged() {
@@ -78,8 +78,8 @@ struct SplatLocomotionTests {
         for _ in 0..<5 {
             loco.tick(deltaTime: 1, gamepad: nil, manual: .init(forward: 1, turn: 0))
         }
-        // 5 steps * (100 * 0.6) = 300 along -z, no wall to stop it.
-        #expect(abs(loco.position.z - (-300)) < 1e-3)
+        // 5 steps * (100 * 0.03) = 15 along -z, no wall to stop it.
+        #expect(abs(loco.position.z - (-15)) < 1e-3)
     }
 
     // MARK: - SplatManualInput (thread-safe on-screen fallback)

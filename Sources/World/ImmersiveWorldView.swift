@@ -25,6 +25,11 @@ struct ImmersiveWorldView: View {
     /// `PlaqueTuning` (the TEMP slider panel in the gallery controls).
     @State private var plaqueTuner = PlaqueTuner()
 
+    /// Loading/failed overlay placement: centred on each picture frame, sitting just in front of
+    /// the painting; `scale` sizes the SwiftUI card. Constants — tunable on device.
+    private static let overlayOutward: Float = 0.05
+    private static let overlayScale: Float = 3.0
+
     var body: some View {
         // Observe each painting's arrival: reading every node's `image` here ties this view's
         // re-evaluation to Stage B landings, which re-runs the RealityView `update:` closure
@@ -97,6 +102,20 @@ struct ImmersiveWorldView: View {
                     // Position/size/orient comes from PlaqueTuning so it can be tuned live.
                     plaqueTuner.set(tuned)
                     plaqueTuner.reapply(PlaqueTuning.shared)
+                    // Loading/failed overlays, centred on each frame (no side offset — they sit on
+                    // the painting itself). Beat k → wall `order[k]`, the same mapping the plaques and
+                    // streamed wall photos use, so each overlay covers its own frame. `outward`/`scale`
+                    // are constants, tunable on device.
+                    for (k, gen) in appState.museumGenerator.nodes.enumerated() {
+                        let tile = k < order.count ? order[k] : k
+                        guard ba396Anchors.indices.contains(tile),
+                              let overlay = attachments.entity(for: "loading-\(gen.id)") else { continue }
+                        root.addChild(overlay)   // child of root → rides locomotion with the walls
+                        let a = ba396Anchors[tile]
+                        let pos = a.centroid + a.normal * Self.overlayOutward
+                        overlay.look(at: pos - a.normal, from: pos, relativeTo: root)
+                        overlay.scale = .init(repeating: Self.overlayScale)
+                    }
                 }
                 // Hand the world root to the streamer and paint whatever has already landed;
                 // the `update:` closure below picks up the rest as they arrive.
@@ -127,10 +146,27 @@ struct ImmersiveWorldView: View {
                         BeatPlaqueView(node: node, convo: appState.museumConversation)
                     }
                 }
+                // Per-frame loading/failed overlay, one per generated beat (real flow only — the
+                // dev/sample path has no generator nodes, so none appear).
+                ForEach(appState.museumGenerator.nodes) { gen in
+                    Attachment(id: "loading-\(gen.id)") {
+                        FrameLoadingOverlay(gen: gen, generator: appState.museumGenerator)
+                    }
+                }
             }
         }
-        .onAppear { music.start() }
-        .onDisappear { music.stop() }
+        .onAppear {
+            appState.immersiveWorldOpen = true
+            if appState.museumSettings.musicOn { music.start() }
+        }
+        .onDisappear {
+            appState.immersiveWorldOpen = false
+            music.stop()
+        }
+        // Live music toggle from the in-world settings popover.
+        .onChange(of: appState.museumSettings.musicOn) { _, on in
+            if on { music.start() } else { music.stop() }
+        }
     }
 
     /// Prefers a runtime panorama (e.g. World Labs) when present, else the bundled asset.
@@ -344,6 +380,7 @@ final class PlaqueTuner {
 /// RealityKit `InputTargetComponent`/`CollisionComponent` plumbing. Styled with the shared Oops
 /// glass card so it matches the rest of the flow.
 struct BeatPlaqueView: View {
+    @Environment(AppState.self) private var appState
     let node: MuseumNode
     /// The shared Curator voice. nil on the dev/sample path (no story) → play button disabled.
     var convo: ConversationService?
@@ -388,9 +425,26 @@ struct BeatPlaqueView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            // Live subtitle — the Curator's spoken line, shown on the exhibit being described while
+            // "Subtitles" is on. Only on the active plaque; clears when the narration ends.
+            if appState.museumSettings.subtitlesOn,
+               convo?.activeBeatID == node.id,
+               let line = convo?.spokenLine {
+                Text(line)
+                    .font(.system(size: 24, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 14)
+                    .background(.black.opacity(0.28), in: RoundedRectangle(cornerRadius: 14))
+                    .transition(.opacity)
+            }
+
             // Play / Stop toggle — first tap has the Curator generate a fresh spoken description for
             // this exhibit; while it plays the button shows a "playing" animation, and tapping it
             // again stops the voice. Pinned to the trailing edge (bottom-right of the plaque).
+            // Hidden when the audio guide is switched off in the in-world settings popover.
+            if appState.museumSettings.audioGuideOn {
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
                 Button {
@@ -420,6 +474,7 @@ struct BeatPlaqueView: View {
                 .disabled(convo == nil)
                 .animation(.easeInOut(duration: 0.2), value: isSpeaking)
                 .animation(.easeInOut(duration: 0.2), value: isThinking)
+            }
             }
         }
         // Constant width so expanding only grows downward (no left/right shift on tap).
@@ -456,6 +511,70 @@ private struct EqualizerBars: View {
     }
 }
 
+// MARK: - Frame loading / failed overlay
+
+/// Sits centred on a BA396 picture frame while its painting is still generating (or failed).
+/// Reads its `GeneratedNode` live: developing → a soft shimmering card; failed → a tap-to-retry
+/// card; once the image lands it renders nothing so the wall texture shows through. A RealityView
+/// attachment, so the retry button is an ordinary SwiftUI `Button` (no RealityKit input plumbing).
+struct FrameLoadingOverlay: View {
+    let gen: GeneratedNode
+    let generator: MuseumGenerator
+    @State private var sweep = false
+
+    var body: some View {
+        Group {
+            if gen.image != nil {
+                Color.clear            // painting landed — let the wall texture show through
+            } else if gen.failed {
+                failedCard
+            } else {
+                developingCard
+            }
+        }
+        .frame(width: 320, height: 320)
+    }
+
+    private var developingCard: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 18).fill(.black.opacity(0.38))
+            // A soft sheen sweeping left→right signals "developing", not frozen.
+            RoundedRectangle(cornerRadius: 18)
+                .fill(LinearGradient(colors: [.clear, .white.opacity(0.16), .clear],
+                                     startPoint: .leading, endPoint: .trailing))
+                .offset(x: sweep ? 200 : -200)
+            VStack(spacing: 14) {
+                ProgressView().controlSize(.large).tint(.white)
+                Text("Developing…")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: false)) { sweep = true }
+        }
+    }
+
+    private var failedCard: some View {
+        Button { generator.retry(gen) } label: {
+            VStack(spacing: 12) {
+                Image(systemName: "wifi.slash").font(.system(size: 30, weight: .semibold))
+                Text("Couldn't load").font(.system(size: 20, weight: .semibold))
+                Text("Tap to retry")
+                    .font(.system(size: 16, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+            .foregroundStyle(.white)
+            .frame(width: 320, height: 320)
+            .background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 18))
+            .contentShape(RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(.plain)
+        .hoverEffect()
+    }
+}
+
 // MARK: - Plaque previews
 
 /// The plaque WITH a live Curator voice → the play button is enabled ("Play"). Tapping it in the
@@ -466,6 +585,7 @@ private struct EqualizerBars: View {
         BeatPlaqueView(node: BeatPlaqueSample.nodes[2], convo: ConversationService())
     }
     .preferredColorScheme(.dark)
+    .environment(AppState())
 }
 
 /// The dev/sample path (no story → no `museumConversation`): the play button is disabled/greyed,
@@ -476,5 +596,6 @@ private struct EqualizerBars: View {
         BeatPlaqueView(node: BeatPlaqueSample.nodes[0], convo: nil)
     }
     .preferredColorScheme(.dark)
+    .environment(AppState())
 }
 #endif

@@ -29,6 +29,10 @@ final class ConversationService {
     /// its own beat id. nil whenever no play-to-describe is in flight.
     private(set) var activeBeatID: String?
 
+    /// The line currently being spoken (entry / narration / play-to-describe). Drives the optional
+    /// on-plaque subtitle. nil whenever nothing is being spoken.
+    private(set) var spokenLine: String?
+
     private let stt = SpeechRecognizer()
     /// On-device AVSpeech voice — always available; the fallback for all output.
     let narrator: NarrationService
@@ -109,6 +113,7 @@ final class ConversationService {
     /// Routes spoken output through the cloud voice when available, else AVSpeech.
     /// The cloud voice falls back to AVSpeech on failure via its `onFailure` hook.
     private func routeSpeak(_ text: String) {
+        spokenLine = text
         if let cloud, !cloudDisabled { cloud.speak(text) } else { narrator.speak(text) }
     }
 
@@ -116,6 +121,7 @@ final class ConversationService {
     private func stopSpeaking() {
         cloud?.stop()
         narrator.stop()
+        spokenLine = nil
     }
 
     // MARK: - Push-to-talk

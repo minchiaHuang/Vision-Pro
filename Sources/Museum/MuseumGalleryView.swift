@@ -82,6 +82,18 @@ final class MuseumGenerator {
         await paintTask?.value
     }
 
+    /// Re-paints a single beat whose image failed (or never landed) — driven by the in-world
+    /// "tap to retry" on a failed picture frame. Clears `failed`, fetches the image again, and on
+    /// success sets `image` (the gallery's signature watcher then re-textures that wall on its own).
+    func retry(_ gen: GeneratedNode) {
+        guard gen.image == nil else { return }
+        gen.failed = false
+        Task { @MainActor in
+            do { gen.image = try await images.image(forPrompt: gen.node.image_prompt) }
+            catch { gen.failed = true }
+        }
+    }
+
     /// Beat-ordered images for the gallery walls — a fixed slot per beat, so frame *i* always
     /// shows beat *i*. A beat whose image failed (or hasn't landed) keeps its slot with a
     /// neutral placeholder, so the image-on-wall ↔ per-beat-narration mapping never shifts.
