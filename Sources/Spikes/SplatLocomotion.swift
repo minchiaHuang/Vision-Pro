@@ -44,20 +44,25 @@ struct SplatLocomotion {
     /// clamps `position` into this box every frame — a wall the user can't walk through.
     /// `nil` = unbounded; the splat `.spz` path leaves it nil to keep free movement.
     var boundary: Box? = nil
+    /// When true, input never changes the player's Y — the triggers' vertical fly is ignored. The
+    /// parametric walk-in worlds set this for a first-person locked eye height (Y is then driven
+    /// externally from the head pose); the free-flying splat `.spz` path leaves it false.
+    var lockVertical: Bool = false
 
     private var initialPosition: SIMD3<Float> = .zero
     private var initialYaw: Float = 0
     private var resetWasPressed = false
 
     private let lookSpeed: Float = 2.4     // rad/sec at full stick deflection
-    private let moveFraction: Float = 0.06  // scene spans/sec at full deflection
+    private let moveFraction: Float = 0.03  // scene spans/sec at full deflection
     private let deadzone: Float = 0.1
 
-    init(position: SIMD3<Float> = .zero, span: Float = 1) {
+    init(position: SIMD3<Float> = .zero, yaw: Float = 0, span: Float = 1) {
         self.position = position
+        self.yaw = yaw
         self.span = span
         self.initialPosition = position
-        self.initialYaw = 0
+        self.initialYaw = yaw
     }
 
     /// Yaw-only horizontal basis so movement stays on the ground plane.
@@ -93,7 +98,7 @@ struct SplatLocomotion {
         let speed = span * moveFraction * dt
         position += forward * (moveY * speed)
         position += right * (moveX * speed)
-        position.y += lift * speed
+        if !lockVertical { position.y += lift * speed }
 
         // Right/bottom face button (A or B) → reset to the start viewpoint, edge-triggered
         // (controller only). Accepting both sidesteps the Switch Pro A/B position swap.
