@@ -5,6 +5,8 @@ import CompositorServices
 #if os(iOS)
 import UIKit
 
+// I am a thing
+
 final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(
         _ application: UIApplication,
