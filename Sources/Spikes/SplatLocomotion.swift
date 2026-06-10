@@ -50,7 +50,7 @@ struct SplatLocomotion {
     private var resetWasPressed = false
 
     private let lookSpeed: Float = 2.4     // rad/sec at full stick deflection
-    private let moveFraction: Float = 0.6  // scene spans/sec at full deflection
+    private let moveFraction: Float = 0.06  // scene spans/sec at full deflection
     private let deadzone: Float = 0.1
 
     init(position: SIMD3<Float> = .zero, span: Float = 1) {
@@ -78,7 +78,7 @@ struct SplatLocomotion {
             turnX += dead(gp.rightThumbstick.xAxis.value)
             moveX += dead(gp.leftThumbstick.xAxis.value)
             moveY += dead(gp.leftThumbstick.yAxis.value)
-            // Triggers → vertical (R2 up, L2 down, analog).
+            // Triggers → vertical (right up, left down, analog).
             lift  += gp.rightTrigger.value - gp.leftTrigger.value
         }
         // `manual` is the no-controller fallback (on-screen pad), supplied by the caller;
@@ -95,8 +95,9 @@ struct SplatLocomotion {
         position += right * (moveX * speed)
         position.y += lift * speed
 
-        // ○ (buttonB) → reset to the start viewpoint, edge-triggered (controller only).
-        let pressed = gp?.buttonB.isPressed ?? false
+        // Right/bottom face button (A or B) → reset to the start viewpoint, edge-triggered
+        // (controller only). Accepting both sidesteps the Switch Pro A/B position swap.
+        let pressed = (gp?.buttonB.isPressed ?? false) || (gp?.buttonA.isPressed ?? false)
         if pressed && !resetWasPressed {
             position = initialPosition
             yaw = initialYaw
