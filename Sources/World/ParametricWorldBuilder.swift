@@ -110,7 +110,16 @@ enum ParametricWorldBuilder {
         return ParametricWorldBuild(container: container, bounds: bounds, span: span,
                                     eye: eye, visitOrder: visitOrder)
     }
-
+    @MainActor
+    static func applySaturation(_ root: Entity, saturation: Double) {
+        let amount = Float(max(0, min(1, 1 - saturation)))
+        guard amount > 0.001 else { return }
+        forEachModelEntity(root) { entity in
+            guard var model = entity.model else { return }
+            model.materials = model.materials.map { desaturate($0, amount: amount) }
+            entity.model = model
+        }
+    }
     /// axis 4 saturation for the visionOS immersive path. There is no full-screen
     /// post-process / `.blendMode(.saturation)` overlay inside an immersive `RealityView`
     /// (iOS uses one), so we bake the effect into the loaded model's materials: each
@@ -121,16 +130,29 @@ enum ParametricWorldBuilder {
     /// textured archetypes desaturate less than the iOS filter. A faithful match would need
     /// a `ShaderGraphMaterial` swap feeding the original textures — deferred.
     @MainActor
-    static func applySaturation(_ root: Entity, saturation: Double) {
-        let amount = Float(max(0, min(1, 1 - saturation)))   // 0 = full colour … 1 = grey
-        guard amount > 0.001 else { return }
-        forEachModelEntity(root) { entity in
-            guard var model = entity.model else { return }
-            model.materials = model.materials.map { desaturate($0, amount: amount) }
-            entity.model = model
+    static func applyGalleryPhotos(_ root: Entity, textures: [TextureResource]) {
+        guard !textures.isEmpty else { return }
+
+        let frames = galleryFrames(root)
+        for (index, frame) in frames.enumerated() {
+            guard var model = frame.model else { continue }
+
+            // Frame 5
+            if index == 5 {
+                var unlit = UnlitMaterial()
+                unlit.color = .init(tint: .white.withAlphaComponent(0.3))
+                model.materials = Array(repeating: unlit, count: model.materials.count)
+                frame.model = model
+                continue
+            }
+
+            let texture = textures[index % textures.count]
+            var unlit = UnlitMaterial()
+            unlit.color = .init(tint: .white, texture: .init(texture))
+            model.materials = Array(repeating: unlit, count: model.materials.count)
+            frame.model = model
         }
     }
-
     // MARK: - Gallery frame photos
 
     /// Converts in-memory images (the AI-generated Hero's-Journey series) into textures, in the
@@ -226,21 +248,6 @@ enum ParametricWorldBuilder {
         }
         frames.sort { $0.name < $1.name }
         return frames
-    }
-
-    @MainActor
-    static func applyGalleryPhotos(_ root: Entity, textures: [TextureResource]) {
-        guard !textures.isEmpty else { return }
-
-        let frames = galleryFrames(root)
-        for (index, frame) in frames.enumerated() {
-            guard var model = frame.model else { continue }
-            let texture = textures[index % textures.count]
-            var unlit = UnlitMaterial()
-            unlit.color = .init(tint: .white, texture: .init(texture))
-            model.materials = Array(repeating: unlit, count: model.materials.count)
-            frame.model = model
-        }
     }
 
     // MARK: - BA396 portrait walls
@@ -518,6 +525,7 @@ enum ParametricWorldBuilder {
                 // In the rotated frame the tile's width/height swap, so the landscape image fills it.
                 framed.draw(in: CGRect(x: -rect.height / 2, y: -rect.width / 2,
                                        width: rect.height, height: rect.width))
+            
                 cg.restoreGState()
             }
         }

@@ -46,7 +46,7 @@ enum OopsContent {
     static let questions: [Question] = [
         .init(id: "q1",
               label: "How old are you?",
-              options: ["< 18", "18-25", "25-30", ">30"],
+              options: ["< 18", "18-25", "25-30", "> 30"],
               placeholder: ""),
         .init(id: "q2",
               label: "Where do you live?",

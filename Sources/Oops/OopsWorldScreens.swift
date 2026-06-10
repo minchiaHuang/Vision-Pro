@@ -37,7 +37,7 @@ struct GeneratingScreen: View {
     /// onto the walls, so this screen no longer lingers through the slow image phase.
     private var statusText: String {
         switch appState.museumGenerator.phase {
-        case .idle, .writing: return "Writing the story of this future…"
+        case .idle, .writing: return "see what others created here:"
         case .painting:       return "Stepping inside…"
         case .ready:          return "Stepping inside…"
         case .failed:         return "Opening the doors…"
@@ -47,19 +47,22 @@ struct GeneratingScreen: View {
     var body: some View {
         ZStack {
             OopsPassthrough(dim: true)
-            VStack(spacing: 38) {
-                OopsSpinner()
-                Text("Building your museum…")
-                    .font(.system(size: 30, weight: .semibold))
-                    .foregroundStyle(.white)
-                Text(statusText)
-                    .oopsSub(20)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 620)
-                    .id(statusText)                  // re-identity each stage so it crossfades
-                    .transition(.opacity)
+            VStack(spacing: 30) {
+                VStack(spacing: 16) {
+                    BuildingMuseumHeader(size: 34)
+                    Text(statusText)
+                        .oopsSub(25)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 620)
+                        .id(statusText)              // re-identity each stage so it crossfades
+                        .transition(.opacity)
+                }
+                .animation(.easeInOut(duration: 0.5), value: statusText)
+                // A gallery of worlds previous visitors generated, flipping by while this
+                // visitor's own world is built — the frame + label box hold still, only the
+                // photo inside slides. Fills the otherwise-empty ~30s build wait.
+                WoodenFrameSlideshow()
             }
-            .animation(.easeInOut(duration: 0.5), value: statusText)
         }
         .task { await runGeneration() }
     }
@@ -79,6 +82,28 @@ struct GeneratingScreen: View {
         appState.museumStory   = appState.museumGenerator.story
         appState.galleryImages = appState.museumGenerator.orderedGalleryImages()
         onDone()
+    }
+}
+
+/// "Building your world" with an animated trailing ellipsis. All three dots always occupy
+/// space (so the title never shifts); they fade in 1 → 2 → 3 on a timer to signal ongoing work.
+private struct BuildingMuseumHeader: View {
+    let size: CGFloat
+    @State private var visible = 1
+    private let timer = Timer.publish(every: 0.4, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Text("Building your world")
+            HStack(spacing: 1) {
+                ForEach(0..<3, id: \.self) { i in
+                    Text(".").opacity(i < visible ? 1 : 0.18)
+                }
+            }
+        }
+        .font(.system(size: size, weight: .semibold))
+        .foregroundStyle(.white)
+        .onReceive(timer) { _ in visible = visible % 3 + 1 }
     }
 }
 

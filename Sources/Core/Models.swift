@@ -1,7 +1,7 @@
 import Foundation
 
 /// One this-or-that slider question (both poles are positive — no bad answer).
-/// Left pole = score 0, right pole = score 1.
+/// Left pole = score 0, right pole = score 1.asdf
 struct ThisOrThat: Identifiable {
     let id: String
     let question: String
