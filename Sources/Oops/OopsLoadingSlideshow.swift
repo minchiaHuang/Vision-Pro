@@ -32,7 +32,7 @@ enum LoadingSlideshow {
     ]
 }
 
-/// A horizontal picture frame with a warm wooden border. The frame and its bottom-right
+/// A horizontal picture frame with a translucent Vision Pro–style glass border. The frame and its bottom-right
 /// description box stay perfectly still while only the photo inside slides from one world
 /// to the next, cycling on a timer. Built for the generating interstitial so the ~30s
 /// world build feels like flipping through a gallery of other visitors' futures.
@@ -84,35 +84,26 @@ struct WoodenFrameSlideshow: View {
             }
             .frame(width: photoWidth, height: photoHeight)
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            // A faint inner shadow line where the photo meets the wood (the rabbet).
+            // A faint inner shadow line where the photo meets the glass border (the rabbet).
             .overlay(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .strokeBorder(.black.opacity(0.28), lineWidth: 2))
         }
         .padding(border)
-        .background(woodGradient)
+        // Vision Pro–style translucent glass border: a frosted material that lets the
+        // backdrop blur through, instead of the old solid beige wood fill.
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: border * 0.7, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: border * 0.7, style: .continuous))
-        // Two highlight/shadow rings give the flat fill a carved, beveled wooden edge.
+        // A bright top edge and soft lower-edge shadow give the glass a lit, beveled rim.
         .overlay(
             RoundedRectangle(cornerRadius: border * 0.7, style: .continuous)
-                .strokeBorder(.white.opacity(0.22), lineWidth: 1))
+                .strokeBorder(.white.opacity(0.30), lineWidth: 1))
         .overlay(
             RoundedRectangle(cornerRadius: border * 0.7, style: .continuous)
-                .strokeBorder(.black.opacity(0.30), lineWidth: 1)
+                .strokeBorder(.black.opacity(0.18), lineWidth: 1)
                 .blur(radius: 1)
                 .offset(y: 1))
         .shadow(color: .black.opacity(0.45), radius: 34, y: 22)
-    }
-
-    /// Warm pine/oak gradient for the border, lit from the top-left.
-    private var woodGradient: LinearGradient {
-        LinearGradient(
-            colors: [
-                Color(red: 0.80, green: 0.64, blue: 0.44),
-                Color(red: 0.69, green: 0.52, blue: 0.34),
-                Color(red: 0.58, green: 0.42, blue: 0.27),
-            ],
-            startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 
     // MARK: Static description box
