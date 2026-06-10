@@ -67,7 +67,9 @@
 		AA00000100000000000000B2 /* SplatMeshShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B2 /* SplatMeshShaders.metal */; };
 		AA00000100000000000000B4 /* SplatHandGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B4 /* SplatHandGesture.swift */; };
 		AA00000100000000000000D1 /* OpenAIImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D1 /* OpenAIImageService.swift */; };
-		AA00000100000000000000D3 /* museum_clair_de_lune.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */; };
+		AA00000100000000000000D3 /* world_soundtrack.m4a in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D3 /* world_soundtrack.m4a */; };
+		AA00000100000000000000D4 /* intro_ambient.m4a in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D7 /* intro_ambient.m4a */; };
+		AA00000100000000000000D6 /* IntroAmbiencePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D6 /* IntroAmbiencePlayer.swift */; };
 		AA00000100000000000000D5 /* BA396.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D5 /* BA396.usdz */; };
 		AA00000100000000000000F2 /* VoiceTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F2 /* VoiceTestView.swift */; };
 		AA00000100000000000000F3 /* DevMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001F3 /* DevMenuView.swift */; };
@@ -173,7 +175,9 @@
 		AA00000100000000000001B2 /* SplatMeshShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SplatMeshShaders.metal; sourceTree = "<group>"; };
 		AA00000100000000000001B4 /* SplatHandGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatHandGesture.swift; sourceTree = "<group>"; };
 		AA00000100000000000001D1 /* OpenAIImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIImageService.swift; sourceTree = "<group>"; };
-		AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = museum_clair_de_lune.mp3; sourceTree = "<group>"; };
+		AA00000100000000000001D3 /* world_soundtrack.m4a */ = {isa = PBXFileReference; lastKnownFileType = audio.m4a; path = world_soundtrack.m4a; sourceTree = "<group>"; };
+		AA00000100000000000001D7 /* intro_ambient.m4a */ = {isa = PBXFileReference; lastKnownFileType = audio.m4a; path = intro_ambient.m4a; sourceTree = "<group>"; };
+		AA00000100000000000001D6 /* IntroAmbiencePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntroAmbiencePlayer.swift; sourceTree = "<group>"; };
 		AA00000100000000000001D5 /* BA396.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = BA396.usdz; sourceTree = "<group>"; };
 		AA00000100000000000001F2 /* VoiceTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceTestView.swift; sourceTree = "<group>"; };
 		AA00000100000000000001F3 /* DevMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevMenuView.swift; sourceTree = "<group>"; };
@@ -293,7 +297,8 @@
 				AA0000010000000000000404 /* oldworld_3.png */,
 				AA0000010000000000000405 /* oldworld_4.png */,
 				AA0000010000000000000406 /* oldworld_5.png */,
-				AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */,
+				AA00000100000000000001D3 /* world_soundtrack.m4a */,
+				AA00000100000000000001D7 /* intro_ambient.m4a */,
 			);
 			path = SpikeAssets;
 			sourceTree = "<group>";
@@ -304,6 +309,7 @@
 				AA0000010000000000000109 /* VisitingArtisanApp.swift */,
 				AA0000010000000000000108 /* RootView.swift */,
 				AA0000010000000000000101 /* AppState.swift */,
+				AA00000100000000000001D6 /* IntroAmbiencePlayer.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -540,7 +546,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA000001000000000000000C /* Assets.xcassets in Resources */,
-				AA00000100000000000000D3 /* museum_clair_de_lune.mp3 in Resources */,
+				AA00000100000000000000D3 /* world_soundtrack.m4a in Resources */,
+				AA00000100000000000000D4 /* intro_ambient.m4a in Resources */,
 				121651D62FD547C500C06C29 /* beach 7.jpg in Resources */,
 				121651D82FD547CB00C06C29 /* beach 2.jpeg in Resources */,
 				121651DA2FD547D000C06C29 /* beach 4.jpg in Resources */,
@@ -637,6 +644,7 @@
 				AA0000010000000000000065 /* MuseumQuestionsView.swift in Sources */,
 				AA0000010000000000000066 /* MuseumFlowView.swift in Sources */,
 				AA0000010000000000000067 /* MuseumMusicPlayer.swift in Sources */,
+				AA00000100000000000000D6 /* IntroAmbiencePlayer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
