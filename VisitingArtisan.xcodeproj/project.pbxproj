@@ -41,6 +41,7 @@
 		AA0000010000000000000033 /* OopsOnboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000133 /* OopsOnboarding.swift */; };
 		AA0000010000000000000034 /* OopsQuiz.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000134 /* OopsQuiz.swift */; };
 		AA0000010000000000000035 /* OopsWorldScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000135 /* OopsWorldScreens.swift */; };
+		AA00000100000000000000C0 /* OopsLoadingSlideshow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001C0 /* OopsLoadingSlideshow.swift */; };
 		AA0000010000000000000036 /* VoiceMascot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000136 /* VoiceMascot.swift */; };
 		AA0000010000000000000037 /* ParametricWorldBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000137 /* ParametricWorldBuilder.swift */; };
 		AA00000100000000000000D1 /* OpenAIImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D1 /* OpenAIImageService.swift */; };
@@ -135,6 +136,7 @@
 		AA0000010000000000000133 /* OopsOnboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsOnboarding.swift; sourceTree = "<group>"; };
 		AA0000010000000000000134 /* OopsQuiz.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsQuiz.swift; sourceTree = "<group>"; };
 		AA0000010000000000000135 /* OopsWorldScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsWorldScreens.swift; sourceTree = "<group>"; };
+		AA00000100000000000001C0 /* OopsLoadingSlideshow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OopsLoadingSlideshow.swift; sourceTree = "<group>"; };
 		AA0000010000000000000136 /* VoiceMascot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceMascot.swift; sourceTree = "<group>"; };
 		AA0000010000000000000137 /* ParametricWorldBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParametricWorldBuilder.swift; sourceTree = "<group>"; };
 		AA00000100000000000001D1 /* OpenAIImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIImageService.swift; sourceTree = "<group>"; };
@@ -408,6 +410,7 @@
 				AA0000010000000000000133 /* OopsOnboarding.swift */,
 				AA0000010000000000000134 /* OopsQuiz.swift */,
 				AA0000010000000000000135 /* OopsWorldScreens.swift */,
+				AA00000100000000000001C0 /* OopsLoadingSlideshow.swift */,
 				AA000001000000000000013A /* OopsReflection.swift */,
 				AA000001000000000000013B /* OopsVoiceOrb.swift */,
 				AA0000010000000000000190 /* QuizVoiceSession.swift */,
@@ -603,6 +606,7 @@
 				AA0000010000000000000033 /* OopsOnboarding.swift in Sources */,
 				AA0000010000000000000034 /* OopsQuiz.swift in Sources */,
 				AA0000010000000000000035 /* OopsWorldScreens.swift in Sources */,
+				AA00000100000000000000C0 /* OopsLoadingSlideshow.swift in Sources */,
 				AA000001000000000000003A /* OopsReflection.swift in Sources */,
 				AA000001000000000000003B /* OopsVoiceOrb.swift in Sources */,
 				AA0000010000000000000090 /* QuizVoiceSession.swift in Sources */,
