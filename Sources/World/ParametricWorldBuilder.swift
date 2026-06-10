@@ -54,8 +54,21 @@ enum ParametricWorldBuilder {
         if params.archetype == .ba396Museum {
             let anchors = ba396PlaqueAnchors(model, relativeTo: model)
             visitOrder = ba396VisitOrder(centroids: anchors.map(\.centroid))
-            if !galleryPhotos.isEmpty {
-                applyBA396Portraits(model, images: galleryPhotos, order: visitOrder)
+            #if DEBUG
+            // TEMP: dump the real frame geometry so the visit order can be pinned deterministically
+            // (remove once the on-wall layout is confirmed). centroid order = atlas tile 0…5.
+            for (t, a) in anchors.enumerated() {
+                print(String(format: "BA396 tile %d centroid (x %.2f, y %.2f, z %.2f)",
+                             t, a.centroid.x, a.centroid.y, a.centroid.z))
+            }
+            print("BA396 visitOrder:", visitOrder)
+            #endif
+            // Prefer the AI-generated beats; on dev-menu direct entry ("Visit Old World", no
+            // photos) fall back to the bundled "old world" preset series so the walls show real
+            // images for a quick walkthrough instead of BA396's baked PortraitUV.
+            let photos = galleryPhotos.isEmpty ? loadOldWorldPresetImages() : galleryPhotos
+            if !photos.isEmpty {
+                applyBA396Portraits(model, images: photos, order: visitOrder)
             }
         }
 
@@ -171,6 +184,23 @@ enum ParametricWorldBuilder {
         return texturesFrom(images)
     }
 
+    /// Loads the bundled `oldworld_*` preset images (the chef Hero's-Journey series) as UIImages,
+    /// sorted by filename so the beat order is stable (oldworld_1 = ordinary world … _5 = return).
+    /// Used as the BA396 fallback when no AI photos are supplied (dev-menu "Visit Old World"), so a
+    /// quick walkthrough shows real images instead of the baked PortraitUV. Empty if none bundled.
+    @MainActor
+    static func loadOldWorldPresetImages() -> [UIImage] {
+        var urls: [URL] = []
+        for ext in ["png", "jpg", "jpeg"] {
+            let found = Bundle.main.urls(forResourcesWithExtension: ext, subdirectory: nil) ?? []
+            urls += found.filter {
+                $0.deletingPathExtension().lastPathComponent.lowercased().hasPrefix("oldworld")
+            }
+        }
+        urls.sort { $0.lastPathComponent < $1.lastPathComponent }
+        return urls.compactMap { UIImage(contentsOfFile: $0.path) }
+    }
+
     /// Replaces every wall-frame mesh's material with an `UnlitMaterial` showing a beach photo,
     /// cycling through `textures`. The whole gallery is unlit-baked (each material feeds its
     /// texture into emissiveColor over a black diffuse), so an UnlitMaterial reproduces the flat,
@@ -247,7 +277,7 @@ enum ParametricWorldBuilder {
     /// Manual full override of the visit order (a permutation of 0..<6 atlas-tile indices). When a
     /// valid permutation is set it wins over the angle-based computation — use it to pin the exact
     /// wall sequence on device. `nil` = derive from geometry via `ba396VisitOrder`.
-    static let ba396VisitOrderOverride: [Int]? = nil
+    static let ba396VisitOrderOverride: [Int]? = [0, 2, 4, 5, 3, 1]
     /// Which entry of the angle-sorted ring is "position 1" (the spawn wall). Tune on device.
     static let ba396VisitStart = 0
     /// Walk direction around the ring: true = clockwise, false = counter-clockwise. Tune on device.
@@ -259,6 +289,10 @@ enum ParametricWorldBuilder {
     /// user's eye height = this + their real standing head height (head tracking adds on top), so a
     /// positive value makes the user float above the floor. Tune on device.
     static let ba396SpawnHeight: Float = 0
+    /// Offset (metres) added to the averaged portrait-frame centre height when pinning the
+    /// first-person eye height (see `ParametricLocomotor`). 0 = exactly at frame centre; nudge
+    /// positive to stand taller / negative to sit lower relative to the paintings. Tune on device.
+    static let ba396EyeHeightOffset: Float = 0
 
     /// Orders the portrait tiles into a clockwise walking sequence around the hall centre (origin).
     /// `centroids[i]` is tile i's physical centre (the model is authored centred on the origin, so
@@ -285,21 +319,33 @@ enum ParametricWorldBuilder {
         return Array(ring[s...] + ring[..<s])
     }
 
-    /// Spawn pose (player-space position + yaw) for the first wall in `order`: stand `standoff`
-    /// metres in front of it at height `height`, facing the wall. `anchors[t]` is tile t's
-    /// (centroid, roomward normal) in the player's space. Returns nil if `order`/`anchors` are empty.
+    /// Spawn pose (player-space position + yaw): stand at the gallery entrance — midway between the
+    /// first wall (`order[0]`, image 1) and the last (`order.last`, the blank 6th wall = "image 6"),
+    /// the seam where the ring of walls meets — pushed `standoff` into the room, looking at image 1.
+    /// Replaces standing head-on to one wall (which filled the whole view with that single image).
+    /// `anchors[t]` is tile t's (centroid, roomward normal) in player space. `height` only seeds Y
+    /// before tracking is ready (the caller's per-frame eye pin then takes over). nil if empty.
     static func ba396SpawnPose(anchors: [(centroid: SIMD3<Float>, normal: SIMD3<Float>)],
                                order: [Int],
                                standoff: Float = ba396SpawnStandoff,
                                height: Float = ba396SpawnHeight)
         -> (position: SIMD3<Float>, yaw: Float)? {
-        guard let first = order.first, anchors.indices.contains(first) else { return nil }
-        let a = anchors[first]
-        var position = a.centroid + a.normal * standoff
+        guard let first = order.first, let last = order.last,
+              anchors.indices.contains(first), anchors.indices.contains(last) else { return nil }
+        let a = anchors[first]   // image 1
+        let b = anchors[last]    // image 6 (the blank 6th wall, on the other side of the entrance)
+        // Stand at the entrance seam between image 1 and image 6, pushed into the room. "Into the
+        // room" = from the seam midpoint toward the hall centre (origin; the model is origin-centred)
+        // — robust even when the two frames face each other (averaging their normals could cancel).
+        let mid = (a.centroid + b.centroid) / 2
+        let horizMid = SIMD3<Float>(mid.x, 0, mid.z)
+        let inward = length(horizMid) > 1e-4 ? normalize(-horizMid) : SIMD3<Float>(0, 0, 0)
+        var position = mid + inward * standoff
         position.y = height
-        // Player forward is (0,0,-1) rotated by yaw; aim it at the wall (-normal). Solving gives
-        // yaw = atan2(n.x, n.z), using only the horizontal components of the (vertical) wall normal.
-        let yaw = atan2(a.normal.x, a.normal.z)
+        // Face image 1: player forward (0,0,-1)·yaw must point from `position` to image 1's centre.
+        // Solving the horizontal components gives yaw = atan2(-d.x, -d.z), d = centroid - position.
+        let d = a.centroid - position
+        let yaw = atan2(-d.x, -d.z)
         return (position, yaw)
     }
 

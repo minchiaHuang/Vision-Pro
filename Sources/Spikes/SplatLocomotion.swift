@@ -54,7 +54,7 @@ struct SplatLocomotion {
     private var resetWasPressed = false
 
     private let lookSpeed: Float = 2.4     // rad/sec at full stick deflection
-    private let moveFraction: Float = 0.06  // scene spans/sec at full deflection
+    private let moveFraction: Float = 0.03  // scene spans/sec at full deflection
     private let deadzone: Float = 0.1
 
     init(position: SIMD3<Float> = .zero, yaw: Float = 0, span: Float = 1) {

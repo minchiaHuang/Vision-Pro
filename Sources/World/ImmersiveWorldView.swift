@@ -63,6 +63,13 @@ struct ImmersiveWorldView: View {
                     ? ParametricWorldBuilder.ba396SpawnPose(anchors: ba396Anchors,
                                                             order: build.visitOrder)
                     : nil
+                // Pin the eye to the portrait-frame centre height so paintings sit at eye level
+                // (BA396 frames hang higher than a 1.6m standing eye → otherwise looked up at).
+                // Average the frame centroids' Y — root space with the floor at y=0, so the value
+                // is the frame centre's height above the floor. nil for non-BA396 (keeps 1.6m).
+                let museumEyeHeight: Float? = ba396Anchors.isEmpty ? nil
+                    : (ba396Anchors.map { $0.centroid.y }.reduce(0, +) / Float(ba396Anchors.count)
+                       + ParametricWorldBuilder.ba396EyeHeightOffset)
                 // Future Museum: narrate each beat as the walker approaches its wall frame.
                 // Same ordered `galleryFrames` list as the wall images, so frame i == beat i.
                 if let story = appState.museumStory {
@@ -73,12 +80,12 @@ struct ImmersiveWorldView: View {
                                                            story: story,
                                                            convo: appState.museumConversation)
                     locomotor.start(root: root, span: build.span, bounds: build.bounds,
-                                    content: content, spawn: spawn) { player in
+                                    content: content, spawn: spawn, eyeHeight: museumEyeHeight) { player in
                         director.tick(playerPosition: player)
                     }
                 } else {
                     locomotor.start(root: root, span: build.span, bounds: build.bounds,
-                                    content: content, spawn: spawn)
+                                    content: content, spawn: spawn, eyeHeight: museumEyeHeight)
                 }
                 // BA396 Future Museum: hang a museum wall-label beside each portrait. The
                 // caption text is ready from Stage A (before any image lands), so the plaques
@@ -190,10 +197,12 @@ final class ParametricLocomotor {
     /// in `start()`, then polled each frame for the head's Y so we can pin the eye height.
     private let arSession = ARKitSession()
     private let worldTracking = WorldTrackingProvider()
-    /// Fixed first-person standing eye height (metres above the world floor). Without this the eye
-    /// sits at the user's real — possibly seated — head height; we cancel that head Y each frame so
-    /// every visitor sees the world from a consistent standing viewpoint. Tunable on device.
-    private let eyeHeight: Float = 1.6
+    /// Fixed first-person eye height (metres above the world floor). Without this the eye sits at
+    /// the user's real — possibly seated — head height; we cancel that head Y each frame so every
+    /// visitor sees the world from a consistent viewpoint. Defaults to a standing 1.6m but `start`
+    /// overrides it per world — BA396 passes the portrait-frame centre height so the paintings sit
+    /// at eye level instead of being looked up at. Tunable on device.
+    private var eyeHeight: Float = 1.6
 
     // Hard-wall margins (metres), tunable on device. Inset from the model bounds so the
     // camera never clips into a wall and to absorb wall thickness.
@@ -203,9 +212,11 @@ final class ParametricLocomotor {
 
     func start(root: Entity, span: Float, bounds: BoundingBox, content: RealityViewContent,
                spawn: (position: SIMD3<Float>, yaw: Float)? = nil,
+               eyeHeight: Float? = nil,
                onPlayerMove: ((SIMD3<Float>) -> Void)? = nil) {
         self.root = root
         self.onPlayerMove = onPlayerMove
+        if let eyeHeight { self.eyeHeight = eyeHeight }   // BA396: portrait-frame centre height
         // Spawn at the fixed pose when supplied (BA396: in front of the first wall, facing it),
         // else at the origin (the floor-aligned world centre). Speed scales with scene size.
         self.loco = SplatLocomotion(position: spawn?.position ?? .zero,
