@@ -366,26 +366,37 @@ struct OopsGalleryControls: View {
         .frame(width: 320)
     }
 
-    /// Begins exit: records where to resume, then dismisses the immersive space. The window
-    /// teardown runs in `performTeardown` (driven by `immersiveWorldOpen` → false), so every
-    /// exit path converges on one cleanup.
+    /// Button exit: record the resume screen, dismiss the immersive space, then clean up the
+    /// floating windows — all in one Task. Running `dismissWindow(self)` from a Task (a fresh
+    /// runloop turn, after `await`) is what makes the self-dismiss actually take; doing it
+    /// synchronously inside `onChange` lets visionOS drop it (the window stays orphaned).
     private func leave(resume: OopsScreen) {
         guard !isExiting else { return }
+        isExiting = true
         appState.oopsResumeScreen = resume
         showSettings = false
-        Task { await dismissImmersiveSpace() }
+        Task { @MainActor in
+            await dismissImmersiveSpace()
+            cleanup()
+        }
     }
 
-    /// Idempotent window/state cleanup. Reached once the immersive space is gone — whether the
-    /// user tapped Leave, pressed the Digital Crown, or the system closed it.
+    /// Safety net for non-button exits (Digital Crown / system close): `immersiveWorldOpen`
+    /// flipped false without `leave` running. The space is already gone, so just clean up —
+    /// deferred to a Task so the self-dismiss isn't dropped.
     private func performTeardown() {
         guard !isExiting else { return }
         isExiting = true
+        Task { @MainActor in cleanup() }
+    }
+
+    /// Tears down the shared Curator voice + floating panels and returns to the Oops flow.
+    /// Idempotent via `isExiting`; always invoked from a Task so the window ops land.
+    private func cleanup() {
         appState.museumConversation?.stop()
         appState.museumConversation = nil
         appState.worldParams = nil
-        // Default to the reflection montage; Leave / Start-over may have set a screen already,
-        // so don't clobber it.
+        // Default to the reflection montage; Leave / Start-over set a screen already, so keep it.
         if appState.oopsResumeScreen == nil { appState.oopsResumeScreen = .reflection }
         appState.devActiveFeature = .oops
         openWindow(id: "dev-menu")
