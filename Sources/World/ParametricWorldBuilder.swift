@@ -11,6 +11,10 @@ struct ParametricWorldBuild {
     let bounds: BoundingBox
     let span: Float
     let eye: SIMD3<Float>
+    /// BA396 only: the clockwise walking order of the 6 portrait tiles (atlas-tile indices),
+    /// `order[k]` = the tile visited at step k (k=0 is the spawn wall). Empty for other worlds.
+    /// Computed once here so the wall images, plaques and spawn pose all share one order.
+    let visitOrder: [Int]
 }
 
 enum ParametricWorldBuilder {
@@ -41,19 +45,33 @@ enum ParametricWorldBuilder {
         // BA396 only: the 6 portrait walls are a single mesh sharing one 3x2 atlas texture,
         // so we can't bind one image per wall like the gallery. Composite the generated beat
         // images into one atlas matching the portrait UV tiles and swap the Portraits material.
-        // When no photos are supplied (dev-menu direct entry) leave BA396's baked PortraitUV.
-        if params.archetype == .ba396Museum, !galleryPhotos.isEmpty {
-            applyBA396Portraits(model, images: galleryPhotos)
+        // First derive the clockwise visit order from the portrait geometry (the model is
+        // authored centred on the origin, so model-local centroids order the same as the placed
+        // root). The order drives wall images, plaques and the spawn pose alike — computed once
+        // here and carried on the build. When no photos are supplied (dev-menu direct entry)
+        // leave BA396's baked PortraitUV, but still return the order so spawn/plaques can use it.
+        var visitOrder: [Int] = []
+        if params.archetype == .ba396Museum {
+            let anchors = ba396PlaqueAnchors(model, relativeTo: model)
+            visitOrder = ba396VisitOrder(centroids: anchors.map(\.centroid))
+            // Prefer the AI-generated beats; on dev-menu direct entry ("Visit Old World", no
+            // photos) fall back to the bundled "old world" preset series so the walls show real
+            // images for a quick walkthrough instead of BA396's baked PortraitUV.
+            let photos = galleryPhotos.isEmpty ? loadOldWorldPresetImages() : galleryPhotos
+            if !photos.isEmpty {
+                applyBA396Portraits(model, images: photos, order: visitOrder)
+            }
         }
 
-        return assemble(model: model, params: params)
+        return assemble(model: model, params: params, visitOrder: visitOrder)
     }
 
     /// Synchronous assembly of an already-loaded `model` into the parametric world
     /// (container + framing + lights + orbs). Split out of `build` so it is testable with
     /// a synthetic model — no bundled USDZ required.
     @MainActor
-    static func assemble(model: Entity, params: WorldParams) -> ParametricWorldBuild {
+    static func assemble(model: Entity, params: WorldParams,
+                         visitOrder: [Int] = []) -> ParametricWorldBuild {
         let container = Entity()
         container.addChild(model)
 
@@ -80,7 +98,8 @@ enum ParametricWorldBuilder {
             container.addChild(orb)
         }
 
-        return ParametricWorldBuild(container: container, bounds: bounds, span: span, eye: eye)
+        return ParametricWorldBuild(container: container, bounds: bounds, span: span,
+                                    eye: eye, visitOrder: visitOrder)
     }
     @MainActor
     static func applySaturation(_ root: Entity, saturation: Double) {
@@ -178,6 +197,23 @@ enum ParametricWorldBuilder {
         return texturesFrom(images)
     }
 
+    /// Loads the bundled `oldworld_*` preset images (the chef Hero's-Journey series) as UIImages,
+    /// sorted by filename so the beat order is stable (oldworld_1 = ordinary world … _5 = return).
+    /// Used as the BA396 fallback when no AI photos are supplied (dev-menu "Visit Old World"), so a
+    /// quick walkthrough shows real images instead of the baked PortraitUV. Empty if none bundled.
+    @MainActor
+    static func loadOldWorldPresetImages() -> [UIImage] {
+        var urls: [URL] = []
+        for ext in ["png", "jpg", "jpeg"] {
+            let found = Bundle.main.urls(forResourcesWithExtension: ext, subdirectory: nil) ?? []
+            urls += found.filter {
+                $0.deletingPathExtension().lastPathComponent.lowercased().hasPrefix("oldworld")
+            }
+        }
+        urls.sort { $0.lastPathComponent < $1.lastPathComponent }
+        return urls.compactMap { UIImage(contentsOfFile: $0.path) }
+    }
+
     /// Replaces every wall-frame mesh's material with an `UnlitMaterial` showing a beach photo,
     /// cycling through `textures`. The whole gallery is unlit-baked (each material feeds its
     /// texture into emissiveColor over a black diffuse), so an UnlitMaterial reproduces the flat,
@@ -234,12 +270,113 @@ enum ParametricWorldBuilder {
     /// imperceptible, so this defaults off; set an index true if that wall looks left-right reversed.
     private static let ba396PortraitMirror: [Bool] = [false, false, false, false, false, false]
 
+    // MARK: - BA396 clockwise visit order + spawn pose
+
+    /// Manual full override of the visit order (a permutation of 0..<6 atlas-tile indices). When a
+    /// valid permutation is set it wins over the angle-based computation — use it to pin the exact
+    /// wall sequence on device. `nil` = derive from geometry via `ba396VisitOrder`.
+    /// Pinned from the real BA396 geometry (the 6 portraits are a flat 3×2 grid on one wall —
+    /// tiles: TL=0 TC=2 TR=4, BL=5 BC=1 BR=3). Boustrophedon age order: top L→R 1,2,3, bottom
+    /// R→L 4,5,6 → image k lands on tile [0,2,4,3,1,5][k].
+    static let ba396VisitOrderOverride: [Int]? = [0, 2, 4, 3, 1, 5]
+    /// Which entry of the angle-sorted ring is "position 1" (the spawn wall). Tune on device.
+    static let ba396VisitStart = 0
+    /// Walk direction around the ring: true = clockwise, false = counter-clockwise. Tune on device.
+    static let ba396VisitClockwise = true
+
+    /// How far back the spawn stands from the portrait wall, as a multiple of the frame spread
+    /// (scale-independent — BA396's wall is large, so an absolute metre value doesn't transfer).
+    /// ~1.3 puts the whole flat 3×2 wall comfortably in view. Tune on device.
+    static let ba396SpawnStandoffFactor: Float = 1.3
+    /// Manual spawn override (player-space position + yaw). When set it wins over the computed
+    /// centred-in-front pose — pinned from a tester who walked to the spot they wanted (read off the
+    /// TEMP position log). y is irrelevant (the eye-height pin drives it). nil = compute the pose.
+    /// Current: walked-to pose on device — left side of the wall (x −14.36), facing the wall (yaw ≈ 0).
+    static let ba396SpawnPoseOverride: (position: SIMD3<Float>, yaw: Float)? =
+        (SIMD3<Float>(-14.36, 0, -0.12), -0.029)
+    /// Fixed spawn height (player-space Y, metres). Default 0 = floor-aligned. NOTE on visionOS the
+    /// user's eye height = this + their real standing head height (head tracking adds on top), so a
+    /// positive value makes the user float above the floor. Tune on device.
+    static let ba396SpawnHeight: Float = 0
+    /// Offset added to the bottom-row portrait height when pinning the first-person eye height
+    /// (see `ParametricLocomotor`). 0 = level with the bottom row; negative = lower toward the
+    /// floor. Units are the model's (BA396 is large). Tunable constant.
+    static let ba396EyeHeightOffset: Float = 0
+
+    /// Orders the portrait tiles into a clockwise walking sequence around the hall centre (origin).
+    /// `centroids[i]` is tile i's physical centre (the model is authored centred on the origin, so
+    /// either model-local or placed-root coordinates order the same). Returns `order` where
+    /// `order[k]` is the atlas-tile index visited at step k (k = 0 is the spawn wall): sort by angle
+    /// in the XZ plane, flip for `clockwise`, then rotate to begin at `start`. A valid
+    /// `override` permutation wins. Pure (no RealityKit) so it is unit-testable.
+    static func ba396VisitOrder(centroids: [SIMD3<Float>],
+                                start: Int = ba396VisitStart,
+                                clockwise: Bool = ba396VisitClockwise,
+                                manualOrder: [Int]? = ba396VisitOrderOverride) -> [Int] {
+        let n = centroids.count
+        if let manualOrder, manualOrder.count == n, Set(manualOrder) == Set(0..<n) {
+            return manualOrder
+        }
+        guard n > 0 else { return [] }
+        // Angle of each tile around the hall centre (origin) in the ground plane. atan2 ascending
+        // walks one way; `clockwise` reverses it. start/clockwise are the on-device knobs.
+        var ring = Array(0..<n).sorted {
+            atan2(centroids[$0].z, centroids[$0].x) < atan2(centroids[$1].z, centroids[$1].x)
+        }
+        if clockwise { ring.reverse() }
+        let s = ((start % n) + n) % n
+        return Array(ring[s...] + ring[..<s])
+    }
+
+    /// Spawn pose (player-space position + yaw): stand centred in front of the portrait wall, facing
+    /// it. BA396's 6 portraits are a flat 3×2 grid on ONE wall, so we place the user at the average
+    /// of all frame centroids, pushed out along the average roomward normal by `standoffFactor` ×
+    /// the frame spread (so the whole wall fits in view at any scale), looking back at the centre.
+    /// `anchors[t]` is tile t's (centroid, roomward normal) in player space. `height` seeds Y before
+    /// tracking; the eye-height pin overrides it at runtime. nil if `anchors` is empty.
+    static func ba396SpawnPose(anchors: [(centroid: SIMD3<Float>, normal: SIMD3<Float>)],
+                               standoffFactor: Float = ba396SpawnStandoffFactor,
+                               height: Float? = nil,
+                               override: (position: SIMD3<Float>, yaw: Float)? = ba396SpawnPoseOverride)
+        -> (position: SIMD3<Float>, yaw: Float)? {
+        if let override { return override }   // pinned pose from on-device tuning wins
+        guard !anchors.isEmpty else { return nil }
+        var centreSum = SIMD3<Float>.zero
+        var normalSum = SIMD3<Float>.zero
+        for a in anchors { centreSum += a.centroid; normalSum += a.normal }
+        let centre = centreSum / Float(anchors.count)
+        let normal = length(normalSum) < 1e-5 ? SIMD3<Float>(0, 0, 1) : normalize(normalSum)
+        // How far the frames reach from the wall centre in the ground plane → stand back
+        // proportionally so the whole wall fits in view (independent of the model's scale).
+        var spread: Float = 0
+        for a in anchors {
+            let d = a.centroid - centre
+            spread = max(spread, length(SIMD3<Float>(d.x, 0, d.z)))
+        }
+        var position = centre + normal * (max(spread, 1) * standoffFactor)
+        position.y = height ?? centre.y
+        // Face the wall centre: forward (0,0,-1)·yaw points from `position` toward the centre.
+        // Solving the horizontal components gives yaw = atan2(-d.x, -d.z), d = centre - position.
+        let d = centre - position
+        let yaw = atan2(-d.x, -d.z)
+        return (position, yaw)
+    }
+
     /// Composites the generated beat `images` into one atlas matching `ba396PortraitTiles` and
-    /// swaps it onto BA396's `Portraits` mesh material, so each of the 6 walls shows a full
-    /// image (cycling if fewer than 6 supplied). No-op if no portrait mesh is found.
+    /// swaps it onto BA396's `Portraits` mesh material. `order[k]` is the atlas tile that beat k's
+    /// image occupies (the clockwise visit order), so the chronological story reads in walking
+    /// order. Tiles left unassigned — e.g. the last wall when only 5 beats fill 6 walls — stay
+    /// blank (the dark atlas fill). Falls back to identity (image k → tile k) when `order` is
+    /// missing/short. No-op if no portrait mesh is found.
     @MainActor
-    static func applyBA396Portraits(_ root: Entity, images: [UIImage]) {
-        guard !images.isEmpty, let atlas = ba396PortraitAtlas(images) else { return }
+    static func applyBA396Portraits(_ root: Entity, images: [UIImage], order: [Int]) {
+        guard !images.isEmpty else { return }
+        var tileImages = [UIImage?](repeating: nil, count: ba396PortraitTiles.count)
+        for (k, image) in images.enumerated() {
+            let tile = k < order.count ? order[k] : k
+            if tileImages.indices.contains(tile) { tileImages[tile] = image }
+        }
+        guard let atlas = ba396PortraitAtlas(tileImages: tileImages) else { return }
 
         var unlit = UnlitMaterial()
         unlit.color = .init(tint: .white, texture: .init(atlas))
@@ -359,12 +496,13 @@ enum ParametricWorldBuilder {
         return best >= 0 ? best : nil
     }
 
-    /// Builds the 3x2 portrait atlas as a `TextureResource`. Each image is drawn into its UV
-    /// tile's pixel rect; UV is mapped with V increasing upward (pixel y = (1 - v) * H).
+    /// Builds the 3x2 portrait atlas as a `TextureResource`. `tileImages[i]` is the image for
+    /// tile i, or `nil` to leave that tile blank (it keeps the dark fill — used for the unassigned
+    /// wall when 5 beats fill 6 walls). UV is mapped with V increasing upward (pixel y = (1-v)*H).
     /// If the walls render vertically flipped on device, wrap the result through
     /// `flippedVertically` (one-line change).
     @MainActor
-    static func ba396PortraitAtlas(_ images: [UIImage]) -> TextureResource? {
+    static func ba396PortraitAtlas(tileImages: [UIImage?]) -> TextureResource? {
         let side: CGFloat = 2048
         let format = UIGraphicsImageRendererFormat.default()
         format.scale = 1
@@ -376,10 +514,12 @@ enum ParametricWorldBuilder {
             ctx.fill(CGRect(x: 0, y: 0, width: side, height: side))
             let cg = ctx.cgContext
             for (i, tile) in ba396PortraitTiles.enumerated() {
+                // nil tile = blank wall: leave the dark fill untouched.
+                guard i < tileImages.count, let image = tileImages[i] else { continue }
                 // Center-crop to the frame's physical aspect, then rotate 90° (cancelling the
                 // wall's authored UV rotation) and fill the tile. The quad samples the whole
                 // tile, so the result lands as an upright, undistorted landscape photo.
-                let framed = centerCropped(images[i % images.count], toAspect: ba396PortraitAspect)
+                let framed = centerCropped(image, toAspect: ba396PortraitAspect)
                 let rect = CGRect(x: tile.uMin * side,
                                   y: (1 - tile.vMax) * side,
                                   width: (tile.uMax - tile.uMin) * side,

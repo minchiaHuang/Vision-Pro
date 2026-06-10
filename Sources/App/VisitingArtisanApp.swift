@@ -65,6 +65,12 @@ struct VisitingArtisanApp: App {
             ImmersiveWorldView()
                 .environment(appState)
         }
+        // Never restore on launch: visionOS otherwise resurrects a previously-open immersive
+        // space (common across ⌘R dev relaunches), leaving it "connected" so the next
+        // openImmersiveSpace(id: "world") fails with "already requested or connected" — the
+        // repeated console warning. Every floating Window below disables restoration for the
+        // same reason; the immersive spaces were missed.
+        .restorationBehavior(.disabled)
 
         // visionOS only: walkable Gaussian-splat world (CompositorServices). A
         // `SplatEntry` (`.spz` URL + upright flip) is passed as the space's value;
@@ -79,6 +85,9 @@ struct VisitingArtisanApp: App {
             }
         }
         .immersionStyle(selection: .constant(.full), in: .full)
+        // Never restore on launch (see the `world` space above): a resurrected splat space would
+        // block the next openImmersiveSpace with "already requested or connected".
+        .restorationBehavior(.disabled)
 
         // visionOS only: tiny floating window shown while a splat world is open. The
         // full-immersion CompositorLayer can't host SwiftUI controls, so load progress

@@ -10,6 +10,11 @@
 		121651D62FD547C500C06C29 /* beach 7.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 121651D52FD547C500C06C29 /* beach 7.jpg */; };
 		121651D82FD547CB00C06C29 /* beach 2.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 121651D72FD547CB00C06C29 /* beach 2.jpeg */; };
 		121651DA2FD547D000C06C29 /* beach 4.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 121651D92FD547D000C06C29 /* beach 4.jpg */; };
+		AA0000010000000000000411 /* oldworld_1.png in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000402 /* oldworld_1.png */; };
+		AA0000010000000000000412 /* oldworld_2.png in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000403 /* oldworld_2.png */; };
+		AA0000010000000000000413 /* oldworld_3.png in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000404 /* oldworld_3.png */; };
+		AA0000010000000000000414 /* oldworld_4.png in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000405 /* oldworld_4.png */; };
+		AA0000010000000000000415 /* oldworld_5.png in Resources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000406 /* oldworld_5.png */; };
 		AA0000010000000000000001 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000101 /* AppState.swift */; };
 		AA0000010000000000000002 /* Immersive360View.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000102 /* Immersive360View.swift */; };
 		AA0000010000000000000003 /* ImmersiveWorldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000103 /* ImmersiveWorldView.swift */; };
@@ -57,13 +62,10 @@
 		AA0000010000000000000065 /* MuseumQuestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000165 /* MuseumQuestionsView.swift */; };
 		AA0000010000000000000066 /* MuseumFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000166 /* MuseumFlowView.swift */; };
 		AA0000010000000000000067 /* MuseumMusicPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000010000000000000167 /* MuseumMusicPlayer.swift */; };
-		AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */; };
 		AA00000100000000000000B0 /* SplatSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B0 /* SplatSession.swift */; };
 		AA00000100000000000000B1 /* SplatMeshRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B1 /* SplatMeshRenderer.swift */; };
 		AA00000100000000000000B2 /* SplatMeshShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B2 /* SplatMeshShaders.metal */; };
-		AA00000100000000000000B3 /* hummingbird_anim.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B3 /* hummingbird_anim.usdz */; };
 		AA00000100000000000000B4 /* SplatHandGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001B4 /* SplatHandGesture.swift */; };
-		AA00000100000000000000C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz */; };
 		AA00000100000000000000D1 /* OpenAIImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D1 /* OpenAIImageService.swift */; };
 		AA00000100000000000000D3 /* museum_clair_de_lune.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */; };
 		AA00000100000000000000D5 /* BA396.usdz in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D5 /* BA396.usdz */; };
@@ -97,6 +99,7 @@
 		BB0000010000000000000016 /* SplatIO in Frameworks */ = {isa = PBXBuildFile; productRef = BB0000010000000000000903 /* SplatIO */; };
 		BB0000010000000000000017 /* SplatLibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000116 /* SplatLibraryTests.swift */; };
 		BB0000010000000000000018 /* ParametricWorldBuilderRealityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */; };
+		BB0000010000000000000019 /* BA396VisitOrderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000010000000000000118 /* BA396VisitOrderTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -113,6 +116,11 @@
 		121651D52FD547C500C06C29 /* beach 7.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "beach 7.jpg"; sourceTree = "<group>"; };
 		121651D72FD547CB00C06C29 /* beach 2.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "beach 2.jpeg"; sourceTree = "<group>"; };
 		121651D92FD547D000C06C29 /* beach 4.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "beach 4.jpg"; sourceTree = "<group>"; };
+		AA0000010000000000000402 /* oldworld_1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = oldworld_1.png; sourceTree = "<group>"; };
+		AA0000010000000000000403 /* oldworld_2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = oldworld_2.png; sourceTree = "<group>"; };
+		AA0000010000000000000404 /* oldworld_3.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = oldworld_3.png; sourceTree = "<group>"; };
+		AA0000010000000000000405 /* oldworld_4.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = oldworld_4.png; sourceTree = "<group>"; };
+		AA0000010000000000000406 /* oldworld_5.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = oldworld_5.png; sourceTree = "<group>"; };
 		AA0000010000000000000101 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		AA0000010000000000000102 /* Immersive360View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Immersive360View.swift; sourceTree = "<group>"; };
 		AA0000010000000000000103 /* ImmersiveWorldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveWorldView.swift; sourceTree = "<group>"; };
@@ -160,13 +168,10 @@
 		AA0000010000000000000165 /* MuseumQuestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumQuestionsView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000166 /* MuseumFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumFlowView.swift; sourceTree = "<group>"; };
 		AA0000010000000000000167 /* MuseumMusicPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuseumMusicPlayer.swift; sourceTree = "<group>"; };
-		AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */ = {isa = PBXFileReference; lastKnownFileType = file; path = vibrant_loft_art_studio.spz; sourceTree = "<group>"; };
 		AA00000100000000000001B0 /* SplatSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatSession.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B1 /* SplatMeshRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatMeshRenderer.swift; sourceTree = "<group>"; };
 		AA00000100000000000001B2 /* SplatMeshShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = SplatMeshShaders.metal; sourceTree = "<group>"; };
-		AA00000100000000000001B3 /* hummingbird_anim.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = hummingbird_anim.usdz; sourceTree = "<group>"; };
 		AA00000100000000000001B4 /* SplatHandGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatHandGesture.swift; sourceTree = "<group>"; };
-		AA00000100000000000001C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Richards_Art_Gallery_-_Audio_Tour.usdz"; sourceTree = "<group>"; };
 		AA00000100000000000001D1 /* OpenAIImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIImageService.swift; sourceTree = "<group>"; };
 		AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = museum_clair_de_lune.mp3; sourceTree = "<group>"; };
 		AA00000100000000000001D5 /* BA396.usdz */ = {isa = PBXFileReference; lastKnownFileType = file; path = BA396.usdz; sourceTree = "<group>"; };
@@ -199,6 +204,7 @@
 		BB0000010000000000000115 /* NetworkServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkServiceTests.swift; sourceTree = "<group>"; };
 		BB0000010000000000000116 /* SplatLibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplatLibraryTests.swift; sourceTree = "<group>"; };
 		BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParametricWorldBuilderRealityTests.swift; sourceTree = "<group>"; };
+		BB0000010000000000000118 /* BA396VisitOrderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BA396VisitOrderTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -278,13 +284,15 @@
 		AA0000010000000000000306 /* SpikeAssets */ = {
 			isa = PBXGroup;
 			children = (
-				AA00000100000000000001A3 /* vibrant_loft_art_studio.spz */,
-				AA00000100000000000001B3 /* hummingbird_anim.usdz */,
-				AA00000100000000000001C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz */,
 				AA00000100000000000001D5 /* BA396.usdz */,
 				121651D52FD547C500C06C29 /* beach 7.jpg */,
 				121651D72FD547CB00C06C29 /* beach 2.jpeg */,
 				121651D92FD547D000C06C29 /* beach 4.jpg */,
+				AA0000010000000000000402 /* oldworld_1.png */,
+				AA0000010000000000000403 /* oldworld_2.png */,
+				AA0000010000000000000404 /* oldworld_3.png */,
+				AA0000010000000000000405 /* oldworld_4.png */,
+				AA0000010000000000000406 /* oldworld_5.png */,
 				AA00000100000000000001D3 /* museum_clair_de_lune.mp3 */,
 			);
 			path = SpikeAssets;
@@ -434,6 +442,7 @@
 				BB0000010000000000000115 /* NetworkServiceTests.swift */,
 				BB0000010000000000000116 /* SplatLibraryTests.swift */,
 				BB0000010000000000000117 /* ParametricWorldBuilderRealityTests.swift */,
+				BB0000010000000000000118 /* BA396VisitOrderTests.swift */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -531,13 +540,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA000001000000000000000C /* Assets.xcassets in Resources */,
-				AA00000100000000000000A3 /* vibrant_loft_art_studio.spz in Resources */,
 				AA00000100000000000000D3 /* museum_clair_de_lune.mp3 in Resources */,
 				121651D62FD547C500C06C29 /* beach 7.jpg in Resources */,
 				121651D82FD547CB00C06C29 /* beach 2.jpeg in Resources */,
 				121651DA2FD547D000C06C29 /* beach 4.jpg in Resources */,
-				AA00000100000000000000B3 /* hummingbird_anim.usdz in Resources */,
-				AA00000100000000000000C3 /* Richards_Art_Gallery_-_Audio_Tour.usdz in Resources */,
+				AA0000010000000000000411 /* oldworld_1.png in Resources */,
+				AA0000010000000000000412 /* oldworld_2.png in Resources */,
+				AA0000010000000000000413 /* oldworld_3.png in Resources */,
+				AA0000010000000000000414 /* oldworld_4.png in Resources */,
+				AA0000010000000000000415 /* oldworld_5.png in Resources */,
 				AA00000100000000000000D5 /* BA396.usdz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -655,6 +666,7 @@
 				BB0000010000000000000014 /* NetworkServiceTests.swift in Sources */,
 				BB0000010000000000000017 /* SplatLibraryTests.swift in Sources */,
 				BB0000010000000000000018 /* ParametricWorldBuilderRealityTests.swift in Sources */,
+				BB0000010000000000000019 /* BA396VisitOrderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

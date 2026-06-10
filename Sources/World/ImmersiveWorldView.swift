@@ -3,6 +3,8 @@ import SwiftUI
 import RealityKit
 import UIKit
 import GameController
+import ARKit
+import QuartzCore
 
 /// visionOS: true immersion. Two paths, mirroring the iOS `iOSWorldView` priority:
 ///   - parametric USDZ walk-in world when `worldParams` is set (the production experience);
@@ -55,10 +57,27 @@ struct ImmersiveWorldView: View {
                 let root = Entity()
                 root.addChild(build.container)
                 content.add(root)
-                // Locomotion only. Per-beat narration is no longer proximity-triggered: each wall
-                // plaque now carries a play button that has the Curator generate a fresh spoken
-                // description on demand (`BeatPlaqueView` → `ConversationService.describeExhibit`).
-                locomotor.start(root: root, span: build.span, bounds: build.bounds, content: content)
+                // BA396: read the portrait walls' physical anchors (root space) once. The shared
+                // clockwise `build.visitOrder` keys both the fixed spawn pose and the plaque
+                // placement, so wall i, plaque i and the walk all agree. Empty/nil for other worlds.
+                let ba396Anchors = params.archetype == .ba396Museum
+                    ? ParametricWorldBuilder.ba396PlaqueAnchors(root, relativeTo: root)
+                    : []
+                let spawn = params.archetype == .ba396Museum
+                    ? ParametricWorldBuilder.ba396SpawnPose(anchors: ba396Anchors)
+                    : nil
+                // Pin the eye to the BOTTOM row of portraits (lowest frame centroid), not the wall's
+                // vertical centre — BA396 is a tall flat 3×2 wall, so the average sat the viewer
+                // floating at mid-wall (felt too high). Bottom-row keeps you grounded, looking up at
+                // the top row; `ba396EyeHeightOffset` (live slider) fine-tunes from there.
+                let museumEyeHeight: Float? = ba396Anchors.isEmpty ? nil
+                    : (ba396Anchors.map { $0.centroid.y }.min()!
+                       + ParametricWorldBuilder.ba396EyeHeightOffset)
+                // Locomotion only — spawn at the entrance facing image 1, eye pinned to frame
+                // height. Per-beat narration is no longer proximity-triggered: each wall plaque
+                // carries a play button (BeatPlaqueView → ConversationService.describeExhibit).
+                locomotor.start(root: root, span: build.span, bounds: build.bounds,
+                                content: content, spawn: spawn, eyeHeight: museumEyeHeight)
                 // BA396 Future Museum: hang a museum wall-label beside each portrait. The
                 // caption text is ready from Stage A (before any image lands), so the plaques
                 // appear while the photos are still "developing". Parented under `root` so they
@@ -68,25 +87,33 @@ struct ImmersiveWorldView: View {
                     // Real flow uses the generated story; "Visit Old World" / dev entry (no story)
                     // falls back to sample beats so the plaque layout/size is quick to preview.
                     let nodes = appState.museumStory?.nodes ?? BeatPlaqueSample.nodes
-                    let anchors = ParametricWorldBuilder.ba396PlaqueAnchors(root, relativeTo: root)
+                    let order = build.visitOrder
                     var tuned: [PlaqueTuner.Item] = []
-                    for (i, node) in nodes.prefix(anchors.count).enumerated() {
-                        guard let plaque = attachments.entity(for: node.id) else { continue }
+                    for (k, node) in nodes.enumerated() {
+                        // Beat k sits on the wall visited at step k (same mapping as the images).
+                        let tile = k < order.count ? order[k] : k
+                        guard ba396Anchors.indices.contains(tile),
+                              let plaque = attachments.entity(for: node.id) else { continue }
                         root.addChild(plaque)   // child of root → rides locomotion with the walls
                         tuned.append(.init(entity: plaque,
-                                           centroid: anchors[i].centroid, normal: anchors[i].normal))
+                                           centroid: ba396Anchors[tile].centroid,
+                                           normal: ba396Anchors[tile].normal))
                     }
                     // Position/size/orient comes from PlaqueTuning so it can be tuned live.
                     plaqueTuner.set(tuned)
                     plaqueTuner.reapply(PlaqueTuning.shared)
                     // Loading/failed overlays, centred on each frame (no side offset — they sit on
-                    // the painting itself). Same anchor order as the plaques + streamed wall photos,
-                    // so overlay i covers frame i. `outward`/`scale` are constants, tunable on device.
-                    for (i, gen) in appState.museumGenerator.nodes.prefix(anchors.count).enumerated() {
-                        guard let overlay = attachments.entity(for: "loading-\(gen.id)") else { continue }
+                    // the painting itself). Beat k → wall `order[k]`, the same mapping the plaques and
+                    // streamed wall photos use, so each overlay covers its own frame. `outward`/`scale`
+                    // are constants, tunable on device.
+                    for (k, gen) in appState.museumGenerator.nodes.enumerated() {
+                        let tile = k < order.count ? order[k] : k
+                        guard ba396Anchors.indices.contains(tile),
+                              let overlay = attachments.entity(for: "loading-\(gen.id)") else { continue }
                         root.addChild(overlay)   // child of root → rides locomotion with the walls
-                        let pos = anchors[i].centroid + anchors[i].normal * Self.overlayOutward
-                        overlay.look(at: pos - anchors[i].normal, from: pos, relativeTo: root)
+                        let a = ba396Anchors[tile]
+                        let pos = a.centroid + a.normal * Self.overlayOutward
+                        overlay.look(at: pos - a.normal, from: pos, relativeTo: root)
                         overlay.scale = .init(repeating: Self.overlayScale)
                     }
                 }
@@ -94,6 +121,7 @@ struct ImmersiveWorldView: View {
                 // the `update:` closure below picks up the rest as they arrive.
                 wallStreamer.root = root
                 wallStreamer.archetype = params.archetype
+                wallStreamer.visitOrder = build.visitOrder
                 wallStreamer.applyIfNeeded(generator: appState.museumGenerator)
             } else {
                 let sphere = await makeSkySphere(
@@ -186,6 +214,18 @@ final class ParametricLocomotor {
 
     private var onPlayerMove: ((SIMD3<Float>) -> Void)?
 
+    /// Head-pose source for the fixed first-person eye height — same `WorldTrackingProvider`
+    /// pattern as the splat renderer (device-anchor pose needs no usage-description key). Started
+    /// in `start()`, then polled each frame for the head's Y so we can pin the eye height.
+    private let arSession = ARKitSession()
+    private let worldTracking = WorldTrackingProvider()
+    /// Fixed first-person eye height (metres above the world floor). Without this the eye sits at
+    /// the user's real — possibly seated — head height; we cancel that head Y each frame so every
+    /// visitor sees the world from a consistent viewpoint. Defaults to a standing 1.6m but `start`
+    /// overrides it per world — BA396 passes the portrait-frame centre height so the paintings sit
+    /// at eye level instead of being looked up at. Tunable on device.
+    private var eyeHeight: Float = 1.6
+
     // Hard-wall margins (metres), tunable on device. Inset from the model bounds so the
     // camera never clips into a wall and to absorb wall thickness.
     private let wallMargin: Float = 0.5     // side walls (X/Z)
@@ -193,12 +233,16 @@ final class ParametricLocomotor {
     private let ceilingMargin: Float = 0.5  // don't poke through the roof
 
     func start(root: Entity, span: Float, bounds: BoundingBox, content: RealityViewContent,
+               spawn: (position: SIMD3<Float>, yaw: Float)? = nil,
+               eyeHeight: Float? = nil,
                onPlayerMove: ((SIMD3<Float>) -> Void)? = nil) {
         self.root = root
         self.onPlayerMove = onPlayerMove
-        // User already stands inside the floor-aligned world, so start at the origin
-        // (no back-off, unlike the splat path). Speed scales with scene size.
-        self.loco = SplatLocomotion(position: .zero, span: span)
+        if let eyeHeight { self.eyeHeight = eyeHeight }   // BA396: portrait-frame centre height
+        // Spawn at the fixed pose when supplied (BA396: in front of the first wall, facing it),
+        // else at the origin (the floor-aligned world centre). Speed scales with scene size.
+        self.loco = SplatLocomotion(position: spawn?.position ?? .zero,
+                                    yaw: spawn?.yaw ?? 0, span: span)
         // Hard walls. Player origin == bounds.center horizontally and the floor (bounds.min.y)
         // sits at y=0, so player space spans ±extents/2 in X/Z and [0, extents.y] in Y.
         let hx = max(0, bounds.extents.x / 2 - wallMargin)
@@ -206,15 +250,24 @@ final class ParametricLocomotor {
         let top = max(floorMargin, bounds.extents.y - ceilingMargin)
         self.loco.boundary = .init(min: SIMD3(-hx, floorMargin, -hz),
                                    max: SIMD3( hx, top,         hz))
+        // First-person: lock vertical so the triggers can't fly the view up/down, and start world
+        // tracking so the update closure can pin the eye to a constant standing height (below).
+        self.loco.lockVertical = true
+        Task { @MainActor in try? await self.arSession.run([self.worldTracking]) }
         subscription = content.subscribe(to: SceneEvents.Update.self) { [weak self] event in
             guard let self, let root = self.root else { return }
             let gamepad = SplatSpikeDebug.ignoreGamepad ? nil : currentExtendedGamepad()
-            // On-screen forward/turn pad fallback (settings → "顯示前進方向鍵"); zero when
-            // untouched, so gamepad users are unaffected. Mirrors the splat path
-            // (`SplatVisionRenderer`), which is why the museum was previously unwalkable without
-            // a controller — this `manual:` arg was missing.
+            // Feed the on-screen "Hold to move" pad (SplatManualInput) so the museum is walkable
+            // without a game controller (e.g. the visionOS Simulator).
             let manual = SplatManualInput.shared.snapshot()
             self.loco.tick(deltaTime: Float(event.deltaTime), gamepad: gamepad, manual: manual)
+            // Pin the eye to a fixed standing height: cancel the real head Y so the view sits at
+            // `eyeHeight` above the floor whether the user is seated or standing. Until tracking is
+            // ready the anchor is nil and we keep the previous Y (no jump).
+            if let device = self.worldTracking.queryDeviceAnchor(atTimestamp: CACurrentMediaTime()) {
+                let headY = device.originFromAnchorTransform.columns.3.y
+                self.loco.position.y = self.eyeHeight - headY
+            }
             let player = self.loco.playerTransform()
             root.transform = Transform(matrix: player.inverse)
             // Report the player's scene-space position (root-local) for proximity narration.
@@ -242,6 +295,9 @@ final class GalleryWallStreamer {
     /// Which world is being textured — selects the correct wall-photo path (BA396 shared atlas vs
     /// the Art Gallery's per-frame "bake" meshes). Set alongside `root` when the world is built.
     var archetype: WorldArchetype?
+    /// BA396 clockwise visit order (from `ParametricWorldBuild`): beat k → atlas tile `visitOrder[k]`,
+    /// so re-textured walls keep the same chronological order as the initial paint.
+    var visitOrder: [Int] = []
     /// Per-beat "image has landed" flags from the last re-texture, so we re-apply only on change.
     private var appliedSignature: [Bool] = []
 
@@ -255,10 +311,11 @@ final class GalleryWallStreamer {
         appliedSignature = signature
         let images = generator.orderedGalleryImages()
         if archetype == .ba396Museum {
-            // BA396's 6 walls are ONE shared atlas mesh, so re-composite the atlas. The gallery
-            // `applyGalleryPhotos` path matches mesh names containing "bake" — BA396 has none, so
-            // using it here silently no-ops and the walls stay on the dark build-time placeholders.
-            ParametricWorldBuilder.applyBA396Portraits(root, images: images)
+            // BA396's 6 walls are ONE shared atlas mesh, so re-composite the atlas in the shared
+            // clockwise visit order. The gallery `applyGalleryPhotos` path matches mesh names
+            // containing "bake" — BA396 has none, so using it here silently no-ops and the walls
+            // stay on the dark build-time placeholders.
+            ParametricWorldBuilder.applyBA396Portraits(root, images: images, order: visitOrder)
         } else {
             ParametricWorldBuilder.applyGalleryPhotos(root, textures: ParametricWorldBuilder.texturesFrom(images))
         }
