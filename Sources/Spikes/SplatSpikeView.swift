@@ -2,7 +2,7 @@ import SwiftUI
 
 // ⚠️ DEV / SPIKE ONLY — do NOT ship.
 // Phase 2: render a World Labs Gaussian-splat (.spz) with MetalSplatter and let
-// the user walk around it (6DoF) via touch + PS5 controller. When `launchIntoSpike`
+// the user walk around it (6DoF) via touch + game controller. When `launchIntoSpike`
 // is true the app boots straight into the splat viewer, bypassing the normal flow.
 enum SplatSpikeDebug {
     static let launchIntoSpike = false
@@ -134,7 +134,7 @@ struct SplatSceneView: View {
             Spacer()
 
             Text(gamepad.isConnected
-                 ? "Left stick move · right stick look · R2/L2 up/down · ○ reset"
+                 ? "Left stick move · right stick look · triggers up/down · A/B reset"
                  : "Drag to look · pinch to move")
                 .font(.footnote)
                 .foregroundStyle(.white.opacity(0.7))
