@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 17 · Reflection (Figma "Reflection Part 1–4") — a short, passive reflective montage shown
 /// after the user steps out of the 3D world. The generated world stays on screen (dimmed)
-/// while three questions fade in and out one at a time, each lingering ~5 seconds. There is
+/// while three questions fade in and out one at a time, each lingering ~7 seconds. There is
 /// no input — it's a quiet moment to sit with the experience — and when the last question
 /// fades away the flow returns Home.
 ///
@@ -21,11 +21,11 @@ struct ReflectionFlowView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    // Timing (seconds). Each question is on screen ~5s total, measured from the start of its
+    // Timing (seconds). Each question is on screen ~7s total, measured from the start of its
     // fade-in: fadeIn + hold + fadeOut == questionDuration.
     private let openingBeat: Double = 2.2     // Part 1 — world only, before the first question
-    private let fade: Double = 0.8
-    private let questionDuration: Double = 5.0
+    private let fade: Double = 1.2
+    private let questionDuration: Double = 7.0
 
     var body: some View {
         ZStack {
