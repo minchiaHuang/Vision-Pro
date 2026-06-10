@@ -32,7 +32,6 @@ enum ParametricWorldBuilder {
         // placeholders. The frames bind their image to `emissiveColor` (diffuse is black), so
         // `applyGalleryPhotos` reuses each mesh's UVs to keep correct on-wall placement.
         if params.archetype == .artGallery {
-            print("[DEBUG] using artGallery path")
             let photos = galleryPhotos.isEmpty
                 ? await loadGalleryPhotoTextures()
                 : texturesFrom(galleryPhotos)
@@ -44,7 +43,6 @@ enum ParametricWorldBuilder {
         // images into one atlas matching the portrait UV tiles and swap the Portraits material.
         // When no photos are supplied (dev-menu direct entry) leave BA396's baked PortraitUV.
         if params.archetype == .ba396Museum, !galleryPhotos.isEmpty {
-            print("[DEBUG] using BA396 path")
             applyBA396Portraits(model, images: galleryPhotos)
         }
 
@@ -109,7 +107,6 @@ enum ParametricWorldBuilder {
 
         let frames = galleryFrames(root)
         for (index, frame) in frames.enumerated() {
-            print("[DEBUG] frame \(index): \(frame.name)")
             guard var model = frame.model else { continue }
 
             // Frame 5

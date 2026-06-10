@@ -29,7 +29,6 @@ enum OpenAIImageService {
     /// each beat and once more at completion. Returns the images that succeeded, in beat order.
     static func generateJourney(q3: String, q4: String, q5: String, q6: String,
                                 onProgress: @escaping @MainActor (Int, Int) -> Void) async -> [UIImage] {
-        print("[DEBUG] generateJourney called with q3: \(q3)")
         let prompts = await heroJourneyPrompts(q3: q3, q4: q4, q5: q5, q6: q6)
         var images: [UIImage] = []
         for (index, prompt) in prompts.enumerated() {
