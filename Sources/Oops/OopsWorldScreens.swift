@@ -85,7 +85,7 @@ struct GeneratingScreen: View {
     }
 }
 
-/// "Building your museum" with an animated trailing ellipsis. All three dots always occupy
+/// "Building your world" with an animated trailing ellipsis. All three dots always occupy
 /// space (so the title never shifts); they fade in 1 → 2 → 3 on a timer to signal ongoing work.
 private struct BuildingMuseumHeader: View {
     let size: CGFloat
@@ -94,7 +94,7 @@ private struct BuildingMuseumHeader: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            Text("Building your museum")
+            Text("Building your world")
             HStack(spacing: 1) {
                 ForEach(0..<3, id: \.self) { i in
                     Text(".").opacity(i < visible ? 1 : 0.18)
