@@ -2,7 +2,8 @@ import RealityKit
 import GameController
 
 /// Holds the first-person camera state and applies it to the RealityKit camera
-/// each frame. Both touch gestures and the PS5 / extended gamepad mutate this
+/// each frame. Both touch gestures and the extended gamepad (PS5 / Switch Pro /
+/// Xbox) mutate this
 /// same rig, so they coexist without fighting over SwiftUI state.
 @MainActor
 final class WorldCameraRig {
@@ -21,7 +22,7 @@ final class WorldCameraRig {
     private var resetWasPressed = false
 
     private let lookSpeed: Float = 2.4          // rad/sec at full stick deflection
-    private let moveFraction: Float = 0.6       // scene spans/sec at full deflection
+    private let moveFraction: Float = 0.06      // scene spans/sec at full deflection
     private let deadzone: Float = 0.1
 
     /// Yaw-only basis so left-stick / pinch movement stays on the horizontal
@@ -86,11 +87,12 @@ final class WorldCameraRig {
         position += moveForward * (dead(gp.leftThumbstick.yAxis.value) * speed)
         position += moveRight * (dead(gp.leftThumbstick.xAxis.value) * speed)
 
-        // Triggers → vertical (R2 up, L2 down, analog).
+        // Triggers → vertical (right up, left down, analog).
         position.y += (gp.rightTrigger.value - gp.leftTrigger.value) * speed
 
-        // ○ (buttonB) → reset, edge-triggered.
-        let pressed = gp.buttonB.isPressed
+        // Right/bottom face button (A or B) → reset, edge-triggered. Accepting both
+        // sidesteps the Switch Pro A/B position swap (Apple's mapping is inconsistent).
+        let pressed = gp.buttonB.isPressed || gp.buttonA.isPressed
         if pressed && !resetWasPressed { resetToInitial() }
         resetWasPressed = pressed
     }
