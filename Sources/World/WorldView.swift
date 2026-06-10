@@ -114,6 +114,8 @@ struct iOSWorldView: View {
     @State private var showOverlay = false
     @State private var showHint = true
     @State private var walkable = false
+    /// Looping world soundtrack that slowly fades in for the duration of the visit.
+    @State private var music = MuseumMusicPlayer()
     var onExit: (() -> Void)? = nil
 
     var body: some View {
@@ -228,6 +230,8 @@ struct iOSWorldView: View {
                 try? await Task.sleep(for: .seconds(2))
                 showHint = false
             }
+            .onAppear { music.start() }
+            .onDisappear { music.stop() }
         }
     }
 }
