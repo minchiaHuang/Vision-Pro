@@ -24,6 +24,10 @@ final class ConversationService {
 
     private(set) var turn: Turn = .idle
     private(set) var lastError: String?
+    /// The exhibit currently being generated/spoken via a wall-plaque play button. All plaques
+    /// share this one service, so each plaque shows its busy/speaking state only while this equals
+    /// its own beat id. nil whenever no play-to-describe is in flight.
+    private(set) var activeBeatID: String?
 
     private let stt = SpeechRecognizer()
     /// On-device AVSpeech voice — always available; the fallback for all output.
@@ -38,6 +42,9 @@ final class ConversationService {
 
     private var systemPrompt = ""
     private var history: [AnthropicClient.ChatMessage] = []
+    /// The in-flight play-to-describe task (plaque play button). Held so a second tap can cancel
+    /// generation/playback mid-way.
+    private var describeTask: Task<Void, Never>?
 
     init() {
         let n = NarrationService()
@@ -159,10 +166,83 @@ final class ConversationService {
 
     /// Fully stops the conversation (leaving the world / starting over).
     func stop() {
+        describeTask?.cancel()
+        describeTask = nil
         stt.stop()
         stopSpeaking()
         deactivateSession()
         turn = .idle
+        activeBeatID = nil
+    }
+
+    // MARK: - Play-to-describe (wall-plaque play/stop toggle)
+
+    /// Play/stop toggle for a wall-plaque button. First tap: the Curator generates a FRESH spoken
+    /// description for THIS exhibit and speaks it (the plaque shows a "playing" animation). Tapping
+    /// the SAME plaque again stops it immediately — even mid-generation; tapping a DIFFERENT plaque
+    /// switches to it. A model failure falls back to the curated `narration` so the plaque is never
+    /// silent. One-shot: it never appends to the push-to-talk `history`, and won't barge into a mic
+    /// turn.
+    func toggleDescribe(_ beat: MuseumNode) {
+        // Second tap on the playing/loading plaque → stop.
+        if activeBeatID == beat.id { stopDescribe(); return }
+        // Don't interrupt an active push-to-talk (mic) turn.
+        guard turn != .listening else { return }
+        // Stop any other plaque that's mid-describe, then start this one.
+        stopDescribe()
+        lastError = nil
+        turn = .thinking
+        activeBeatID = beat.id
+        describeTask = Task { [weak self] in
+            guard let self else { return }
+            let line: String
+            do {
+                line = try await self.claude.reply(
+                    system: self.systemPrompt,
+                    history: [AnthropicClient.ChatMessage(
+                        role: "user", content: Self.describeExhibitMessage(beat: beat))]
+                )
+            } catch {
+                if Task.isCancelled { return }
+                self.lastError = Self.describe(error)
+                line = beat.narration   // never leave the plaque silent
+            }
+            if Task.isCancelled { return }
+            self.activatePlaybackSession()
+            self.turn = .speaking
+            self.routeSpeak(line)
+            await self.waitUntilSpeechEnds()
+            if Task.isCancelled { return }
+            self.turn = .idle
+            self.activeBeatID = nil
+            self.describeTask = nil
+        }
+    }
+
+    /// Stops the in-flight play-to-describe (cancels generation, silences playback) and returns the
+    /// plaque button to its resting "Play" state.
+    func stopDescribe() {
+        describeTask?.cancel()
+        describeTask = nil
+        stopSpeaking()
+        turn = .idle
+        activeBeatID = nil
+    }
+
+    /// Awaits the start (cloud fetch / TTS warm-up) then the end of the current spoken line, so the
+    /// caller can return the plaque button to "Play" once playback finishes on its own. Polls the
+    /// observable `isSpeaking`; cancellation-aware (a stop tap cancels the task).
+    private func waitUntilSpeechEnds() async {
+        var warmup = 0
+        while !isSpeaking && warmup < 60 {            // up to ~6s for playback to begin
+            try? await Task.sleep(for: .milliseconds(100))
+            if Task.isCancelled { return }
+            warmup += 1
+        }
+        while isSpeaking {
+            try? await Task.sleep(for: .milliseconds(150))
+            if Task.isCancelled { return }
+        }
     }
 
     // MARK: - Claude (Messages API over URLSession)
@@ -249,7 +329,7 @@ final class ConversationService {
     /// anchored in the generated story's beats + the visitor's own fear/sacrifice/worthIt and the
     /// closing decision. Blank answer fields are simply omitted (worthIt is usually blank — the
     /// Curator infers it).
-    private static func makeCuratorPrompt(story: MuseumStory, answers: MuseumAnswers) -> String {
+    static func makeCuratorPrompt(story: MuseumStory, answers: MuseumAnswers) -> String {
         let beats = story.nodes
             .map { "- \($0.stage) (age \($0.age)): \($0.narration)" }
             .joined(separator: "\n")
@@ -265,6 +345,18 @@ final class ConversationService {
         \(beats)
         \(visitorLine)The closing question at the exit is: "\(story.decision_prompt)"
         When the visitor speaks to you, answer about THIS exhibition and what it asks of them. Keep every reply to 2-3 short spoken sentences — it is read aloud. Persuade neither toward nor away from the path; hand the choice back to them. Never mention that this is an app, a quiz, or AI.
+        """
+    }
+
+    /// The synthetic "visitor turn" that asks the Curator to describe ONE exhibit afresh, sent by
+    /// the wall-plaque play button. Pure + static so the wording is unit-testable (mirrors the
+    /// prompt builders above). The `systemPrompt` already grounds the Curator in all five beats;
+    /// this just points at the one in front of the visitor and asks for new words, not the label.
+    static func describeExhibitMessage(beat: MuseumNode) -> String {
+        let stage = beat.stage.replacingOccurrences(of: "_", with: " ")
+        return """
+        I'm standing in front of one exhibit now: "\(beat.caption)" — the \(stage) room, age \(beat.age). \
+        Describe THIS room and what it asks of me, in your own Curator voice. Do not repeat the wall text word for word — say it anew. Keep it to 2-3 short spoken sentences.
         """
     }
 }

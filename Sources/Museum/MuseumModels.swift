@@ -74,3 +74,51 @@ final class GeneratedNode: Identifiable {
         self.node = node
     }
 }
+
+// MARK: - Sample beats (preview / "Visit Old World" without running generation)
+
+/// Stand-in beats so the BA396 plaques can be shown — and the Curator voice grounded — via
+/// "Visit Old World" (or dev entry) without running the quiz + image generation. Six entries (one
+/// per wall) with deliberately mixed caption lengths so the plaque layout/size can be judged on
+/// both short and long labels. Used only when `appState.museumStory` is nil; the real flow always
+/// supplies its own story.
+enum BeatPlaqueSample {
+    static let nodes: [MuseumNode] = [
+        .init(stage: "ordinary_world_call", age: 17, beat: "",
+              caption: "The Drawer — where the dream is kept, unspoken.",
+              narration: "Seventeen. You keep the flyer in a drawer. You haven't told anyone yet.",
+              image_prompt: "", tone: "cold"),
+        .init(stage: "crossing_threshold", age: 19, beat: "",
+              caption: "Before Dawn",
+              narration: "Then, for years, every morning before the city wakes. No audience. No applause.",
+              image_prompt: "", tone: "cold"),
+        .init(stage: "ordeal", age: 23, beat: "",
+              caption: "The Empty Row — when the body fails and the others have gone.",
+              narration: "Twenty-three. Your body gives out. The ones who started with you have already left.",
+              image_prompt: "", tone: "cold"),
+        .init(stage: "sacrifice", age: 27, beat: "",
+              caption: "Missed Calls",
+              narration: "You wanted to keep time with your family. You missed the last birthday that mattered.",
+              image_prompt: "", tone: "cold"),
+        .init(stage: "return_elixir", age: 34, beat: "",
+              caption: "Curtain Call — one stage, at last.",
+              narration: "Thirty-four. The Opera House. Whether it was worth it — only you will know.",
+              image_prompt: "", tone: "warm"),
+        .init(stage: "epilogue", age: 40, beat: "",
+              caption: "After — a sample sixth label for sizing.",
+              narration: "A sixth sample beat so all six BA396 walls show a plaque for layout checking.",
+              image_prompt: "", tone: "warm"),
+    ]
+
+    /// A full sample story wrapping `nodes`, used to ground the Curator voice in "Visit Old World"
+    /// so the wall-plaque play button (`ConversationService.describeExhibit`) and the push-to-talk
+    /// orb are testable without running the quiz + generation. Not used in the real flow.
+    static let story = MuseumStory(
+        persona: "a dancer who gave everything to one stage",
+        cold_style: "",
+        warm_style: "",
+        decision_prompt: "Knowing the cost laid out in these rooms, would you still begin?",
+        refusal: nil,
+        nodes: nodes
+    )
+}

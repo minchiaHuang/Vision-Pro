@@ -134,13 +134,13 @@ struct OopsFlowView: View {
     ///   are composited onto BA396's 6 portrait walls by `ParametricWorldBuilder`.
     /// - iPad: loads BA396 worldParams and shows the in-cover `WorldView` (ParametricWorldView).
     private func enterWorld() {
-        // When a Curator story exists (the museum flow, not "visit old world"), stand up the one
-        // shared voice now so both the orb and the in-gallery proximity narrator use it.
-        if let story = appState.museumStory {
-            let convo = ConversationService()
-            convo.configureCurator(story: story, answers: appState.museumAnswers ?? MuseumAnswers())
-            appState.museumConversation = convo
-        }
+        // Stand up the one shared Curator voice. The real flow grounds it in the generated story;
+        // "Visit Old World" (no story) grounds it in the sample beats so the wall-plaque play
+        // button (`describeExhibit`) and the push-to-talk orb are still testable there.
+        let convo = ConversationService()
+        let story = appState.museumStory ?? BeatPlaqueSample.story
+        convo.configureCurator(story: story, answers: appState.museumAnswers ?? MuseumAnswers())
+        appState.museumConversation = convo
         #if os(visionOS)
         Task {
             appState.loadBA396World()
