@@ -382,9 +382,7 @@ enum ParametricWorldBuilder {
                 // Center-crop to the frame's physical aspect, then rotate 90° (cancelling the
                 // wall's authored UV rotation) and fill the tile. The quad samples the whole
                 // tile, so the result lands as an upright, undistorted landscape photo.
-                let order = [0, 2, 4, 5, 1, 3]
-                let imageIndex = order[i] % images.count
-                let framed = centerCropped(images[imageIndex], toAspect: ba396PortraitAspect)
+                let framed = centerCropped(images[i % images.count], toAspect: ba396PortraitAspect)
                 let rect = CGRect(x: tile.uMin * side,
                                   y: (1 - tile.vMax) * side,
                                   width: (tile.uMax - tile.uMin) * side,
@@ -396,12 +394,7 @@ enum ParametricWorldBuilder {
                 // In the rotated frame the tile's width/height swap, so the landscape image fills it.
                 framed.draw(in: CGRect(x: -rect.height / 2, y: -rect.width / 2,
                                        width: rect.height, height: rect.width))
-                let label = "\(i)" as NSString
-                let attrs: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.boldSystemFont(ofSize: 200),
-                    .foregroundColor: UIColor.white
-                ]
-                label.draw(at: CGPoint(x: -rect.height / 2 + 20, y: -rect.width / 2 + 20), withAttributes: attrs)
+            
                 cg.restoreGState()
             }
         }
