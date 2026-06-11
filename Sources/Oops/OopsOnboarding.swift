@@ -357,12 +357,12 @@ struct DeclarationScreen: View {
                 .frame(height: cardHeight)
                 .oopsWindow()
 
-                // Back button — pinned to the card's top-left corner (design position:
-                // window-left+40 / window-top+36), overlaid on the glass.
+                // Back button — pinned snug into the card's very top-left corner, overlaid on
+                // the glass (stays within the rounded corner so it never floats off the card).
                 if let onBack {
                     backButton(action: onBack)
-                        .padding(.leading, 40)
-                        .padding(.top, 36)
+                        .padding(.leading, 24)
+                        .padding(.top, 24)
                 }
             }
 

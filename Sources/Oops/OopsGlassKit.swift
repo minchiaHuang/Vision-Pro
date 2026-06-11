@@ -387,13 +387,14 @@ struct CheckStatement: View {
         .animation(.easeInOut(duration: 0.2), value: checked)
     }
 
-    /// "Checkbox" pill from VisualEyes Screens.html (`.pill.check`): a 36×30 glass pill.
-    /// OFF = frosted glass gradient, empty. ON = bright white fill with a soft outer
-    /// glow (no checkmark — the filled pill alone signals the selected state).
+    /// "Checkbox" pill (`.pill.check`): a 36×30 glass pill. The selected/unselected look is
+    /// SWAPPED per the user's request — bright white fill = UNSELECTED, frosted/empty = SELECTED.
+    /// `filled` (= !checked) drives the appearance; the tap state itself is still `checked`.
     private var toggle: some View {
-        Capsule()
+        let filled = !checked
+        return Capsule()
             .fill(
-                checked
+                filled
                     ? LinearGradient(
                         colors: [Color.white.opacity(0.95),
                                  Color(red: 0.92, green: 0.92, blue: 0.94).opacity(0.90)],
@@ -403,9 +404,9 @@ struct CheckStatement: View {
                                  Color(white: 0.47, opacity: 0.42)],
                         startPoint: UnitPoint(x: 0.10, y: 0.05),
                         endPoint:   UnitPoint(x: 0.90, y: 0.95)))
-            .overlay(Capsule().strokeBorder(.white.opacity(checked ? 0.0 : 0.55), lineWidth: 1.5))
-            .shadow(color: checked ? Color.white.opacity(0.55) : .black.opacity(0.18),
-                    radius: checked ? 7 : 4, y: checked ? 0 : 1)
+            .overlay(Capsule().strokeBorder(.white.opacity(filled ? 0.0 : 0.55), lineWidth: 1.5))
+            .shadow(color: filled ? Color.white.opacity(0.55) : .black.opacity(0.18),
+                    radius: filled ? 7 : 4, y: filled ? 0 : 1)
             .frame(width: 36, height: 30)
             .animation(.easeInOut(duration: 0.2), value: checked)
     }
