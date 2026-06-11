@@ -100,7 +100,7 @@ struct MuseumQuestionsView: View {
     }
 
     private var generateButton: some View {
-        Button(action: onGenerate) {
+        Button { ButtonClick.play(); onGenerate() } label: {
             Text("Build my museum")
                 .font(.system(size: 18, weight: .semibold))
                 .frame(maxWidth: .infinity)
