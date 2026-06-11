@@ -34,6 +34,12 @@ struct OopsFlowView: View {
     @State private var safety = [false, false, false]
     @State private var privacy = [false, false, false]
 
+    /// Looping home ambience. Owned here (not by `HomeScreen`) so it survives the Home → safety
+    /// transition: it keeps playing into the safety page and slowly fades out there.
+    @State private var ambience = IntroAmbiencePlayer(resource: "home_ambient", volume: 0.48)
+    /// How long the ambient bed takes to settle to silence once the safety page appears.
+    private let ambienceFadeOut: TimeInterval = 6
+
     /// Bumped every time we navigate to `.home`, then used as HomeScreen's `.id`. Landing on
     /// home from a different screen (e.g. returning from the reflection montage) reuses the
     /// same `switch` branch, so SwiftUI keeps the old HomeScreen + its `@State` alive and the
@@ -77,6 +83,16 @@ struct OopsFlowView: View {
                     dismissWindow(id: id)
                 }
                 #endif
+            }
+            if screen == .home { ambience.start() }
+        }
+        // Drive the home ambience across screens: play on Home, carry into the safety page and
+        // fade out there, and ensure it's stopped on any other destination.
+        .onChange(of: screen) { _, newScreen in
+            switch newScreen {
+            case .home:   ambience.start()
+            case .safety: ambience.fadeOut(over: ambienceFadeOut)
+            default:      ambience.stop()
             }
         }
         #if os(visionOS)

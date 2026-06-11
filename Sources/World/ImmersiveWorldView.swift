@@ -564,7 +564,7 @@ struct FrameLoadingOverlay: View {
     }
 
     private var failedCard: some View {
-        Button { generator.retry(gen) } label: {
+        Button { ButtonClick.play(); generator.retry(gen) } label: {
             VStack(spacing: 12) {
                 Image(systemName: "wifi.slash").font(.system(size: 30, weight: .semibold))
                 Text("Couldn't load").font(.system(size: 20, weight: .semibold))

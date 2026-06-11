@@ -245,7 +245,7 @@ private struct SplatExitControls: View {
     }
 
     private var exitButton: some View {
-        Button { performExit() } label: {
+        Button { ButtonClick.play(); performExit() } label: {
             Label("Exit world", systemImage: "chevron.left")
                 .font(.title3.weight(.semibold))
                 .frame(maxWidth: .infinity)

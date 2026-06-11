@@ -129,7 +129,7 @@ struct OopsWorldContainer: View {
             WorldView(onExit: onExit)
                 .ignoresSafeArea()
 
-            Button(action: onExit) {
+            Button { ButtonClick.play(); onExit() } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(.white)
@@ -221,7 +221,7 @@ struct OopsWorldControls: View {
     }
 
     private var exitButton: some View {
-        Button { performExit() } label: {
+        Button { ButtonClick.play(); performExit() } label: {
             Label("Leave world", systemImage: "chevron.left")
                 .font(.title3.weight(.semibold))
                 .frame(maxWidth: .infinity)
@@ -269,7 +269,7 @@ struct OopsGalleryControls: View {
         // `.ornament` on in full immersion, so we emulate the bottom toolbar with a slim window
         // + a settings popover. Resting state is just: ⋯ Settings · Leave world.
         HStack(spacing: 14) {
-            Button { showSettings.toggle() } label: {
+            Button { ButtonClick.play(); showSettings.toggle() } label: {
                 Label("Settings", systemImage: "ellipsis")
                     .font(.title3.weight(.semibold))
             }
@@ -282,7 +282,7 @@ struct OopsGalleryControls: View {
                 SplatMovePad()
             }
 
-            Button { leave(resume: .reflection) } label: {
+            Button { ButtonClick.play(); leave(resume: .reflection) } label: {
                 Label("Leave world", systemImage: "chevron.left")
                     .font(.title3.weight(.semibold))
             }
@@ -325,6 +325,7 @@ struct OopsGalleryControls: View {
             Toggle("Background music", isOn: $settings.musicOn)
             Toggle("Subtitles", isOn: $settings.subtitlesOn)
             Button {
+                ButtonClick.play()
                 openWindow(id: "museum-voice-orb")
                 showSettings = false
             } label: {
@@ -363,7 +364,7 @@ struct OopsGalleryControls: View {
 
             Divider()
 
-            Button { leave(resume: .home) } label: {
+            Button { ButtonClick.play(); leave(resume: .home) } label: {
                 Label("Start over", systemImage: "arrow.counterclockwise")
             }
             .buttonStyle(.plain)

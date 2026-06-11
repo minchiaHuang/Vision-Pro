@@ -29,6 +29,8 @@ struct RootView: View {
 /// Opening screen.
 struct SplashView: View {
     @Environment(AppState.self) private var appState
+    /// Looping ambient bed for the intro screen; stops when leaving for the quiz.
+    @State private var ambience = IntroAmbiencePlayer()
 
     var body: some View {
         VStack(spacing: 30) {
@@ -53,6 +55,8 @@ struct SplashView: View {
         }
         .frame(maxWidth: 520)
         .padding(32)
+        .onAppear { ambience.start() }
+        .onDisappear { ambience.stop() }
     }
 }
 
