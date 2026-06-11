@@ -411,6 +411,63 @@ struct CheckStatement: View {
     }
 }
 
+// MARK: - visionOS toggle + preference row (Privacy Preferences)
+
+/// visionOS-style green pill toggle (design `Toggle`). 64×38 capsule, #32D74B when on /
+/// neutral grey when off, with a 30pt white knob that slides to the active edge.
+struct OopsToggle: View {
+    var on: Bool
+
+    var body: some View {
+        Capsule()
+            .fill(on ? Color(.sRGB, red: 50.0 / 255, green: 215.0 / 255, blue: 75.0 / 255, opacity: 1)
+                     : Color(white: 0.47, opacity: 0.5))
+            .frame(width: 64, height: 38)
+            .overlay(Capsule().strokeBorder(.white.opacity(on ? 0.20 : 0.25), lineWidth: 1))
+            .overlay(alignment: on ? .trailing : .leading) {
+                Circle()
+                    .fill(.white)
+                    .frame(width: 30, height: 30)
+                    .shadow(color: .black.opacity(0.30), radius: 2.5, y: 2)
+                    .padding(.horizontal, 4)
+            }
+            .animation(.easeInOut(duration: 0.2), value: on)
+    }
+}
+
+/// Privacy preference row — same heading+body block as `CheckStatement` but with the green
+/// toggle on the RIGHT (design `PrefRow`). The whole row is the tap target so it toggles
+/// reliably (pinch/tap can be imprecise on the small switch).
+struct PrefToggleRow: View {
+    let head: String
+    let text: String
+    let on: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 24) {
+            VStack(alignment: .leading, spacing: 9) {
+                Text(head)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(OopsGlass.label1)
+                Text(text)
+                    .font(.system(size: 17, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .lineSpacing(2)
+                    .lineLimit(3, reservesSpace: true)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            OopsToggle(on: on)
+                // Align the switch with the heading's first line.
+                .padding(.top, 2)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onToggle)
+        .animation(.easeInOut(duration: 0.2), value: on)
+    }
+}
+
 // MARK: - Spinner
 
 /// `.spinner` — indeterminate ring used on the generating screen.

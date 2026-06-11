@@ -123,7 +123,8 @@ struct OopsFlowView: View {
                 label: "04 Privacy Preferences", title: "Privacy Preferences",
                 subtitle: OopsContent.privacyIntro,
                 items: OopsContent.privacy, cta: "Start",
-                checks: $privacy, requireAll: false, onCta: { go(.quiz) }, onBack: { go(.safety) })
+                checks: $privacy, requireAll: false, useToggle: true,
+                onCta: { go(.quiz) }, onBack: { go(.safety) })
         case .quiz:
             QuizScreen(answers: $answers, onFinish: { go(.generating) }, onBack: { go(.home) })
         case .generating:
