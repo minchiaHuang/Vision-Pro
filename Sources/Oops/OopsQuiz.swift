@@ -92,13 +92,13 @@ struct QuizScreen: View {
                     }
 
                     // 3 — Back button (pinned top-leading — IDENTICAL on every screen).
-                    //     Sits near the card top (top 32) so it lines up with the back chevron
-                    //     on the Declaration (Safety / Privacy) screens, whose centred content
-                    //     floats its chevron up to roughly the same height. Kept clear of the
-                    //     "Quiz" header below it (header starts at top 88).
+                    //     Tucked snug into the card's very top-left corner at 24/24, matching
+                    //     the Declaration (Safety / Privacy) screens exactly so the control sits
+                    //     at one fixed spot across the whole onboarding + quiz flow. Kept clear
+                    //     of the "Quiz" header below it (button bottom 84 < header top 88).
                     backButton
-                        .padding(.leading, sideInset)
-                        .padding(.top, 32)
+                        .padding(.leading, 24)
+                        .padding(.top, 24)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
                 .frame(width: cardW, height: cardH)
@@ -140,10 +140,10 @@ struct QuizScreen: View {
 
     // MARK: - Back button
 
-    /// Large circular glass back control (`OopsBackCircleLabel`) — its left edge sits at the
-    /// overlay's `.leading` padding, giving the "Quiz" header below it a shared left edge to align
-    /// to. The solid disc is a reliable tap target (a bare transparent chevron hit-tests
-    /// unreliably on visionOS). Lives in its own overlay layer so it never moves between screens.
+    /// Large circular glass back control (`OopsBackCircleLabel`) — pinned into the card's
+    /// top-left corner (24/24, same as the Declaration screens) so it sits at one fixed spot
+    /// across the flow. The solid disc is a reliable tap target (a bare transparent chevron
+    /// hit-tests unreliably on visionOS). Lives in its own overlay layer so it never moves.
     private var backButton: some View {
         Button {
             ButtonClick.play()
