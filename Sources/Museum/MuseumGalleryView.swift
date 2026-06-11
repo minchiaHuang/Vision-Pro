@@ -82,6 +82,15 @@ final class MuseumGenerator {
         await paintTask?.value
     }
 
+    /// Awaits Stage B (image painting) completion without starting or re-running anything — used
+    /// by the save-visit hook. The Oops flow enters the museum the instant Stage A is ready and
+    /// lets the paintings stream in; this lets `AppState` wait for `phase == .ready` before
+    /// persisting the finished visit. No-op if no paint task is in flight (Stage A failed, or
+    /// nothing has run), so it never blocks.
+    func waitUntilReady() async {
+        await paintTask?.value
+    }
+
     /// Re-paints a single beat whose image failed (or never landed) — driven by the in-world
     /// "tap to retry" on a failed picture frame. Clears `failed`, fetches the image again, and on
     /// success sets `image` (the gallery's signature watcher then re-textures that wall on its own).
@@ -120,6 +129,21 @@ final class MuseumGenerator {
         story = nil
         nodes = []
     }
+
+    #if DEBUG
+    /// TEST-ONLY: install a finished run (a story plus each beat's image bytes) as if both stages
+    /// had already completed — no network. `paintTask` stays nil, so `waitUntilReady()` returns at
+    /// once and the save path can be exercised deterministically.
+    func installFinishedRun(story: MuseumStory, images: [Data?]) {
+        self.story = story
+        self.nodes = story.nodes.enumerated().map { i, node in
+            let g = GeneratedNode(node: node)
+            g.image = i < images.count ? images[i] : nil
+            return g
+        }
+        self.phase = .ready
+    }
+    #endif
 }
 
 /// Flat gallery for the pipeline-only milestone: the persona, a horizontal row of beat

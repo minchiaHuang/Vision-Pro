@@ -3,7 +3,7 @@ import SwiftUI
 /// The screens of the Oops prototype flow (mirrors the React `screen` state). After the
 /// user steps out of the 3D world they land on the `reflection` screen (5 questions).
 enum OopsScreen {
-    case home, safety, privacy, quiz, generating, world, reflection
+    case home, safety, privacy, quiz, generating, world, reflection, library
 }
 
 /// Held-in-memory answers for the quiz (front-end only — never scored or stored in this
@@ -110,7 +110,7 @@ struct OopsFlowView: View {
         case .home:
             // `.id` keyed to the visit count so each arrival re-mounts HomeScreen and replays
             // its opening animation (see `homeAppearance`).
-            HomeScreen(onGenerate: { go(.safety) }, onVisitOld: { enterWorld() })
+            HomeScreen(onGenerate: { go(.safety) }, onVisitOld: { go(.library) })
                 .id(homeAppearance)
         case .safety:
             DeclarationScreen(
@@ -135,6 +135,16 @@ struct OopsFlowView: View {
         case .reflection:
             // A passive question montage over the world; when it ends, return Home.
             ReflectionFlowView(onFinish: { go(.home) })
+        case .library:
+            // Game-save-style grid of past visits. Tapping one restores it onto AppState and
+            // re-enters the museum through the very same `enterWorld()` path as a fresh run —
+            // but with no generation, so no AI is re-run.
+            OopsLibraryScreen(
+                onSelect: { record in
+                    appState.loadSavedVisit(record)
+                    enterWorld()
+                },
+                onBack: { go(.home) })
         }
     }
 

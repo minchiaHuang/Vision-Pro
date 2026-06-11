@@ -82,6 +82,10 @@ struct GeneratingScreen: View {
         appState.museumStory   = appState.museumGenerator.story
         appState.galleryImages = appState.museumGenerator.orderedGalleryImages()
         onDone()
+        // Persist this run as a re-enterable VisitRecord. Saves an image-less card immediately so it
+        // shows up right after generating, then fills in the paintings once Stage B finishes. Owned
+        // by the long-lived AppState (not this screen, which is torn down on entry), so it survives.
+        appState.saveCurrentVisit()
     }
 }
 

@@ -232,6 +232,50 @@ final class AppState {
         phase = .world
     }
 
+    /// Restore a previously-saved Future Museum visit so the user can re-enter it. Sets the three
+    /// fields the world pipeline reads — `museumStory` (plaques + Curator voice), `museumAnswers`,
+    /// and `galleryImages` (wall paintings, decoded from disk) — and resets the generator so the
+    /// live wall-streamer no-ops and no "developing" overlays appear. The caller then enters via
+    /// the existing `OopsFlowView.enterWorld()`; no AI is re-run.
+    @MainActor
+    func loadSavedVisit(_ record: VisitRecord) {
+        museumGenerator.reset()
+        museumStory = record.story
+        museumAnswers = record.answers
+        galleryImages = record.loadGalleryImages()
+    }
+
+    /// Persist the current run as a re-enterable `VisitRecord`. Called from
+    /// `GeneratingScreen.runGeneration` the moment the user enters the museum (story ready) and
+    /// owned here on the long-lived `AppState` (not the torn-down `GeneratingScreen`). Two phases:
+    ///   • IMMEDIATE — write an image-less index entry (`makeShell`) so a library card appears at
+    ///     once, even if the user leaves before the paintings finish.
+    ///   • DEFERRED — once Stage B finishes (`phase == .ready`), write the 6 paintings + thumbnail
+    ///     off the main actor and update that same record in place. Individual failed beats are
+    ///     tolerated (saved as empty slots).
+    /// A guard skips the deferred write if a new run has superseded this one (regenerate within the
+    /// ~90s paint window), so the second run's images can't land in the first run's record.
+    /// `into` / the returned `Task` exist for tests: production calls `saveCurrentVisit()` and
+    /// ignores both. Tests pass an isolated `UserDefaults` and `await` the returned task to
+    /// deterministically observe the deferred image fill.
+    @MainActor
+    @discardableResult
+    func saveCurrentVisit(into defaults: UserDefaults = .standard) -> Task<Void, Never>? {
+        guard let story = museumGenerator.story, let answers = museumAnswers else { return nil }
+        let id = UUID().uuidString
+        VisitLibrary.add(VisitLibrary.makeShell(id: id, story: story, answers: answers), to: defaults)
+        return Task { @MainActor in
+            await museumGenerator.waitUntilReady()
+            // Still the same run? (persona + beat count identify it well enough for a prototype.)
+            guard museumGenerator.story?.persona == story.persona,
+                  museumGenerator.nodes.count == story.nodes.count else { return }
+            let imageData = museumGenerator.nodes.map { $0.image }   // [Data?], beat order
+            await Task.detached(priority: .utility) {
+                VisitLibrary.fillImages(id: id, imageData: imageData, from: defaults)
+            }.value
+        }
+    }
+
     /// Restart from the beginning.
     func restart() {
         answers = QuizAnswers()
