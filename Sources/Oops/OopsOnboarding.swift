@@ -362,16 +362,12 @@ struct DeclarationScreen: View {
       }
     }
 
-    /// Bare back chevron — no glass circle. Left-aligned with the title/body copy, with a
-    /// 44pt hit target retained for comfortable tapping.
+    /// Large circular glass back control (`OopsBackCircleLabel`) — left edge aligned with the
+    /// title/body copy. The solid disc is a reliable tap target (a bare transparent chevron
+    /// hit-tests unreliably on visionOS).
     private func backButton(action: @escaping () -> Void) -> some View {
         Button { ButtonClick.play(); action() } label: {
-            Image(systemName: "chevron.left")
-                // 10% + 5% larger than the original 16pt glyph.
-                .font(.system(size: 18.48, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44, alignment: .leading)
-                .contentShape(Rectangle())
+            OopsBackCircleLabel()
         }
         .buttonStyle(.plain)
     }

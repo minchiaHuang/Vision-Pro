@@ -79,6 +79,29 @@ extension View {
     }
 }
 
+// MARK: - Circular back control
+
+/// Large circular glass "back" control — the label for the Quiz / Declaration back buttons,
+/// matching the round glass look visionOS gives the world screens' ornament buttons. The filled
+/// glass disc + `contentShape(Circle())` give a solid, reliable tap target: a bare transparent
+/// chevron hit-tests unreliably on visionOS (its empty area doesn't always register the tap).
+/// `diameter` / `glyph` are exposed so the size is easy to tune.
+struct OopsBackCircleLabel: View {
+    var diameter: CGFloat = 60
+    var glyph: CGFloat = 20
+
+    var body: some View {
+        Image(systemName: "chevron.left")
+            .font(.system(size: glyph, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: diameter, height: diameter)
+            .background(.ultraThinMaterial, in: Circle())
+            .background(Color.white.opacity(0.06), in: Circle())
+            .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 1))
+            .contentShape(Circle())
+    }
+}
+
 // MARK: - Text styles
 
 extension View {
