@@ -387,27 +387,23 @@ struct CheckStatement: View {
         .animation(.easeInOut(duration: 0.2), value: checked)
     }
 
-    /// "Checkbox" pill (`.pill.check`): a 36×30 glass pill. The selected/unselected look is
-    /// SWAPPED per the user's request — bright white fill = UNSELECTED, frosted/empty = SELECTED.
-    /// `filled` (= !checked) drives the appearance; the tap state itself is still `checked`.
+    /// Checkbox marker (design `Checkbox`): a 38×38 rounded-glass square. Per the user's final
+    /// call in the design chat ("不要有打勾 / 填滿顏色就好"), there is NO checkmark glyph —
+    /// `checked` simply fills the square with solid white (+ soft white glow); unchecked stays an
+    /// empty glass square with a hairline inset border. White fill therefore means SELECTED.
     private var toggle: some View {
-        let filled = !checked
-        return Capsule()
-            .fill(
-                filled
-                    ? LinearGradient(
-                        colors: [Color.white.opacity(0.95),
-                                 Color(red: 0.92, green: 0.92, blue: 0.94).opacity(0.90)],
-                        startPoint: .topLeading, endPoint: .bottomTrailing)
-                    : LinearGradient(
-                        colors: [Color.white.opacity(0.42),
-                                 Color(white: 0.47, opacity: 0.42)],
-                        startPoint: UnitPoint(x: 0.10, y: 0.05),
-                        endPoint:   UnitPoint(x: 0.90, y: 0.95)))
-            .overlay(Capsule().strokeBorder(.white.opacity(filled ? 0.0 : 0.55), lineWidth: 1.5))
-            .shadow(color: filled ? Color.white.opacity(0.55) : .black.opacity(0.18),
-                    radius: filled ? 7 : 4, y: filled ? 0 : 1)
-            .frame(width: 36, height: 30)
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(checked ? Color.white.opacity(0.95) : Color.white.opacity(0.10))
+            .overlay {
+                // Unchecked: 1.5pt inset white border defines the empty glass square.
+                if !checked {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(.white.opacity(0.35), lineWidth: 1.5)
+                }
+            }
+            .frame(width: 38, height: 38)
+            .shadow(color: checked ? Color.white.opacity(0.45) : .black.opacity(0.15),
+                    radius: checked ? 10 : 6, y: checked ? 0 : 1)
             .animation(.easeInOut(duration: 0.2), value: checked)
     }
 }
