@@ -261,10 +261,6 @@ struct OopsGalleryControls: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
     @Environment(\.openWindow) private var openWindow
-    @Environment(\.dismissWindow) private var dismissWindow
-    // `dismissWindow(id:)` can't reliably close the window it's called FROM — visionOS reserves it
-    // for closing OTHER windows. To close THIS control window we use the view's own dismiss action.
-    @Environment(\.dismiss) private var dismissSelf
     @State private var isExiting = false
     @State private var showSettings = false
 
@@ -339,13 +335,16 @@ struct OopsGalleryControls: View {
             Divider()
 
             // Always-visible: walk speed scales all locomotion (gamepad + pad); height nudges the
-            // viewpoint up/down live.
+            // viewpoint up/down live. Fixed-width labels so both sliders start at the same x and
+            // their (both centred-by-default) thumbs line up.
             HStack(spacing: 10) {
                 Text("Walk speed").font(.caption).foregroundStyle(.secondary)
+                    .frame(width: 84, alignment: .leading)
                 Slider(value: $settings.moveSpeed, in: 0.5...1.5)
             }
             HStack(spacing: 10) {
                 Text("Height").font(.caption).foregroundStyle(.secondary)
+                    .frame(width: 84, alignment: .leading)
                 Slider(value: $settings.eyeHeight, in: -0.5...0.5)
             }
             Toggle("Show forward pad", isOn: $settings.showMovePad)
@@ -407,9 +406,10 @@ struct OopsGalleryControls: View {
         // Default to the reflection montage; Leave / Start-over set a screen already, so keep it.
         if appState.oopsResumeScreen == nil { appState.oopsResumeScreen = .reflection }
         appState.devActiveFeature = .oops
+        // Reopen the dev-menu flow; its `onAppear` closes THIS control window + the voice orb on
+        // return. A visionOS `Window` can't reliably dismiss itself (dismissWindow(self) and
+        // `\.dismiss` both fail); a DIFFERENT window's `dismissWindow(id:)` is reliable.
         openWindow(id: "dev-menu")
-        dismissWindow(id: "museum-voice-orb")   // a DIFFERENT window — dismissWindow(id:) is correct here
-        dismissSelf()                           // close THIS control window (dismissWindow(self) is unreliable)
     }
 }
 
