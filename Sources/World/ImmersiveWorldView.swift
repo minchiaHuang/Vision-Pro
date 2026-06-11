@@ -158,6 +158,7 @@ struct ImmersiveWorldView: View {
         }
         .onAppear {
             appState.immersiveWorldOpen = true
+            music.volume = appState.museumSettings.musicVolume
             if appState.museumSettings.musicOn { music.start() }
         }
         .onDisappear {
@@ -166,7 +167,11 @@ struct ImmersiveWorldView: View {
         }
         // Live music toggle from the in-world settings popover.
         .onChange(of: appState.museumSettings.musicOn) { _, on in
-            if on { music.start() } else { music.stop() }
+            if on { music.volume = appState.museumSettings.musicVolume; music.start() } else { music.stop() }
+        }
+        // Live volume slider.
+        .onChange(of: appState.museumSettings.musicVolume) { _, v in
+            music.setVolume(v)
         }
     }
 

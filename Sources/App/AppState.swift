@@ -29,6 +29,8 @@ final class MuseumSettings {
     var audioGuideOn = true
     /// Looping background music (`MuseumMusicPlayer`).
     var musicOn = true
+    /// Background-music volume (0–1, default 30%); the in-world "Volume" slider drives it.
+    var musicVolume: Float = 0.3
     /// Show the on-screen forward/turn pad in the control bar (default off — gamepad is primary).
     var showMovePad = false
     /// Global walk-speed multiplier — scales all locomotion (gamepad + on-screen pad). 0.5–1.5,

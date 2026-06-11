@@ -298,10 +298,11 @@ enum ParametricWorldBuilder {
     /// user's eye height = this + their real standing head height (head tracking adds on top), so a
     /// positive value makes the user float above the floor. Tune on device.
     static let ba396SpawnHeight: Float = 0
-    /// Offset added to the bottom-row portrait height when pinning the first-person eye height
-    /// (see `ParametricLocomotor`). 0 = level with the bottom row; negative = lower toward the
-    /// floor. Units are the model's (BA396 is large). Tunable constant.
-    static let ba396EyeHeightOffset: Float = 0
+    /// Default offset added to the bottom-row portrait height when pinning the first-person eye
+    /// height (see `ParametricLocomotor`). 0 = level with the bottom row; negative = lower toward
+    /// the floor. The in-world "Height" slider fine-tunes ±1.5 around this. Units are the model's
+    /// (BA396 is large). Tunable constant.
+    static let ba396EyeHeightOffset: Float = -1.2
 
     /// Orders the portrait tiles into a clockwise walking sequence around the hall centre (origin).
     /// `centroids[i]` is tile i's physical centre (the model is authored centred on the origin, so

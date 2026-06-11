@@ -323,6 +323,13 @@ struct OopsGalleryControls: View {
 
             Toggle("Audio guide", isOn: $settings.audioGuideOn)
             Toggle("Background music", isOn: $settings.musicOn)
+            if settings.musicOn {
+                HStack(spacing: 10) {
+                    Text("Volume").font(.caption).foregroundStyle(.secondary)
+                        .frame(width: 84, alignment: .leading)
+                    Slider(value: $settings.musicVolume, in: 0...1)
+                }
+            }
             Toggle("Subtitles", isOn: $settings.subtitlesOn)
             Button {
                 ButtonClick.play()
@@ -346,7 +353,7 @@ struct OopsGalleryControls: View {
             HStack(spacing: 10) {
                 Text("Height").font(.caption).foregroundStyle(.secondary)
                     .frame(width: 84, alignment: .leading)
-                Slider(value: $settings.eyeHeight, in: -0.5...0.5)
+                Slider(value: $settings.eyeHeight, in: -1.5...1.5)
             }
             Toggle("Show forward pad", isOn: $settings.showMovePad)
 
