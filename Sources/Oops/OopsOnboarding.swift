@@ -213,6 +213,10 @@ struct HomeScreen: View {
     /// false → only the floating frames show · true → logo + buttons have faded in.
     @State private var revealed = false
 
+    /// One-shot cue that fires the moment the VisualEyes monogram reveals. (The looping ambient
+    /// bed is owned by `OopsFlowView` so it can carry past Home and fade out on the safety page.)
+    @State private var logoSfx = SoundEffectPlayer()
+
     var body: some View {
         ZStack {
             OopsPassthrough()
@@ -243,8 +247,10 @@ struct HomeScreen: View {
             }
         }
         .onAppear {
-            // Hold on the floating frames, then fade the logo + buttons in together.
+            // Hold on the floating frames, then fade the logo + buttons in together — with the
+            // logo cue firing as the monogram appears.
             DispatchQueue.main.asyncAfter(deadline: .now() + holdBeforeReveal) {
+                logoSfx.play("logo_animation")
                 withAnimation(.easeInOut(duration: 0.8)) { revealed = true }
             }
         }
@@ -359,7 +365,7 @@ struct DeclarationScreen: View {
     /// Bare back chevron — no glass circle. Left-aligned with the title/body copy, with a
     /// 44pt hit target retained for comfortable tapping.
     private func backButton(action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button { ButtonClick.play(); action() } label: {
             Image(systemName: "chevron.left")
                 // 10% + 5% larger than the original 16pt glyph.
                 .font(.system(size: 18.48, weight: .semibold))

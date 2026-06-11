@@ -94,7 +94,7 @@ struct DevMenuView: View {
 
                     VStack(spacing: 14) {
                         ForEach(DevFeature.allCases) { feature in
-                            Button { appState.devActiveFeature = feature } label: {
+                            Button { ButtonClick.play(); appState.devActiveFeature = feature } label: {
                                 HStack(spacing: 16) {
                                     Image(systemName: feature.systemImage)
                                         .font(.title3)
@@ -161,7 +161,7 @@ private struct DevFeatureContainer: View {
             // Features with their own navigation (e.g. splat) surface their own
             // back button, so skip the floating one to avoid two stacked backs.
             if !feature.providesOwnNavigation {
-                Button(action: onClose) {
+                Button { ButtonClick.play(); onClose() } label: {
                     Image(systemName: "chevron.left")
                         .font(.headline)
                         .foregroundStyle(.primary)

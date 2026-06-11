@@ -138,6 +138,9 @@ struct OopsButton: ButtonStyle {
             .shadow(color: .black.opacity(0.22), radius: 18, y: 6)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeOut(duration: 0.16), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { ButtonClick.play() }
+            }
     }
 }
 
@@ -197,7 +200,7 @@ struct BarButton: View {
     let systemImage: String
     var action: () -> Void = {}
     var body: some View {
-        Button(action: action) {
+        Button { ButtonClick.play(); action() } label: {
             Image(systemName: systemImage)
                 .font(.system(size: 24, weight: .regular))
                 .foregroundStyle(.white.opacity(0.92))
@@ -428,7 +431,7 @@ struct OopsDialog: View {
                 VStack(spacing: 12) {
                     Button(confirmTitle, action: onConfirm)
                         .buttonStyle(OopsButton(ghost: true, minWidth: 300))
-                    Button("Never mind…", action: onCancel)
+                    Button("Never mind…") { ButtonClick.play(); onCancel() }
                         .font(.system(size: 20))
                         .foregroundStyle(.white)
                         .underline()

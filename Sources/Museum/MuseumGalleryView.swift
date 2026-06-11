@@ -165,7 +165,7 @@ struct MuseumGalleryView: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white.opacity(0.85))
                 .frame(maxWidth: 520)
-            Button("Start over", action: onRestart).buttonStyle(.borderedProminent)
+            Button("Start over") { ButtonClick.play(); onRestart() }.buttonStyle(.borderedProminent)
         }
         .padding(40)
     }
@@ -262,7 +262,7 @@ private struct DecisionCard: View {
                 .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
-            Button("Start over", action: onRestart).buttonStyle(.bordered).tint(.white)
+            Button("Start over") { ButtonClick.play(); onRestart() }.buttonStyle(.bordered).tint(.white)
         }
         .padding(24)
         .frame(width: 360, height: 240 + 12 + 60, alignment: .topLeading)
