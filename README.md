@@ -46,7 +46,7 @@ Vision-Pro/
 └── Sources/           ← Swift source used by the Xcode target
     ├── Museum/        ← the Future Museum pipeline (questions → story → images)
     ├── World/         ← RealityKit gallery + parametric world builder
-    ├── Voice/         ← narration + conversation (STT → LLM → TTS)
+    ├── Voice/         ← narration + conversation for the user(STT → LLM → TTS)
     └── …
 ```
 

@@ -146,6 +146,7 @@ struct QuizScreen: View {
     /// never moves between screens.
     private var backButton: some View {
         Button {
+            ButtonClick.play()
             if isFirst {
                 confirm = true
             } else {

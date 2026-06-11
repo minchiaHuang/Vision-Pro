@@ -58,6 +58,9 @@ struct PrimaryPillButtonStyle: ButtonStyle {
             .shadow(color: VATheme.amber.opacity(0.35), radius: 14, y: 8)
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { ButtonClick.play() }
+            }
     }
 }
 
@@ -74,6 +77,9 @@ struct SecondaryPillButtonStyle: ButtonStyle {
             .overlay(Capsule().stroke(.white.opacity(0.25), lineWidth: 0.5))
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                if pressed { ButtonClick.play() }
+            }
     }
 }
 

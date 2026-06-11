@@ -29,10 +29,16 @@ final class MuseumSettings {
     var audioGuideOn = true
     /// Looping background music (`MuseumMusicPlayer`).
     var musicOn = true
+    /// Background-music volume (0–1, default 30%); the in-world "Volume" slider drives it.
+    var musicVolume: Float = 0.3
     /// Show the on-screen forward/turn pad in the control bar (default off — gamepad is primary).
     var showMovePad = false
-    /// Multiplier on the on-screen pad's forward magnitude (0.5–1.5; 1.0 = unscaled).
+    /// Global walk-speed multiplier — scales all locomotion (gamepad + on-screen pad). 0.5–1.5,
+    /// 1.0 = unscaled.
     var moveSpeed: Float = 1.0
+    /// Eye-height offset in metres, added on top of the world's default standing height (BA396:
+    /// the portrait-frame height). Lets the visitor raise/lower their viewpoint live.
+    var eyeHeight: Float = 0
     /// Show the Curator's spoken line as text on the exhibit being described.
     var subtitlesOn = false
 }

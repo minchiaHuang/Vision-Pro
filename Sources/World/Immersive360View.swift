@@ -72,6 +72,7 @@ struct Immersive360View: View {
     private var controls: some View {
         VStack(alignment: .trailing, spacing: 10) {
             Button {
+                ButtonClick.play()
                 useGyro.toggle()
             } label: {
                 Label(useGyro ? "Gyro" : "Drag",
@@ -84,6 +85,7 @@ struct Immersive360View: View {
 
             if gyroActive {
                 Button {
+                    ButtonClick.play()
                     motion.recenter()
                 } label: {
                     Label("Recenter", systemImage: "scope")

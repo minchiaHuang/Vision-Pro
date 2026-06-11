@@ -1,14 +1,15 @@
 import Foundation
 import AVFAudio
 
-/// Loops a gentle bundled piano track (Debussy — Clair de lune) while the visitor is in
-/// the immersive gallery world. Mixes politely with any other app audio (voice/STT), so
-/// it needs no ducking coordination.
+/// Loops the bundled world soundtrack (`world_soundtrack.m4a`) while the visitor is in
+/// the world — the immersive gallery on visionOS and the full-screen world on iOS. Mixes
+/// politely with any other app audio (voice/STT), so it needs no ducking coordination.
 ///
 /// Mirrors the `AVAudioPlayer` pattern used by `ElevenLabsVoice` / `NarrationService`.
 final class MuseumMusicPlayer {
-    /// Steady-state background volume reached after the fade-in.
-    private static let targetVolume: Float = 0.6
+    /// Steady-state target volume (0–1) the track fades up to. Set before `start()` to pick the
+    /// fade-in target; `setVolume` changes it live (no fade). Default 30%.
+    var volume: Float = 0.3
     /// The track fades up from silence over this many seconds when playback starts.
     private static let fadeInDuration: TimeInterval = 15
 
@@ -19,7 +20,7 @@ final class MuseumMusicPlayer {
     /// `targetVolume` over the first `fadeInDuration` seconds.
     func start() {
         guard player == nil,
-              let url = Bundle.main.url(forResource: "museum_clair_de_lune", withExtension: "mp3")
+              let url = Bundle.main.url(forResource: "world_soundtrack", withExtension: "m4a")
         else { return }
 
         #if !os(macOS)
@@ -35,8 +36,14 @@ final class MuseumMusicPlayer {
         p?.volume = 0                            // start silent…
         p?.prepareToPlay()
         p?.play()
-        p?.setVolume(Self.targetVolume, fadeDuration: Self.fadeInDuration)   // …ramp up over the first 15s
+        p?.setVolume(volume, fadeDuration: Self.fadeInDuration)   // …ramp up over the first 15s
         player = p
+    }
+
+    /// Live volume change (e.g. the settings slider) — applies immediately, no fade.
+    func setVolume(_ v: Float) {
+        volume = v
+        player?.volume = v
     }
 
     /// Stops playback and releases the player (e.g. when leaving the gallery).
