@@ -12,7 +12,7 @@ import Foundation
 /// Typed answers collected from the Future Museum question form (front-end only — never
 /// stored). Only `role` is required; blank optional fields are inferred by the Curator
 /// from the archetype.
-struct MuseumAnswers {
+struct MuseumAnswers: Codable, Sendable {
     var role = ""        // Q1 — "Who do you want to become?" (required; the Call)
     var age = 22         // anchor — the Ordinary World's starting point
     var city = ""        // anchor — localizes the Elixir (e.g. Sydney Opera House)
