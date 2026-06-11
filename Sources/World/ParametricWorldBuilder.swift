@@ -278,11 +278,7 @@ enum ParametricWorldBuilder {
     /// Pinned from the real BA396 geometry (the 6 portraits are a flat 3×2 grid on one wall —
     /// tiles: TL=0 TC=2 TR=4, BL=5 BC=1 BR=3). Boustrophedon age order: top L→R 1,2,3, bottom
     /// R→L 4,5,6 → image k lands on tile [0,2,4,3,1,5][k].
-    /// REVERSED 2026-06-11 for the friend's updated model whose wall numbers run the OPPOSITE
-    /// way: the whole sequence is flipped so image k lands on tile [5,1,3,4,2,0][k] (drives the
-    /// wall photos, plaques and narration together). Verify against the printed numbers on
-    /// device and tweak a single entry if one frame is off. Original boustrophedon: [0,2,4,3,1,5].
-    static let ba396VisitOrderOverride: [Int]? = [5, 1, 3, 4, 2, 0]
+    static let ba396VisitOrderOverride: [Int]? = [0, 2, 4, 3, 1, 5]
     /// Which entry of the angle-sorted ring is "position 1" (the spawn wall). Tune on device.
     static let ba396VisitStart = 0
     /// Walk direction around the ring: true = clockwise, false = counter-clockwise. Tune on device.
@@ -295,13 +291,9 @@ enum ParametricWorldBuilder {
     /// Manual spawn override (player-space position + yaw). When set it wins over the computed
     /// centred-in-front pose — pinned from a tester who walked to the spot they wanted (read off the
     /// TEMP position log). y is irrelevant (the eye-height pin drives it). nil = compute the pose.
-    /// MIRRORED 2026-06-11 to the wall's RIGHT side to start at the new model's reversed "1".
-    /// Player-space wall centre ≈ x0, so we negate x (−14.36 → 14.36) and the yaw sign. This is a
-    /// mirror-estimate starting point — the new model added props that may shift bounds.center, so
-    /// re-confirm on device (walk to the spot, read the TEMP position log) or set nil to auto-centre.
-    /// Original walked-to left-side pose: (SIMD3(-14.36, 0, -0.12), -0.029).
+    /// Current: walked-to pose on device — left side of the wall (x −14.36), facing the wall (yaw ≈ 0).
     static let ba396SpawnPoseOverride: (position: SIMD3<Float>, yaw: Float)? =
-        (SIMD3<Float>(14.36, 0, -0.12), 0.029)
+        (SIMD3<Float>(-14.36, 0, -0.12), -0.029)
     /// Fixed spawn height (player-space Y, metres). Default 0 = floor-aligned. NOTE on visionOS the
     /// user's eye height = this + their real standing head height (head tracking adds on top), so a
     /// positive value makes the user float above the floor. Tune on device.
