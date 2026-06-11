@@ -1,7 +1,7 @@
 import Foundation
 import AVFAudio
 
-/// Loops the bundled world soundtrack (`world_soundtrack.m4a`) while the visitor is in
+/// Loops the bundled world soundtrack (`museum_clair_de_lune.mp3`) while the visitor is in
 /// the world — the immersive gallery on visionOS and the full-screen world on iOS. Mixes
 /// politely with any other app audio (voice/STT), so it needs no ducking coordination.
 ///
@@ -20,7 +20,7 @@ final class MuseumMusicPlayer {
     /// `targetVolume` over the first `fadeInDuration` seconds.
     func start() {
         guard player == nil,
-              let url = Bundle.main.url(forResource: "world_soundtrack", withExtension: "m4a")
+              let url = Bundle.main.url(forResource: "museum_clair_de_lune", withExtension: "mp3")
         else { return }
 
         #if !os(macOS)

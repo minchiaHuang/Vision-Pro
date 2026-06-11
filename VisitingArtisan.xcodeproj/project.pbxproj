@@ -71,6 +71,7 @@
 		AA00000100000000000000D7 /* home_ambient.m4a in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D8 /* home_ambient.m4a */; };
 		AA00000100000000000000D8 /* logo_animation.m4a in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D9 /* logo_animation.m4a */; };
 		AA00000100000000000000DA /* button_click.m4a in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001DB /* button_click.m4a */; };
+		AA00000100000000000000DC /* museum_clair_de_lune.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001DC /* museum_clair_de_lune.mp3 */; };
 		AA00000100000000000000D9 /* SoundEffectPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001DA /* SoundEffectPlayer.swift */; };
 		AA00000100000000000000D4 /* intro_ambient.m4a in Resources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D7 /* intro_ambient.m4a */; };
 		AA00000100000000000000D6 /* IntroAmbiencePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000100000000000001D6 /* IntroAmbiencePlayer.swift */; };
@@ -183,6 +184,7 @@
 		AA00000100000000000001D8 /* home_ambient.m4a */ = {isa = PBXFileReference; lastKnownFileType = audio.m4a; path = home_ambient.m4a; sourceTree = "<group>"; };
 		AA00000100000000000001D9 /* logo_animation.m4a */ = {isa = PBXFileReference; lastKnownFileType = audio.m4a; path = logo_animation.m4a; sourceTree = "<group>"; };
 		AA00000100000000000001DB /* button_click.m4a */ = {isa = PBXFileReference; lastKnownFileType = audio.m4a; path = button_click.m4a; sourceTree = "<group>"; };
+		AA00000100000000000001DC /* museum_clair_de_lune.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = museum_clair_de_lune.mp3; sourceTree = "<group>"; };
 		AA00000100000000000001DA /* SoundEffectPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundEffectPlayer.swift; sourceTree = "<group>"; };
 		AA00000100000000000001D7 /* intro_ambient.m4a */ = {isa = PBXFileReference; lastKnownFileType = audio.m4a; path = intro_ambient.m4a; sourceTree = "<group>"; };
 		AA00000100000000000001D6 /* IntroAmbiencePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntroAmbiencePlayer.swift; sourceTree = "<group>"; };
@@ -310,6 +312,7 @@
 				AA00000100000000000001D8 /* home_ambient.m4a */,
 				AA00000100000000000001D9 /* logo_animation.m4a */,
 				AA00000100000000000001DB /* button_click.m4a */,
+				AA00000100000000000001DC /* museum_clair_de_lune.mp3 */,
 			);
 			path = SpikeAssets;
 			sourceTree = "<group>";
@@ -563,6 +566,7 @@
 				AA00000100000000000000D7 /* home_ambient.m4a in Resources */,
 				AA00000100000000000000D8 /* logo_animation.m4a in Resources */,
 				AA00000100000000000000DA /* button_click.m4a in Resources */,
+				AA00000100000000000000DC /* museum_clair_de_lune.mp3 in Resources */,
 				121651D62FD547C500C06C29 /* beach 7.jpg in Resources */,
 				121651D82FD547CB00C06C29 /* beach 2.jpeg in Resources */,
 				121651DA2FD547D000C06C29 /* beach 4.jpg in Resources */,
