@@ -48,6 +48,9 @@ struct SplatLocomotion {
     /// parametric walk-in worlds set this for a first-person locked eye height (Y is then driven
     /// externally from the head pose); the free-flying splat `.spz` path leaves it false.
     var lockVertical: Bool = false
+    /// Caller-set multiplier on movement speed (gamepad + manual). 1 = unscaled; the museum's
+    /// "Walk speed" slider drives it. The splat `.spz` path leaves it 1.
+    var speedScale: Float = 1
 
     private var initialPosition: SIMD3<Float> = .zero
     private var initialYaw: Float = 0
@@ -95,7 +98,7 @@ struct SplatLocomotion {
         yaw -= turnX * lookSpeed * dt
 
         // Move on the horizontal plane; triggers add vertical.
-        let speed = span * moveFraction * dt
+        let speed = span * moveFraction * dt * speedScale
         position += forward * (moveY * speed)
         position += right * (moveX * speed)
         if !lockVertical { position.y += lift * speed }

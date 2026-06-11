@@ -73,6 +73,16 @@ struct OopsFlowView: View {
             if let resume = appState.oopsResumeScreen {
                 screen = resume
                 appState.oopsResumeScreen = nil
+                #if os(visionOS)
+                // The world's control + voice windows can't reliably dismiss themselves (visionOS
+                // single-`Window` limitation: dismissWindow(self) and `\.dismiss` both fail). Close
+                // them from here — the dev-menu window reopening on return — where `dismissWindow(id:)`
+                // targets OTHER windows and IS reliable. No-op if a window is already gone.
+                for id in ["oops-gallery-controls", "museum-voice-orb",
+                           "oops-world-controls", "oops-voice-orb"] {
+                    dismissWindow(id: id)
+                }
+                #endif
             }
             if screen == .home { ambience.start() }
         }

@@ -7,8 +7,9 @@ import AVFAudio
 ///
 /// Mirrors the `AVAudioPlayer` pattern used by `ElevenLabsVoice` / `NarrationService`.
 final class MuseumMusicPlayer {
-    /// Steady-state background volume reached after the fade-in.
-    private static let targetVolume: Float = 0.6
+    /// Steady-state target volume (0–1) the track fades up to. Set before `start()` to pick the
+    /// fade-in target; `setVolume` changes it live (no fade). Default 30%.
+    var volume: Float = 0.3
     /// The track fades up from silence over this many seconds when playback starts.
     private static let fadeInDuration: TimeInterval = 15
 
@@ -35,8 +36,14 @@ final class MuseumMusicPlayer {
         p?.volume = 0                            // start silent…
         p?.prepareToPlay()
         p?.play()
-        p?.setVolume(Self.targetVolume, fadeDuration: Self.fadeInDuration)   // …ramp up over the first 15s
+        p?.setVolume(volume, fadeDuration: Self.fadeInDuration)   // …ramp up over the first 15s
         player = p
+    }
+
+    /// Live volume change (e.g. the settings slider) — applies immediately, no fade.
+    func setVolume(_ v: Float) {
+        volume = v
+        player?.volume = v
     }
 
     /// Stops playback and releases the player (e.g. when leaving the gallery).
