@@ -79,6 +79,29 @@ extension View {
     }
 }
 
+// MARK: - Circular back control
+
+/// Large circular glass "back" control — the label for the Quiz / Declaration back buttons,
+/// matching the round glass look visionOS gives the world screens' ornament buttons. The filled
+/// glass disc + `contentShape(Circle())` give a solid, reliable tap target: a bare transparent
+/// chevron hit-tests unreliably on visionOS (its empty area doesn't always register the tap).
+/// `diameter` / `glyph` are exposed so the size is easy to tune.
+struct OopsBackCircleLabel: View {
+    var diameter: CGFloat = 60
+    var glyph: CGFloat = 20
+
+    var body: some View {
+        Image(systemName: "chevron.left")
+            .font(.system(size: glyph, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: diameter, height: diameter)
+            .background(.ultraThinMaterial, in: Circle())
+            .background(Color.white.opacity(0.06), in: Circle())
+            .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 1))
+            .contentShape(Circle())
+    }
+}
+
 // MARK: - Text styles
 
 extension View {
@@ -364,13 +387,14 @@ struct CheckStatement: View {
         .animation(.easeInOut(duration: 0.2), value: checked)
     }
 
-    /// "Checkbox" pill from VisualEyes Screens.html (`.pill.check`): a 36×30 glass pill.
-    /// OFF = frosted glass gradient, empty. ON = bright white fill with a soft outer
-    /// glow (no checkmark — the filled pill alone signals the selected state).
+    /// "Checkbox" pill (`.pill.check`): a 36×30 glass pill. The selected/unselected look is
+    /// SWAPPED per the user's request — bright white fill = UNSELECTED, frosted/empty = SELECTED.
+    /// `filled` (= !checked) drives the appearance; the tap state itself is still `checked`.
     private var toggle: some View {
-        Capsule()
+        let filled = !checked
+        return Capsule()
             .fill(
-                checked
+                filled
                     ? LinearGradient(
                         colors: [Color.white.opacity(0.95),
                                  Color(red: 0.92, green: 0.92, blue: 0.94).opacity(0.90)],
@@ -380,11 +404,68 @@ struct CheckStatement: View {
                                  Color(white: 0.47, opacity: 0.42)],
                         startPoint: UnitPoint(x: 0.10, y: 0.05),
                         endPoint:   UnitPoint(x: 0.90, y: 0.95)))
-            .overlay(Capsule().strokeBorder(.white.opacity(checked ? 0.0 : 0.55), lineWidth: 1.5))
-            .shadow(color: checked ? Color.white.opacity(0.55) : .black.opacity(0.18),
-                    radius: checked ? 7 : 4, y: checked ? 0 : 1)
+            .overlay(Capsule().strokeBorder(.white.opacity(filled ? 0.0 : 0.55), lineWidth: 1.5))
+            .shadow(color: filled ? Color.white.opacity(0.55) : .black.opacity(0.18),
+                    radius: filled ? 7 : 4, y: filled ? 0 : 1)
             .frame(width: 36, height: 30)
             .animation(.easeInOut(duration: 0.2), value: checked)
+    }
+}
+
+// MARK: - visionOS toggle + preference row (Privacy Preferences)
+
+/// visionOS-style green pill toggle (design `Toggle`). 64×38 capsule, #32D74B when on /
+/// neutral grey when off, with a 30pt white knob that slides to the active edge.
+struct OopsToggle: View {
+    var on: Bool
+
+    var body: some View {
+        Capsule()
+            .fill(on ? Color(.sRGB, red: 50.0 / 255, green: 215.0 / 255, blue: 75.0 / 255, opacity: 1)
+                     : Color(white: 0.47, opacity: 0.5))
+            .frame(width: 64, height: 38)
+            .overlay(Capsule().strokeBorder(.white.opacity(on ? 0.20 : 0.25), lineWidth: 1))
+            .overlay(alignment: on ? .trailing : .leading) {
+                Circle()
+                    .fill(.white)
+                    .frame(width: 30, height: 30)
+                    .shadow(color: .black.opacity(0.30), radius: 2.5, y: 2)
+                    .padding(.horizontal, 4)
+            }
+            .animation(.easeInOut(duration: 0.2), value: on)
+    }
+}
+
+/// Privacy preference row — same heading+body block as `CheckStatement` but with the green
+/// toggle on the RIGHT (design `PrefRow`). The whole row is the tap target so it toggles
+/// reliably (pinch/tap can be imprecise on the small switch).
+struct PrefToggleRow: View {
+    let head: String
+    let text: String
+    let on: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 24) {
+            VStack(alignment: .leading, spacing: 9) {
+                Text(head)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(OopsGlass.label1)
+                Text(text)
+                    .font(.system(size: 17, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .lineSpacing(2)
+                    .lineLimit(3, reservesSpace: true)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            OopsToggle(on: on)
+                // Align the switch with the heading's first line.
+                .padding(.top, 2)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onToggle)
+        .animation(.easeInOut(duration: 0.2), value: on)
     }
 }
 

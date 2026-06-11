@@ -140,10 +140,10 @@ struct QuizScreen: View {
 
     // MARK: - Back button
 
-    /// Bare back chevron — no circle. The glyph is left-aligned inside a 40×40 tap target
-    /// so its visual left edge sits at the overlay's `.leading` padding, giving the "Quiz"
-    /// header below it a shared left edge to align to. Lives in its own overlay layer so it
-    /// never moves between screens.
+    /// Large circular glass back control (`OopsBackCircleLabel`) — its left edge sits at the
+    /// overlay's `.leading` padding, giving the "Quiz" header below it a shared left edge to align
+    /// to. The solid disc is a reliable tap target (a bare transparent chevron hit-tests
+    /// unreliably on visionOS). Lives in its own overlay layer so it never moves between screens.
     private var backButton: some View {
         Button {
             ButtonClick.play()
@@ -154,13 +154,8 @@ struct QuizScreen: View {
                 withAnimation(.easeInOut(duration: 0.28)) { currentIndex -= 1 }
             }
         } label: {
-            Image(systemName: "chevron.left")
-                // Identical to the Declaration screen's back chevron (size 18.48, 44pt
-                // leading hit target) so both screens' back buttons match exactly.
-                .font(.system(size: 18.48, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44, alignment: .leading)
-                .contentShape(Rectangle())
+            // Identical circular control to the Declaration screen's back button so both match.
+            OopsBackCircleLabel()
         }
         .buttonStyle(.plain)
     }

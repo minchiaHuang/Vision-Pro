@@ -276,6 +276,7 @@ struct DeclarationScreen: View {
     let cta: String
     @Binding var checks: [Bool]
     var requireAll: Bool = true   // true = all toggles required; false = no selection required
+    var useToggle: Bool = false   // false = capsule check pills (Safety); true = green visionOS toggles (Privacy)
     let onCta: () -> Void
     var onBack: (() -> Void)? = nil
 
@@ -295,23 +296,17 @@ struct DeclarationScreen: View {
         ZStack {
             OopsPassthrough(dim: true)
 
-            // Figma node 46:1124. A single vertical stack: the header (back button → title →
-            // subtitle) hugs the TOP, then a fixed gap, then the three statements, then a
-            // flexible Spacer, then the CTA pill. Because the Spacer can never collapse below
-            // its minimum, the button can NOT overlap the statements no matter how tall the
-            // copy runs — yet on both the Safety and Privacy screens it still settles to the
-            // same bottom-centre spot (the Spacer absorbs the difference in copy height).
-            VStack(spacing: 0) {
-                // 1 — Header (back button → title → subtitle), top-leading.
-                VStack(alignment: .leading, spacing: 28) {
-                    // Back button — top-leading, above the title (Figma 289:2111).
-                    // Equal top/bottom padding so the arrow sits evenly between the card
-                    // edge and the title.
-                    if let onBack {
-                        backButton(action: onBack)
-                            .padding(.vertical, 16)
-                    }
-
+            // The frosted card, with the back button pinned to its top-left CORNER (design
+            // BackButton: window+40/+36, overlaid — NOT in the content flow, so it never
+            // pushes the title down). Content is a single vertical stack: title → subtitle →
+            // statements → flexible Spacer → CTA. The Spacer can never collapse below its
+            // minimum, so the CTA always clears the copy and settles to the same bottom-centre
+            // spot on both the Safety and Privacy screens (the Spacer absorbs the copy-height
+            // difference).
+            ZStack(alignment: .topLeading) {
+                VStack(spacing: 0) {
+                    // 1 — Header (title → subtitle). Pushed down so it clears the corner back
+                    //     button overlaid above-left of it.
                     VStack(alignment: .leading, spacing: 12) {
                         Text(title).oopsTitle(36)
                         Text(subtitle)
@@ -323,38 +318,53 @@ struct DeclarationScreen: View {
                             .lineLimit(2, reservesSpace: true)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 56)
 
-                // Gap between the header and the bullet points — pushes the statements down.
-                Color.clear.frame(height: 56)
+                    // Gap between the header and the rows — pushes the statements down.
+                    Color.clear.frame(height: 56)
 
-                // 2 — The three circular-toggle statements, top-leading.
-                VStack(spacing: 18) {
-                    ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
-                        CheckStatement(head: item.head, text: item.text,
-                                       checked: checks[i]) { checks[i].toggle() }
+                    // 2 — The three statements: Safety keeps the capsule check pills; Privacy
+                    //     (useToggle) uses the green visionOS toggle rows (switch on the right).
+                    VStack(spacing: 18) {
+                        ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
+                            if useToggle {
+                                PrefToggleRow(head: item.head, text: item.text,
+                                              on: checks[i]) { checks[i].toggle() }
+                            } else {
+                                CheckStatement(head: item.head, text: item.text,
+                                               checked: checks[i]) { checks[i].toggle() }
+                            }
+                        }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    // Flexible gap: grows to push the CTA toward the bottom, but never shrinks
+                    // past 24pt — this minimum is what guarantees the pill clears the copy.
+                    Spacer(minLength: 24)
+
+                    // 3 — CTA pill, bottom-centre (Figma 289:2130). Sized 258×65 — another 5%
+                    // down from the prior 272×68 — for reliable clearance on the tall Safety screen.
+                    Button(cta, action: onCta)
+                        .buttonStyle(OopsButton(fixedWidth: 258, fixedHeight: 65))
+                        .disabled(!canContinue)
+                        .opacity(canContinue ? 1 : 0.4)
+                        .animation(.easeInOut(duration: 0.2), value: canContinue)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(width: 960)
+                .padding(52)
+                // Fixed card height matching the Quiz frame.
+                .frame(height: cardHeight)
+                .oopsWindow()
 
-                // Flexible gap: grows to push the CTA toward the bottom, but never shrinks
-                // past 24pt — this minimum is what guarantees the pill clears the copy.
-                Spacer(minLength: 24)
-
-                // 3 — CTA pill, bottom-centre (Figma 289:2130). Sized 258×65 — another 5%
-                // down from the prior 272×68 — for reliable clearance on the tall Safety screen.
-                Button(cta, action: onCta)
-                    .buttonStyle(OopsButton(fixedWidth: 258, fixedHeight: 65))
-                    .disabled(!canContinue)
-                    .opacity(canContinue ? 1 : 0.4)
-                    .animation(.easeInOut(duration: 0.2), value: canContinue)
+                // Back button — pinned snug into the card's very top-left corner, overlaid on
+                // the glass (stays within the rounded corner so it never floats off the card).
+                if let onBack {
+                    backButton(action: onBack)
+                        .padding(.leading, 24)
+                        .padding(.top, 24)
+                }
             }
-            .frame(width: 960)
-            .padding(52)
-            // Fixed card height matching the Quiz frame.
-            .frame(height: cardHeight)
-            .oopsWindow()
 
             VStack { Spacer(); PageDots().padding(.bottom, 18) }
         }
@@ -362,16 +372,12 @@ struct DeclarationScreen: View {
       }
     }
 
-    /// Bare back chevron — no glass circle. Left-aligned with the title/body copy, with a
-    /// 44pt hit target retained for comfortable tapping.
+    /// Large circular glass back control (`OopsBackCircleLabel`) — left edge aligned with the
+    /// title/body copy. The solid disc is a reliable tap target (a bare transparent chevron
+    /// hit-tests unreliably on visionOS).
     private func backButton(action: @escaping () -> Void) -> some View {
         Button { ButtonClick.play(); action() } label: {
-            Image(systemName: "chevron.left")
-                // 10% + 5% larger than the original 16pt glyph.
-                .font(.system(size: 18.48, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44, alignment: .leading)
-                .contentShape(Rectangle())
+            OopsBackCircleLabel()
         }
         .buttonStyle(.plain)
     }
